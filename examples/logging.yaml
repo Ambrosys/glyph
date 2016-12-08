@@ -1,0 +1,45 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+    simple:
+        format: "%(message)s"
+    verbose:
+        format: "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
+
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: simple
+        stream: ext://sys.stdout
+
+    debug_file_handler:
+        class: logging.FileHandler
+        level: DEBUG
+        formatter: verbose
+        filename: {workdir}/log.debug
+        encoding: utf8
+        mode: w
+
+    error_file_handler:
+        class: logging.FileHandler
+        level: ERROR
+        formatter: verbose
+        filename: {workdir}/log.error
+        encoding: utf8
+        mode: w
+
+loggers:
+    __main__:
+        handlers: [console]
+
+    control.application:
+        handlers: [console]
+
+    py.warnings:
+        handlers: [debug_file_handler]
+
+root:
+    level: DEBUG
+    handlers: [debug_file_handler, error_file_handler]

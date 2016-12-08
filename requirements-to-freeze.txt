@@ -1,0 +1,10 @@
+deap
+decorator
+dill
+mpmath
+networkx
+numpy
+pyyaml
+scipy
+sympy
+toolz

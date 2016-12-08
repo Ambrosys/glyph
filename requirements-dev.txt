@@ -1,0 +1,11 @@
+-e .
+pytest
+pytest-cov
+pytest-xdist
+scikit-learn
+sphinx
+recommonmark
+distributed
+matplotlib
+seaborn
+joblib
