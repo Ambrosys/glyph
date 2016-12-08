@@ -1,0 +1,7 @@
+language: python
+python:
+  - "3.5"
+# command to install dependencies
+install: make dev
+# command to run tests
+script: make test

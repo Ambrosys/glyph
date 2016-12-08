@@ -9,7 +9,7 @@ integration: dev
 	py.test tests --runslow -n8
 
 dev:
-	pip install -r requirements-to-freeze.txt
+	pip install -r requirements.txt
 	pip install -r requirements-dev.txt
 	pip install -e .
 
