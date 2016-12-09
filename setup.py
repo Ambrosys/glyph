@@ -4,7 +4,7 @@ Solving control problems with machine learning methods.
 
 import re
 import ast
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 _version_re = re.compile(r'__VERSION__\s+=\s+(.*)')
@@ -29,7 +29,7 @@ setup(
     license=read('LICENCE', split=False),
     keywords='complex systems, control, machine learning, genetic programming',
     url='https://www.github.com/ambrosys/glyph',
-    packages=['glyph'],
+    packages=find_packages(exclude=["tests", "doc", "examples"]),
     install_requires=read('requirements-to-freeze.txt'),
     classifiers=[
         'Development Status :: 3 - Alpha',
