@@ -9,3 +9,4 @@ distributed
 matplotlib
 seaborn
 joblib
+twine
