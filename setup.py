@@ -18,7 +18,7 @@ def read(fname, split=True):
 
 
 setup(
-    name='pygylph',
+    name='pyglyph',
     version=version,
     author='Markus Abel, Julien Gout, Markus Quade',
     author_email='markus.abel@ambrosys.de, julien.gout@ambrosys.de, markus.quade@ambrosys.de',
