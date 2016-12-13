@@ -38,7 +38,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'glyph-remote = glyph.cli.glyph_remote'
+            'glyph-remote = glyph.cli.glyph_remote:main'
         ]
     },
 )
