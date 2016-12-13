@@ -26,4 +26,4 @@ Examples can be found in the [repo](https://github.com/Ambrosys/glyph/tree/maste
 
 ## Bugs, feature requests, contributions
 
-Please use the [issue tracker](https://github.com/Ambrosys/glyph/issues). For contributions have a look at out contribution guide.
+Please use the [issue tracker](https://github.com/Ambrosys/glyph/issues) and the [mailing list](https://groups.google.com/forum/#!forum/pyglyph) For contributions have a look at out [contribution] guide(https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING).
