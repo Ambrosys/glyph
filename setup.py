@@ -1,4 +1,4 @@
-"""Solving control problems with machine learning methods."""
+"""Symbolic regression tools."""
 
 import re
 import ast
