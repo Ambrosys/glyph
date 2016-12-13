@@ -36,4 +36,9 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
     ],
+    entry_points={
+        'console_scripts': [
+            'glyph-remote = glyph.cli.glyph_remote'
+        ]
+    },
 )
