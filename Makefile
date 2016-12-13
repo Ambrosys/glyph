@@ -21,3 +21,8 @@ doc: dev
 	rm -rf doc/build
 	sphinx-apidoc -o doc/source/api glyph
 	make -C doc html
+
+pypi: dev
+	rm -rf dist/*
+	python setup.py sdist bdist_wheel
+	twine upload dist/*

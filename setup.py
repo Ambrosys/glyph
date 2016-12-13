@@ -1,6 +1,4 @@
-"""
-Solving control problems with machine learning methods.
-"""
+"""Symbolic regression tools."""
 
 import re
 import ast
@@ -20,7 +18,7 @@ def read(fname, split=True):
 
 
 setup(
-    name='gylph',
+    name='pyglyph',
     version=version,
     author='Markus Abel, Julien Gout, Markus Quade',
     author_email='markus.abel@ambrosys.de, julien.gout@ambrosys.de, markus.quade@ambrosys.de',
@@ -35,8 +33,12 @@ setup(
         'Development Status :: 3 - Alpha',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Intended Audience :: Science/Research',
-        'Intended Audience :: Engineering',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
     ],
+    entry_points={
+        'console_scripts': [
+            'glyph-remote = glyph.cli.glyph_remote:main'
+        ]
+    },
 )
