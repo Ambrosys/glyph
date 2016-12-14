@@ -18,8 +18,8 @@ freeze:
 	pip-compile --output-file requirements.txt requirements-to-freeze.txt
 
 doc: dev
-	rm -rf doc/build
-	sphinx-apidoc -o doc/source/api glyph
+	make -C doc clean
+	sphinx-apidoc -T -d 1 -o doc/source/api glyph
 	make -C doc html
 
 pypi: dev
