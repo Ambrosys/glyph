@@ -10,6 +10,60 @@ import deap.gp
 from glyph.gp import numpy_primitive_set, AExpressionTree, algorithms
 from glyph.utils import memoize
 
+from glyph.application import Application
+
+class RemoteApp(Application):
+    def run(self, breakpoint=None):
+        try:
+            super().run(breakpoint=breakpoint)
+        except KeyboardInterrupt:
+            self.checkpoint()
+        finally:
+            send(dict(action="SHUTDOWN"))
+
+    @property
+    def send(self):
+        return self.assessment_runner.send
+
+    @property:
+    def recv(self):
+        return self.assessment_runner.recv
+
+
+
+class Nestedspace(argparse.Namespace):
+    def __setattr__(self, name, value):
+        if '.' in name:
+            group,name = name.split('.',1)
+            ns = getattr(self, group, Nestedspace())
+            setattr(ns, name, value)
+            self.__dict__[group] = ns
+        else:
+            self.__dict__[name] = value
+
+    def __getattr__(self, name):
+        if '.' in name:
+            group,name = name.split('.',1)
+            try:
+                ns = self.__dict__[group]
+            except KeyError:
+                raise AttributeError
+            return getattr(ns, name)
+        else:
+            raise AttributeError
+
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
+    parser.add_argument('--ip', type=str, default="localhost", help='IP of the client (default: localhost)')
+
+    config = parser.add_argument_group('config')
+    group = config.add_mutually_exclusive_group()
+    group.add_argument('--remote', action='store_true', dest='config.remote', default=True, help='Request GP configs from experiment handler.')
+    group.add_argument('--cli', action='store_true', dest='config.cli', default=False, help='Read GP configs from command line.')
+    group.add_argument('--cfile', dest='config.cfile', type=argparse.FileType('r'), help='Read GP configs from file')
+
+    return parser
 
 def _send(socket, msg, serializer=json):
     socket.send(serializer.dumps(msg).encode('ascii'))
@@ -19,8 +73,23 @@ def _recv(socket, serializer=json):
     return serializer.loads(socket.recv().decode('ascii'))
 
 
-def handle_gp_config():
-    pass
+def connect(ip, port):
+    socket = zmq.Context().socket(zmq.REQ)
+    socket.connect('tcp://{ip}:{port}'.format(ip=ip, port=port))
+    send = partial(_send, socket)
+    recv = partial(_recv, socket)
+    return send, recv
+
+
+def handle_gpconfig(config, send, recv):
+    if config.cfile:
+        pass
+    elif config.cli:
+        pass
+    else:
+        send(dict(action="CONFIG"))
+        gpconfig = recv()
+    return gpconfig
 
 
 def build_pset_gp(primitives):
@@ -66,29 +135,17 @@ class AssessmentRunner:
 
 def main():
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
-    parser.add_argument('--ip', type=str, default="localhost", help='IP of the client (default: localhost)')
+    parser = get_parser()
+    args = parser.parse_args(namespace=Nestedspace())
 
-    gpconfig = parser.add_argument_group('gpconfig')
-    group = gpconfig.add_mutually_exclusive_group()
-    group.add_argument('--remote', action='store_true', default=True, help='Request GP configs from experiment handler.')
-    group.add_argument('--cli', action='store_true', help='Read GP configs from command line.')
-    group.add_argument('--cfile', type=argparse.FileType('r'), help='Read GP configs from file')
+    send, recv = connect(args.ip, args.port)
 
-    args = parser.parse_args()
-
-    socket = zmq.Context().socket(zmq.REQ)
-    socket.connect('tcp://{ip}:{port}'.format(ip=args.ip, port=args.port))
-    send = partial(_send, socket)
-    recv = partial(_recv, socket)
     try:
-        send(dict(action="CONFIG"))
-        config = recv()
-        print(config)
+        gpsettings = handle_gpconfig(args.config, send, recv)
+        print(gpsettings)
+        exit()
 
-        pset = build_pset_gp(config["primitives"])
-
+        pset = build_pset_gp(gpsettings["primitives"])
         Individual = type("Individual", (AExpressionTree,), dict(pset=pset))
 
         pop_size = config.get('pop_size', 100)

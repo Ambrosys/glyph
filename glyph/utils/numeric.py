@@ -79,20 +79,17 @@ def strict_subtract(x, y):
     return x - y
 
 
-@toolz.curry
 def rmse(x, y):
     """Root mean square error."""
     return rms(strict_subtract(x, y))
 
 
-@toolz.curry
 def nrmse(x, y):
     """Normalized, with respect to x, root mean square error."""
     diff = strict_subtract(x, y)
     return rms(diff) / (numpy.max(x) - numpy.min(x))
 
 
-@toolz.curry
 def cvrmse(x, y):
     """Coefficient of variation, with respect to x, of the rmse."""
     diff = strict_subtract(x, y)

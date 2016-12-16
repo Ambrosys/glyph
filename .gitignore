@@ -92,3 +92,8 @@ ENV/
 
 # Pycharm project settings
 .idea
+
+# aux files from examples
+checkpoint.pickle
+log.error
+log.debug

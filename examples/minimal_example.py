@@ -67,8 +67,10 @@ def main2():
 
     mate = application.MateFactory.create(dict(mating='cxonepoint', mating_max_height=20), Individual)
     mutate = application.MutateFactory.create(dict(mutation='mutuniform', mutation_max_height=20), Individual)
+    select = application.SelectFactory.create(dict(select='nsga2'))
+    create = application.CreateFactory.create(dict(create_method='halfandhalf', create_min_height=1, create_max_height=4), Individual)
     algorithm_config = dict(algorithm='nsga2', crossover_prob=0.5,  mutation_prob=0.2, tournament_size=2)
-    algorithm_factory = partial(application.AlgorithmFactory.create, algorithm_config, mate, mutate)
+    algorithm_factory = partial(application.AlgorithmFactory.create, algorithm_config, mate, mutate, select, create)
     runner = application.GPRunner(Individual, algorithm_factory, update_fitness)
 
     runner.init(pop_size=pop_size)

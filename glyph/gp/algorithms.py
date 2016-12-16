@@ -102,10 +102,10 @@ class DeapEaSimple(object):
 
 
 class AgeFitness(MOGP):
-    def __init__(self, mate_func, mutate_func, select, create):
+    def __init__(self, mate_func, mutate_func, select, create_func):
         super().__init__(mate_func, mutate_func, select)
-        self.create = create
         self.num_new_blood = 1
+        self.create = create_func
 
     def _init(self, population):
         super()._init(population)
@@ -154,5 +154,5 @@ for alg in basic:
     setattr(current_module, ualg.__name__, ualg)  # we need to create it in this submodules scope as well
     uniques.append(ualg)
 
-all_algorithms = tuple(itertools.chain.from_iterable([basic, uniques]))
+all_algorithms = tuple(itertools.chain.from_iterable([basic, uniques, [AgeFitness]]))
 __all__ = [obj.__name__ for obj in all_algorithms]

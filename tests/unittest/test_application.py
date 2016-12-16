@@ -14,7 +14,7 @@ class AssessmentRunnerMock(AAssessmentRunner):
 
 
 @slow
-def test_gp_runner_reproducibility(AlgorithmClass, SympyIndividual):
+def test_gp_runner_reproducibility(SympyIndividual):
 
     def run(pop_size, num_generations):
         gp_runner = application.default_gprunner(SympyIndividual, AssessmentRunnerMock())
