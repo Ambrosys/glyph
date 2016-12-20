@@ -81,16 +81,13 @@ class SPEA2(MOGP):
 class DeapEaSimple(object):
     """Basically a copy of deap.algorithm's eaSimple algorithm."""
 
-    def __init__(self, mate_func, mutate_func, assessment_runner=None, initial_population=()):
+    def __init__(self, mate_func, mutate_func):
         self.mate = mate_func
         self.mutate = mutate_func
         self.clone = copy.deepcopy
         self.crossover_prob = 0.5
         self.mutation_prob = 0.2
         self.tournament_size = 2
-
-        self.assessment_runner = assessment_runner
-        self.initial_population = initial_population
 
     def evolve(self, population):
         if not _all_valid(population):
