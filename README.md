@@ -4,7 +4,7 @@
 
 ## Documentation
 
-The online documentation is available at [glyph.readthedocs.io](glyph.readthedocs.io).
+The online documentation is available at [glyph.readthedocs.io](https://glyph.readthedocs.io).
 
 ## Installation
 
@@ -26,4 +26,4 @@ Examples can be found in the [repo](https://github.com/Ambrosys/glyph/tree/maste
 
 ## Bugs, feature requests, contributions
 
-Please use the [issue tracker](https://github.com/Ambrosys/glyph/issues) and the [mailing list](https://groups.google.com/forum/#!forum/pyglyph) For contributions have a look at out [contribution guide](https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING).
+Please use the [issue tracker](https://github.com/Ambrosys/glyph/issues) and the [mailing list](https://groups.google.com/forum/#!forum/pyglyph). For contributions have a look at out [contribution guide](https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING).
