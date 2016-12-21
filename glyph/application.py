@@ -3,13 +3,15 @@
 import os
 import sys
 import time
-import dill
-import numpy
+import inspect
 import random
 import logging
 import argparse
 import operator
 from contextlib import contextmanager
+
+import dill
+import numpy
 import toolz
 import deap
 import deap.tools
@@ -88,12 +90,18 @@ def default_gprunner(Individual, assessment_runner, **kwargs):
     default_config = dict(mating='cxonepoint', mating_max_height=20,
                           mutation='mutuniform', mutation_max_height=20,
                           algorithm='nsga2', crossover_prob=0.5,
-                          mutation_prob=0.2, tournament_size=2)
+                          mutation_prob=0.2, tournament_size=2,
+                          select='nsga2', create_method='halfandhalf',
+                          create_min_height=1, create_max_height=4,
+                          mutate_tree_max=2, mutate_tree_min=0)
+
     default_config.update(kwargs)
     mate = MateFactory.create(default_config, Individual)
     mutate = MutateFactory.create(default_config, Individual)
-    AlgorithmFactory.create(default_config, mate, mutate)  # A test run to check config params.
-    algorithm_factory = toolz.partial(AlgorithmFactory.create, default_config, mate, mutate)
+    select = SelectFactory.create(default_config)
+    create_method = CreateFactory.create(default_config, Individual)
+    AlgorithmFactory.create(default_config, mate, mutate, select, create_method)  # A test run to check config params.
+    algorithm_factory = toolz.partial(AlgorithmFactory.create, default_config, mate, mutate, select, create_method)
     return GPRunner(Individual, algorithm_factory, assessment_runner)
 
 
@@ -123,8 +131,7 @@ class Application(object):
     def run(self, break_condition=None):
         """Run gp app.
 
-        :param break_condition: callable(application), is called after every
-                         evolutionary step.
+        :param break_condition: callable(application), is called after every evolutionary step.
         :return: number of iterations executed during run.
         """
         if break_condition is None:
@@ -208,7 +215,10 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
     group_breeding = parser.add_argument_group('breeding')
     MateFactory.add_options(group_breeding)
     MutateFactory.add_options(group_breeding)
+    SelectFactory.add_options(group_breeding)
+    CreateFactory.add_options(group_breeding)
     ParallelizationFactory.add_options(parser.add_argument_group('parallel execution'))
+
     args = parser.parse_args()
 
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
@@ -225,7 +235,9 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
     else:
         mate = MateFactory.create(args, IndividualClass)
         mutate = MutateFactory.create(args, IndividualClass)
-        algorithm_factory = toolz.partial(AlgorithmFactory.create, args, mate, mutate)
+        select = SelectFactory.create(args)
+        create_method = CreateFactory.create(args, IndividualClass)
+        algorithm_factory = toolz.partial(AlgorithmFactory.create, args, mate, mutate, select, create_method)
         parallel_factory = toolz.partial(ParallelizationFactory.create, args)
         assessment_runner = AssessmentRunnerClass(parallel_factory)
         gp_runner = GPRunner(IndividualClass, algorithm_factory, assessment_runner)
@@ -266,11 +278,13 @@ class AlgorithmFactory(AFactory):
     mapping = get_mapping(gp.all_algorithms)
 
     @classmethod
-    def _create(cls, args, mate, mutate):
+    def _create(cls, args, mate_func, mutate_func, select, create_func):
         """Setup gp algorithm."""
+        kwargs = locals().copy()
         args.algorithm = args.algorithm.lower()
         algorithm_class = cls.get_from_mapping(args.algorithm)
-        algorithm = algorithm_class(mate, mutate)
+        signature = inspect.signature(algorithm_class)
+        algorithm = algorithm_class(*tuple(kwargs.get(x) for x in signature.parameters))
         algorithm.crossover_prob = args.crossover_prob
         algorithm.mutation_prob = args.mutation_prob
         return algorithm
@@ -335,12 +349,51 @@ class MutateFactory(AFactory):
                             help='the mutation method (default: mutuniform)')
         parser.add_argument('--mutation-max-height', dest='mutation_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mutation (default: 20)')
-
         parser.add_argument('--mutate_tree_min', dest='mutate_tree_min', default=0, metavar='min_', type=utils.argparse.positive_int,
                             help="minimum value for tree based mutation methods (default: 0)")
-
         parser.add_argument('--mutate_tree_max', dest='mutate_tree_max', default=2, metavar='max_', type=utils.argparse.positive_int,
                             help="maximum value for tree based mutation methods (default: 2)")
+
+
+class SelectFactory(AFactory):
+    """Factory class for selection"""
+
+    mapping = {"nsga2": deap.tools.selNSGA2,
+               "spea2": deap.tools.selSPEA2,
+            }
+
+    @staticmethod
+    def _create(args):
+        args.select = args.select.lower()
+        return SelectFactory.get_from_mapping(args.select)
+
+    @staticmethod
+    def add_options(parser):
+        """Add available parser options."""
+        parser.add_argument('--select', dest='select', type=str, default='nsga2',
+                            choices=list(SelectFactory.mapping.keys()),
+                            help='the selection method (default: nsga2)')
+
+
+class CreateFactory(AFactory):
+
+    mapping = {"halfandhalf": deap.gp.genHalfAndHalf}
+
+    @staticmethod
+    def _create(args, IndividualClass):
+        args.create_method = args.create_method.lower()
+        create_ = toolz.partial(IndividualClass, gen_method=args.create_method,
+                                min=args.create_min_height, max=args.create_max_height)
+        return create_
+
+    def add_options(parser):
+        parser.add_argument('--create_method', dest='create_method', type=str, default='halfandhalf',
+                            choices=list(SelectFactory.mapping.keys()),
+                            help='the create method (default: halfandhalf)')
+        parser.add_argument('--create_max_height', dest='create_max_height', default=4, type=utils.argparse.positive_int,
+                            help="maximum value for tree based create methods (default: 4)")
+        parser.add_argument('--create_min_height', dest='create_min_height', default=1, type=utils.argparse.positive_int,
+                            help="maximum value for tree based create methods (default: 1)")
 
 
 class SingleProcessFactory:

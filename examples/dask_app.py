@@ -6,14 +6,6 @@ from minimal_example import complete_measure, Individual, pop_size
 
 
 def update_fitness(population):
-    invalid = [p for p in population if not p.fitness.valid]
-    fitnesses = map(complete_measure, invalid)
-    for ind, fit in zip(invalid, fitnesses):
-        ind.fitness.values = fit.result()
-    return len(invalid)
-
-
-def update_fitness(population):
     global client
     invalid = [p for p in population if not p.fitness.valid]
     fitness = [client.submit(complete_measure, ind) for ind in invalid]
@@ -38,5 +30,4 @@ if __name__ == "__main__":
     from distributed import Client
     client = Client()
     client.upload_file(os.path.join(os.path.dirname(__file__), "minimal_example.py"))
-    map = client.map
     main()

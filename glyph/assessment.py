@@ -6,8 +6,6 @@ import toolz
 import functools
 import warnings
 
-from . import utils
-
 
 class SingleProcessFactoy(object):
     map = map
@@ -164,7 +162,6 @@ def const_opt_leastsq(measure, individual):
     return popt, measure_opt
 
 
-@toolz.curry
 def replace_nan(x, rep=numpy.infty):
     """Replace occurences of numpy.NAN in x.
 

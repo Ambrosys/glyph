@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    glyph.cli
     glyph.gp
     glyph.utils
 

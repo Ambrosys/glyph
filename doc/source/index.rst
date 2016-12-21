@@ -3,24 +3,26 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to WIP's documentation!
+Welcome to glyph's documentation!
 ===============================
 
 Contents:
+---------
 
 .. toctree::
    :maxdepth: 1
+   :glob:
 
-   parallel.md
-   concepts.md
+   concepts/*
 
+API
+---
 
-.. automodule:: glyph
+Know what you're looking for & just need API details? View our auto-generated
+API documentation:
 
+.. toctree::
+   :maxdepth: 1
+   :glob:
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   api/*
