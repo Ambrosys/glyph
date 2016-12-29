@@ -72,12 +72,11 @@ class Experiment(object):
 
 if __name__ == "__main__":
 
-    while True:
-        logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
 
-        primitives = dict(x=0, add=2, multiply=2, subtract=2, negative=1)
-        experiment = Experiment()
+    primitives = dict(x=0, add=2, multiply=2, subtract=2, negative=1)
+    experiment = Experiment()
 
-        loop = EventLoop(experiment, primitives)
-        loop.run()
+    loop = EventLoop(experiment, primitives)
+    loop.run()
