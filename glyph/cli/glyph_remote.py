@@ -7,6 +7,7 @@ import copy
 from functools import partial
 
 import zmq
+import yaml
 import deap.tools
 import deap.gp
 
@@ -47,28 +48,6 @@ class RemoteApp(glyph.application.Application):
         self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
 
-class Nestedspace(argparse.Namespace):
-    def __setattr__(self, name, value):
-        if '.' in name:
-            group, name = name.split('.', 1)
-            ns = getattr(self, group, Nestedspace())
-            setattr(ns, name, value)
-            self.__dict__[group] = ns
-        else:
-            self.__dict__[name] = value
-
-    def __getattr__(self, name):
-        if '.' in name:
-            group, name = name.split('.', 1)
-            try:
-                ns = self.__dict__[group]
-            except KeyError:
-                raise AttributeError
-            return getattr(ns, name)
-        else:
-            raise AttributeError
-
-
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
@@ -76,9 +55,8 @@ def get_parser():
 
     config = parser.add_argument_group('config')
     group = config.add_mutually_exclusive_group()
-    group.add_argument('--remote', action='store_true', dest='config.remote', default=True, help='Request GP configs from experiment handler.')
-    group.add_argument('--cli', action='store_true', dest='config.cli', default=False, help='Read GP configs from command line.')
-    group.add_argument('--cfile', dest='config.cfile', type=argparse.FileType('r'), help='Read GP configs from file')
+    group.add_argument('--remote', action='store_true', dest='remote', default=False, help='Request GP configs from experiment handler.')
+    group.add_argument('--cfile', dest='cfile', type=argparse.FileType('r'), help='Read GP configs from file')
 
     RemoteApp.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(required=False)
@@ -117,16 +95,18 @@ def connect(ip, port):
     recv = partial(_recv, socket)
     return send, recv
 
+def update_namespace(ns, up):
+    return argparse.Namespace(**{**vars(ns), **up})
 
 def handle_gpconfig(config, send, recv):
     if config.cfile:
-        return None
-    elif config.cli:
-        return None
-    else:
+        gpconfig = yaml.load(config.cfile)
+    elif config.remote:
         send(dict(action="CONFIG"))
         gpconfig = recv()
-        return gpconfig
+    else:
+        gpconfig = {}
+    return update_namespace(config, gpconfig)
 
 
 def build_pset_gp(primitives):
@@ -142,6 +122,8 @@ def build_pset_gp(primitives):
             pset.arguments.append(fname)
         else:
             raise ValueError("Wrong arity in primitive specification.")
+    if len(pset.terminals) == 0:
+        raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
     return pset
 
 
@@ -183,7 +165,7 @@ class NDTree(glyph.gp.individual.ANDimTree):
 
 def make_remote_app():
     parser = get_parser()
-    args = parser.parse_args(namespace=Nestedspace())
+    args = parser.parse_args()
 
     send, recv = connect(args.ip, args.port)
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
@@ -197,8 +179,11 @@ def make_remote_app():
         logger.debug('Loading checkpoint {}'.format(args.resume_file))
         app = RemoteApp.from_checkpoint(args.resume_file, send, recv)
     else:
-        gpsettings = handle_gpconfig(args.config, send, recv)
-        pset = build_pset_gp(gpsettings["primitives"])
+        args = handle_gpconfig(args, send, recv)
+        try:
+            pset = build_pset_gp(args.primitives)
+        except AttributeError:
+            raise AttributeError("You need to specify the pset")
         Individual.pset = pset
         mate = glyph.application.MateFactory.create(args, Individual)
         mutate = glyph.application.MutateFactory.create(args, Individual)
