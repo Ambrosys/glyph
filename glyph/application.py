@@ -197,7 +197,6 @@ class Application(object):
                             help='do checkpointing every n generations (default: 1)')
 
 
-# def from_command_line(IndividualClass, assessment_runner, parser=argparse.ArgumentParser()):
 def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.ArgumentParser()):
     """Factory function for a console application."""
     Application.add_options(parser)
@@ -382,7 +381,8 @@ class CreateFactory(AFactory):
     @staticmethod
     def _create(args, IndividualClass):
         args.create_method = args.create_method.lower()
-        create_ = toolz.partial(IndividualClass, gen_method=args.create_method,
+        m = CreateFactory.get_from_mapping(args.create_method)
+        create_ = toolz.partial(IndividualClass.create_population, gen_method=m,
                                 min=args.create_min_height, max=args.create_max_height)
         return create_
 

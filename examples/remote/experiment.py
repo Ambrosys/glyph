@@ -4,7 +4,6 @@ import logging
 
 import numpy as np
 from deap.gp import compile
-from control.gp import numpy_primitive_set
 
 from build_pset import build_pset
 
@@ -54,7 +53,7 @@ class EventLoop(object):
             raise ValueError("Unknown action")
 
     def evaluate(self, individual):
-        func = compile(individual, self.pset)
+        func = compile(individual[0], self.pset)
         fitness = self.experiment(func),
         return dict(fitness=fitness)
 
@@ -73,11 +72,12 @@ class Experiment(object):
 
 if __name__ == "__main__":
 
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
+    while True:
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
 
-    primitives = dict(x=0, add=2, multiply=2, subtract=2, negative=1)
-    experiment = Experiment()
+        primitives = dict(x=0, add=2, multiply=2, subtract=2, negative=1)
+        experiment = Experiment()
 
-    loop = EventLoop(experiment, primitives)
-    loop.run()
+        loop = EventLoop(experiment, primitives)
+        loop.run()

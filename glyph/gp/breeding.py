@@ -1,7 +1,11 @@
+from functools import partialmethod
+
 import toolz
 import deap.gp
 import itertools
 import numpy as np
+
+from glyph.gp.individual import ANDimTree
 
 
 def mutuniform(pset, **kwargs):

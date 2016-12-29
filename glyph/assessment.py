@@ -21,7 +21,7 @@ class AAssessmentRunner(object):
     executed in a different process or even on a remote machine depending on the
     parallelization scheme.
     Child classes may override the setup() method, which is executed once on
-    obejct instantiation.
+    object instantiation.
     Child classes may override the assign_fitness() method, which is executed in
     the main process. This can be usefull if you want to locally post-process
     the results of measure(), when collected from remote processes.
