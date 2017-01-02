@@ -81,11 +81,11 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--directions', type=int, default=5, help='Number of directions to try in stochastic hill climber')
-    ass_group.add_argument('--hill_steps', type=int, default=5, help='Number of iterations of stochastic hill climber')
-    ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO')
-    ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation')
-    ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants')
+    ass_group.add_argument('--directions', type=int, default=5, help='Number of directions to try in stochastic hill climber (default: 5)')
+    ass_group.add_argument('--hill_steps', type=int, default=5, help='Number of iterations of stochastic hill climber (default: 5)')
+    ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
+    ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
+    ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     return parser
 
 
