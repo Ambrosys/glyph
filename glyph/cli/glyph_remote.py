@@ -146,7 +146,9 @@ class hashabledict(dict):
 
 
 def default_constants(individual):
-    return hashabledict({k: 1 for k in individual.base.pset.constants if any(k in str(i) for i in individual)})
+    constants_in_ind = {k for k in individual.base.pset.constants if any(k in str(i) for i in individual)}
+    old_values = getattr(individual, "constants", {})
+    return hashabledict({k: old_values.get(k, 1) for k in constants_in_ind})  # try hotstart = inherited values
 
 
 class RemoteAssessmentRunner:
@@ -171,8 +173,7 @@ class RemoteAssessmentRunner:
         return error
 
     def hill_climb(self, individual, rng=np.random):
-        constants = getattr(individual, "constants", default_constants(individual))
-
+        constants = default_constants(individual)
         memory = {constants: self.evaluate(individual, constants)}
         if len(constants.keys()) == 0:
             return self.evaluate(individual, constants)
