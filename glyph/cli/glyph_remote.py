@@ -10,9 +10,11 @@ import zmq
 import yaml
 import deap.tools
 import deap.gp
+import toolz
+import numpy as np
 
 from glyph.gp import AExpressionTree
-from glyph.utils import memoize
+from glyph.utils import Memoize
 import glyph.application
 
 
@@ -31,7 +33,8 @@ class RemoteApp(glyph.application.Application):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv)
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=cp['args'].hill_steps, directions=cp['args'].directions,
+                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -44,7 +47,7 @@ class RemoteApp(glyph.application.Application):
         runner = copy.deepcopy(self.gp_runner)
         del runner.assessment_runner
         glyph.application.safe(self.checkpoint_file, args=self.args, runner=runner,
-             random_state=random.getstate(), pareto_fronts=self.pareto_fronts)
+                               random_state=random.getstate(), pareto_fronts=self.pareto_fronts)
         self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
 
@@ -77,6 +80,12 @@ def get_parser():
     glyph.application.SelectFactory.add_options(group_breeding)
     glyph.application.CreateFactory.add_options(group_breeding)
 
+    ass_group = parser.add_argument_group('assessment')
+    ass_group.add_argument('--directions', type=int, default=5, help='Number of directions to try in stochastic hill climber')
+    ass_group.add_argument('--hill_steps', type=int, default=5, help='Number of iterations of stochastic hill climber')
+    ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO')
+    ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation')
+    ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants')
     return parser
 
 
@@ -95,8 +104,10 @@ def connect(ip, port):
     recv = partial(_recv, socket)
     return send, recv
 
+
 def update_namespace(ns, up):
     return argparse.Namespace(**{**vars(ns), **up})
+
 
 def handle_gpconfig(config, send, recv):
     if config.cfile:
@@ -113,6 +124,7 @@ def build_pset_gp(primitives):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
+    pset.constants = set()
     for fname, arity in primitives.items():
         if arity > 0:
             func = lambda *args: args
@@ -121,23 +133,63 @@ def build_pset_gp(primitives):
             pset.addTerminal(fname, name=fname)
             pset.arguments.append(fname)
         else:
-            raise ValueError("Wrong arity in primitive specification.")
+            pset.addTerminal(fname, name=fname)
+            pset.constants.add(fname)
     if len(pset.terminals) == 0:
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
     return pset
 
 
+class hashabledict(dict):
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
+
+
+def default_constants(individual):
+    return hashabledict({k: 1 for k in individual.base.pset.constants if any(k in str(i) for i in individual)})
+
+
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True):
+    def __init__(self, send, recv, consider_complexity=True, max_steps=5, directions=5, caching=True, precision=3):
         super().__init__()
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
+        self.max_steps = max_steps
+        self.directions = directions
+        self.precision = precision
+        if caching:
+            self.evaluate = Memoize(self.evaluate)
 
-    @memoize
-    def measure(self, individual):
-        self.send(dict(action="EXPERIMENT", payload=[str(t) for t in individual]))
+    def evaluate(self, individual, constants):
+        self.evaluations += 1
+        payload = [str(t) for t in individual]
+        for k, v in constants.items():
+            payload = [s.replace(k, str(v)) for s in payload]
+        self.send(dict(action="EXPERIMENT", payload=payload))
         error = self.recv()["fitness"]
+        return error
+
+    def hill_climb(self, individual, rng=np.random):
+        constants = getattr(individual, "constants", default_constants(individual))
+
+        memory = {constants: self.evaluate(individual, constants)}
+        if len(constants.keys()) == 0:
+            return self.evaluate(individual, constants)
+
+        for _ in range(self.max_steps):
+            for _ in range(self.directions):
+                c = toolz.valmap(lambda x: tweak(x, self.precision), constants, factory=hashabledict)
+                error = self.evaluate(individual, c)
+                memory[c] = error
+            constants = min(memory, key=memory.get)
+            memory = {constants: memory[constants]}
+        individual.constants = constants
+
+        return memory[constants]
+
+    def measure(self, individual):
+        error = self.hill_climb(individual)
         if self.consider_complexity:
             fitness = *error, sum(map(len, individual))
         else:
@@ -145,14 +197,19 @@ class RemoteAssessmentRunner:
         return fitness
 
     def update_fitness(self, population, map=map):
+        self.evaluations = 0
         invalid = [p for p in population if not p.fitness.valid]
         fitnesses = map(self.measure, invalid)
         for ind, fit in zip(invalid, fitnesses):
             ind.fitness.values = fit
-        return len(invalid)
+        return self.evaluations
 
     def __call__(self, population):
         return self.update_fitness(population)
+
+
+def tweak(x, p, rng=np.random):
+    return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-p)), p)
 
 
 class Individual(AExpressionTree):
@@ -194,7 +251,8 @@ def make_remote_app():
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv)
+        assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=args.hill_steps, directions=args.directions,
+                                                   consider_complexity=args.consider_complexity, precision=args.precision, caching=args.caching)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
@@ -205,7 +263,6 @@ def main():
 
     app, args = make_remote_app()
     app.run()
-
 
 if __name__ == "__main__":
     main()
