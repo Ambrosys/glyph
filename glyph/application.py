@@ -65,12 +65,12 @@ class GPRunner(object):
         self._update()
 
     def _update(self):
-        self.assessment_runner(self.population)
+        evals = self.assessment_runner(self.population)
         self.halloffame.update(self.population)
         if not self.mstats:
             self.mstats = create_stats(len(self.population[0].fitness.values))
         record = self.mstats.compile(self.population)
-        self.logbook.record(gen=self.step_count, **record)
+        self.logbook.record(gen=self.step_count, evals=evals, **record)
 
 
 @contextmanager
