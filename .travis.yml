@@ -5,9 +5,12 @@ python:
 install: make dev
 # command to run tests
 script: make test
-after_sucess:
+after_success:
   - CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN codeclimate-test-reporter
 
 notifications:
-  slack: ambrosys:$SLACK_TOKEN
+  slack:
+     rooms:
+       - ambrosys:$SLACK_TOKEN
+     on_success: always
   email: false
