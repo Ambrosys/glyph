@@ -20,6 +20,9 @@ import glyph.application
 
 class RemoteApp(glyph.application.Application):
     def run(self, break_condition=None):
+        """For details see application.Application.
+        Will checkpoint and close zmq connection on keyboard interruption.
+        """
         try:
             super().run(break_condition=break_condition)
         except KeyboardInterrupt:
@@ -106,10 +109,14 @@ def connect(ip, port):
 
 
 def update_namespace(ns, up):
+    """Update the argparse.Namespace ns with a dictionairy up.
+    """
     return argparse.Namespace(**{**vars(ns), **up})
 
 
 def handle_gpconfig(config, send, recv):
+    """Will try to load config from file or from remote and update the cli/default config accordingly.
+    """
     if config.cfile:
         gpconfig = yaml.load(config.cfile)
     elif config.remote:
@@ -141,19 +148,25 @@ def build_pset_gp(primitives):
 
 
 class hashabledict(dict):
+    """We can use this as dict key"""
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
 
 
-def default_constants(individual):
+def default_constants(individual, default=1):
+    """Finds all constants which are used in the individual and tries to inherit old values (from parents).
+    If a constant cannot be inherited, the default value will be used as initial guess.
+    """
     constants_in_ind = {k for k in individual.base.pset.constants if any(k in str(i) for i in individual)}
     old_values = getattr(individual, "constants", {})
-    return hashabledict({k: old_values.get(k, 1) for k in constants_in_ind})  # try hotstart = inherited values
+    return hashabledict({k: old_values.get(k, default) for k in constants_in_ind})  # try hotstart = inherited values
 
 
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, max_steps=5, directions=5, caching=True, precision=3):
-        super().__init__()
+        """Contains assessment logic. Uses zmq connection to request evaluation.
+        Constant optimization is done using a stochastic hill climber.
+        """
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
@@ -163,7 +176,10 @@ class RemoteAssessmentRunner:
         if caching:
             self.evaluate = Memoize(self.evaluate)
 
-    def evaluate(self, individual, constants):
+    def evaluate(self, individual, constants=None):
+        """Evaluate a single individual.
+        """
+        constants = constants or {}
         self.evaluations += 1
         payload = [str(t) for t in individual]
         for k, v in constants.items():
@@ -173,6 +189,10 @@ class RemoteAssessmentRunner:
         return error
 
     def hill_climb(self, individual, rng=np.random):
+        """Stochastic hill climber for constant optimization.
+        Try self.directions different solutions per iteration to select a new best individual.
+        This iterates self.max_steps times.
+        """
         constants = default_constants(individual)
         memory = {constants: self.evaluate(individual, constants)}
         if len(constants.keys()) == 0:
@@ -183,13 +203,15 @@ class RemoteAssessmentRunner:
                 c = toolz.valmap(lambda x: tweak(x, self.precision), constants, factory=hashabledict)
                 error = self.evaluate(individual, c)
                 memory[c] = error
-            constants = min(memory, key=memory.get)
+            constants = min(memory, key=memory.get)  # argmin for dictionaries
             memory = {constants: memory[constants]}
         individual.constants = constants
 
         return memory[constants]
 
     def measure(self, individual):
+        """Construct fitness for given individual.
+        """
         error = self.hill_climb(individual)
         if self.consider_complexity:
             fitness = *error, sum(map(len, individual))
@@ -210,6 +232,8 @@ class RemoteAssessmentRunner:
 
 
 def tweak(x, p, rng=np.random):
+    """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))
+    """
     return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-p)), p)
 
 

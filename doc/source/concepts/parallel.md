@@ -7,7 +7,6 @@ Deap relies heavily on those functionalities and thus most parallelization frame
 
 Dill can handle everything we need and can be monkey patched to replace pickle.
 
-
 ### scoop
 
 Install

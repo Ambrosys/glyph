@@ -13,6 +13,7 @@ Contents:
    :maxdepth: 1
    :glob:
 
+   roadmap.md
    concepts/*
 
 API
