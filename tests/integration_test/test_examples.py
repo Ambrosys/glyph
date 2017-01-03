@@ -17,10 +17,10 @@ def test_example(file):
     assert error_code == 0
 
 
-def test_run_remote():
-    example = os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py")
-    exp = subprocess.Popen("python {}".format(example))
-    gp = subprocess.Popen("glyph-remote --remote --ndim 2")
+def test_run_glyph_remote():
+    example = os.path.abspath(os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py"))
+    exp = subprocess.Popen("python {}".format(example), shell=True)
+    gp = subprocess.Popen("glyph-remote --remote --ndim 2", shell=True)
 
     gp.wait()  # gp sends shutdown to exp process
     exp.wait()
