@@ -1,15 +1,10 @@
 language: python
 python:
   - "3.5"
-# command to install dependencies
 install: make dev
-# command to run tests
 script: make test
-
-addons:
-    code_climate:
-        repo_token: $CODECLIMATE_REPO_TOKEN
-
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 notifications:
   slack:
      rooms:
