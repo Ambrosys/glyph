@@ -3,7 +3,7 @@ init:
 	pip install -e .
 
 test: dev
-	py.test tests/unittest --cov=glyph
+	py.test tests/unittest --runslow --cov=glyph
 
 integration: dev
 	py.test tests --runslow -n8
