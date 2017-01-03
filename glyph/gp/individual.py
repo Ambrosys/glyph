@@ -184,14 +184,14 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         return toolbox.population(n=size)
 
 
-class ANDimTree(list, metaclass=abc.ABCMeta):
+class ANDimTree(list):
 
     def __init__(self, trees):
         super().__init__(trees)
         self.dim = len(trees)
         self.fitness = Measure()
 
-    @abc.abstractproperty
+    @property
     def base(self):
         pass
 

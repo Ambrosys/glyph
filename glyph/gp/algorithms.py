@@ -142,7 +142,7 @@ def make_unique_version(obj):
     return uobj
 
 
-basic = (NSGA2, SPEA2, DeapEaSimple)
+basic = (NSGA2, SPEA2, DeapEaSimple, AgeFitness)
 uniques = []
 
 current_module = sys.modules[__name__]
@@ -151,5 +151,5 @@ for alg in basic:
     setattr(current_module, ualg.__name__, ualg)  # we need to create it in this submodules scope as well
     uniques.append(ualg)
 
-all_algorithms = tuple(itertools.chain.from_iterable([basic, uniques, [AgeFitness]]))
+all_algorithms = tuple(itertools.chain.from_iterable([basic, uniques]))
 __all__ = [obj.__name__ for obj in all_algorithms]

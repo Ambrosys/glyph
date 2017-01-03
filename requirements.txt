@@ -11,6 +11,7 @@ mpmath==0.19
 networkx==1.11
 numpy==1.11.2
 pyyaml==3.12
+pyzmq==16.0.2
 scipy==0.18.1
 sympy==1.0
 toolz==0.8.1

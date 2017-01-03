@@ -4,7 +4,6 @@ import logging
 
 import numpy as np
 from deap.gp import compile
-from control.gp import numpy_primitive_set
 
 from build_pset import build_pset
 
@@ -19,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, pop_size=10, generations=5, consider_complexity=False)
+        return dict(primitives=self.primitives, pop_size=10, generations=5, consider_complexity=True)
 
     @property
     def address(self):
@@ -54,20 +53,26 @@ class EventLoop(object):
             raise ValueError("Unknown action")
 
     def evaluate(self, individual):
-        func = compile(individual, self.pset)
+        func = [compile(t, self.pset) for t in individual]
         fitness = self.experiment(func),
         return dict(fitness=fitness)
 
 
 class Experiment(object):
     def __init__(self):
-        self.points = np.linspace(-1, 1, 100, endpoint=True)
-        f = lambda x: x**2 + 0.25
-        self.y = f(self.points)
+        def target(x):
+            return np.array([f(x) for f in [lambda x: x**2, lambda x: x]])
+        self.x = np.linspace(-1, 1, 30)
+        self.y = target(self.x)
+
         self.metric = lambda y, yhat: np.sum((y - yhat)**2)
 
-    def __call__(self, func):
-        yhat = func(self.points)
+    def __call__(self, funcs):
+        yhat = [f(self.x) for f in funcs]
+        for i in range(len(yhat)):
+            if np.isscalar(yhat[i]):
+                yhat[i] = np.ones_like(self.y[i]) * yhat[i]
+        yhat = np.array(yhat)
         return self.metric(self.y, yhat)
 
 
@@ -76,7 +81,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.INFO)
 
-    primitives = dict(x=0, add=2, multiply=2, subtract=2, negative=1)
+    primitives = dict(x=0, k=-1, add=2, multiply=2, subtract=2, negative=1)
     experiment = Experiment()
 
     loop = EventLoop(experiment, primitives)

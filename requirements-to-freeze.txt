@@ -8,3 +8,4 @@ pyyaml
 scipy
 sympy
 toolz
+pyzmq

@@ -27,7 +27,7 @@ def build_pset(primitives):
             pset.addTerminal(fname, name=fname)
             pset.arguments.append(fname)
         else:
-            raise ValueError("Wrong arity in primitive specification.")
+            pass
     return pset
 
 
