@@ -1,6 +1,6 @@
 # glyph &#78227;
 
-[![Build Status](https://travis-ci.org/Ambrosys/glyph.svg?branch=master)](https://travis-ci.org/Ambrosys/glyph) [![PyPI version](https://badge.fury.io/py/pyglyph.svg)](https://badge.fury.io/py/pyglyph)
+[![Build Status](https://travis-ci.org/Ambrosys/glyph.svg?branch=master)](https://travis-ci.org/Ambrosys/glyph) [![PyPI version](https://badge.fury.io/py/pyglyph.svg)](https://badge.fury.io/py/pyglyph) [![Test Coverage](https://codeclimate.com/github/Ambrosys/glyph/badges/coverage.svg)](https://codeclimate.com/github/Ambrosys/glyph/coverage) [![Code Climate](https://codeclimate.com/github/Ambrosys/glyph/badges/gpa.svg)](https://codeclimate.com/github/Ambrosys/glyph)
 
 ## Documentation
 
