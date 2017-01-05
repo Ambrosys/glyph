@@ -1,7 +1,7 @@
 # Concepts
 
  * Individual
- * genetic operators
+ * Genetic operators
  * Evolver (Algorithm)
  * AssessmentRunner
  * GPRunner
@@ -29,22 +29,22 @@
      * Constructing the archive (e.g. using nsga2).
      * Selecting parents for breeding (e.g. tournament)
      * Breeding offsprings.
- * *Currently:* Many parameters are implicit. We also do not derive from an abstract class. Maybe make this functions?
 
-### AssessmentRunner
- * Provides map-like interface to assign fitness to each individual.
+### AssessmentRunner & Parallel factory
  * (optional) Provides interface to remote machines.
+ * Provide evaluation logic
  *  You can combine the Evolver and AssessmentRunner to a GPRunner like so `pops = iterate(combine(Evolver.evolve, AssessmentRunner.update_fitness), init_pop())`
+ * Parallel factory: map-object for embarrassingly parallely computation
 
 ### GPRunner
 
  * Initializes a GP run.
  * Iterates Evolver and AssessmentRunner.
  * Handles random state.
- * Executes callbacks, e.g. logbook or hall of fame updates.
 
 ### Application
 
  * Provides CLI.
- * *Currently*: Factory approach. Each factory will add `argparse` options.
- * *Suggestion:* Use `click` instead.
+ * Executes callbacks, e.g. logbook or hall of fame updates.
+ * Checkpointing
+ * Iterates GPRunner until breakcondition or maximum genereation reached
