@@ -1,7 +1,7 @@
 """Collection of helper functions for arparse."""
 
 import argparse
-
+import os
 
 def positive_int(string):
     """Check whether string is an integer greater than 0."""
@@ -47,3 +47,13 @@ def ntuple(n, to_type=float):
             raise argparse.ArgumentTypeError("Must be a {}-tuple of type {}".format(n, to_type))
         return value
     return evaluate
+
+
+def readable_file(string):
+    path = os.path.abspath(string)
+    try:
+        with open(path, 'r'):
+            pass
+    except IOError:
+        raise argparse.ArgumentTypeError("Must be a readable file path {}".format(path))
+    return path
