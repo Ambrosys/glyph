@@ -6,15 +6,21 @@
 Welcome to glyph's documentation!
 ===============================
 
+.. warning::
+    While fully usable, glyph is still pre-1.0 software and has **no**  backwards compatibility guarantees until the 1.0 release occurs!
+
 Contents:
 ---------
 
 .. toctree::
    :maxdepth: 1
-   :glob:
 
    roadmap.md
-   concepts/*
+   concepts/concepts.md
+   concepts/parallel.md
+   Glyph-remote <concepts/glyph_remote.rst>
+
+
 
 API
 ---
