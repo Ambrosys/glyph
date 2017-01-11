@@ -183,16 +183,16 @@ class Application(object):
     @staticmethod
     def add_options(parser):
         """Add available parser options."""
-        parser.add_argument('--pop-size', '-p', dest='pop_size', metavar='n',
+        parser.add_argument('--pop_size', '-p', dest='pop_size', metavar='n',
                             type=utils.argparse.non_negative_int, default=10,
                             help='initial population size (default: 10)')
-        parser.add_argument('--num-generations', '-n', dest='num_generations', metavar='n',
+        parser.add_argument('--num_generations', '-n', dest='num_generations', metavar='n',
                             type=utils.argparse.non_negative_int, default=10,
                             help='number of generations to evolve (default: 10)')
         parser.add_argument('--seed', dest='seed', metavar='n', type=utils.argparse.non_negative_int,
                             default=random.randint(0, sys.maxsize),
                             help='a seed for the random genrator (default: random.randint(0, sys.maxsize))')
-        parser.add_argument('--checkpoint-frequency', '-f', dest='checkpoint_frequency', metavar='n',
+        parser.add_argument('--checkpoint_frequency', '-f', dest='checkpoint_frequency', metavar='n',
                             type=utils.argparse.positive_int, default=1,
                             help='do checkpointing every n generations (default: 1)')
 
@@ -208,7 +208,7 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
                           help='checkpoint to FILE (default: ./checkpoint.pickle)')
     parser.add_argument('--verbose', '-v', dest='verbosity', action='count', default=0,
                         help='set verbose output; raise verbosity level with -vv, -vvv, -vvvv')
-    parser.add_argument('--logging', '-l', dest='logging_config', type=str, default='logging.yaml',
+    parser.add_argument('--logging_config', '-l', type=str, default='logging.yaml',
                         help='set config file for logging; overides --verbose (default: logging.yaml)')
     AlgorithmFactory.add_options(parser.add_argument_group('algorithm'))
     group_breeding = parser.add_argument_group('breeding')

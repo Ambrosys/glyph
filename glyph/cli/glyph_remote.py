@@ -15,6 +15,8 @@ import numpy as np
 
 from glyph.gp import AExpressionTree
 from glyph.utils import Memoize
+from glyph.utils.logging import print_params
+from glyph.utils.argparse import readable_file
 import glyph.application
 
 
@@ -62,7 +64,7 @@ def get_parser():
     config = parser.add_argument_group('config')
     group = config.add_mutually_exclusive_group()
     group.add_argument('--remote', action='store_true', dest='remote', default=False, help='Request GP configs from experiment handler.')
-    group.add_argument('--cfile', dest='cfile', type=argparse.FileType('r'), help='Read GP configs from file')
+    group.add_argument('--cfile', dest='cfile', type=readable_file, help='Read GP configs from file')
 
     RemoteApp.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(required=False)
@@ -118,7 +120,8 @@ def handle_gpconfig(config, send, recv):
     """Will try to load config from file or from remote and update the cli/default config accordingly.
     """
     if config.cfile:
-        gpconfig = yaml.load(config.cfile)
+        with open(config.cfile, 'r') as cf:
+            gpconfig = yaml.load(cf)
     elif config.remote:
         send(dict(action="CONFIG"))
         gpconfig = recv()
@@ -287,6 +290,8 @@ def make_remote_app():
 def main():
 
     app, args = make_remote_app()
+    logger = logging.getLogger(__name__)
+    print_params(logger.info, vars(args))
     app.run()
 
 if __name__ == "__main__":

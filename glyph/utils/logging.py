@@ -26,3 +26,13 @@ def log_level(verbosity):
     level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     verbosity = len(level) - 1 if verbosity >= len(level) else verbosity
     return level[verbosity]
+
+
+def print_dict(p_func, d):
+    for k, v in sorted(d.items()):
+        p_func('{} = {}'.format(k, v))
+
+
+def print_params(p_func, gp_config):
+    print_dict(p_func, gp_config)
+    p_func('')

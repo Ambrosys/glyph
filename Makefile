@@ -1,3 +1,5 @@
+SHELL = bash
+
 init:
 	pip install -r requirements.txt
 	pip install -e .
@@ -26,3 +28,6 @@ pypi: dev
 	rm -rf dist/*
 	python setup.py sdist bdist_wheel
 	twine upload dist/*
+
+environment:
+	python doc/make_envyml.py
