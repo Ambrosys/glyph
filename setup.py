@@ -32,6 +32,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',

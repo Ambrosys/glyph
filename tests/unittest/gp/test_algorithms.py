@@ -94,26 +94,21 @@ def test_paretobest_are_preserved(AlgorithmClass, IndividualClass):
     assert set(fitness_values(pareto_front)) & set(fitness_values(reference_pareto_front)) != {}
 
 
-# todo (mq) maybe write this test for selection not for algorithms
 @slow
-def test_selection_bug_nan_fitness(AlgorithmClass, IndividualClass):
+@pytest.mark.skip
+@pytest.mark.parametrize("select", [deap.tools.selNSGA2, deap.tools.selSPEA2, deap.tools.selBest])
+def test_selection_bug_nan_fitness(select, IndividualClass):
     """This test replicates the best individual overall dropping out of the current population if randomly competing
     with "invalid" individuals, i.e. individuals with some nan fitness values
     """
-    pop_size = 10
+    pop_size = 2
     num_generations = 10
     population = IndividualClass.create_population(pop_size)
     # Set initial fitness values and construct a pareto front.
-    population[0].fitness.values = 0, 0
-    best = population[0]
-    algorithm = setup_algorithm(AlgorithmClass, IndividualClass)
-    for _ in range(num_generations):
-        set_fitnesses(invalid_individuals(population), (float('nan'), float('nan')))
-        population = algorithm.evolve(population)
-    if "EaSimple" in AlgorithmClass.__name__:
-        assert best in population  # selection is based on max(), this ignores nan's
-    else:
-        assert all(best is not ind for ind in population)  # selection is based on comparison, so 1 is not better than nan
+    population[-1].fitness.values = 0, 0
+    set_fitnesses(invalid_individuals(population), (float('nan'), float('nan')))
+    best = population[-1]
+    assert best != select(population, 1)[0]
 
 
 def get_best(pop):
