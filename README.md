@@ -1,7 +1,7 @@
 # glyph &#78227;
 
 [![Build Status](https://travis-ci.org/Ambrosys/glyph.svg?branch=master)](https://travis-ci.org/Ambrosys/glyph) [![PyPI version](https://badge.fury.io/py/pyglyph.svg)](https://badge.fury.io/py/pyglyph)
-[![codecov](https://codecov.io/gh/Ambrosys/glyph/branch/master/graph/badge.svg)](https://codecov.io/gh/Ambrosys/glyph) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.236449.svg)](https://doi.org/10.5281/zenodo.236449)
+[![codecov](https://codecov.io/gh/Ambrosys/glyph/branch/master/graph/badge.svg)](https://codecov.io/gh/Ambrosys/glyph) [![DOI](https://zenodo.org/badge/75950324.svg)](https://zenodo.org/badge/latestdoi/75950324)
 
 ## Documentation
 
