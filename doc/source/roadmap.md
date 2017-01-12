@@ -1,10 +1,9 @@
 # Roadmap
 
-## v0.2
- * running and tested prototype of glyph-remote
- * documentation
-
 ## v0.3
+ * constant optimization refactoring
+
+## v0.4
  * tutorials
  * coevolution
 
