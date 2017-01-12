@@ -119,7 +119,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.consts))  # Initial guess.
+    p0 = numpy.ones(len(individual.pset.constants))  # Initial guess.
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
@@ -147,11 +147,11 @@ def const_opt_leastsq(measure, individual):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.consts))  # Initial guess.
+    p0 = numpy.ones(len(individual.pset.constants))  # Initial guess.
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.consts):
+    if any(constant in terminals for constant in individual.pset.constants):
         res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True)
         popt, infodict, msg, ierr = res[0], res[2], res[-2], res[-1]
         measure_opt = infodict['fvec']

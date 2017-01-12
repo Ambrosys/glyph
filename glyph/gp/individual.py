@@ -36,7 +36,7 @@ def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential')
         pset.addTerminal(sympy.Symbol(symbol), name=symbol)
     # Dirty hack to make constant optimization possible.
     pset.args = arguments
-    pset.consts = constants
+    pset.constants = constants
     return pset
 
 
@@ -49,7 +49,7 @@ def sympy_phenotype(individual):
     """
     # args = ','.join(terminal.name for terminal in individual.terminals)
     pset = individual.pset
-    args = ','.join(arg for arg in itertools.chain(pset.args, pset.consts))
+    args = ','.join(arg for arg in itertools.chain(pset.args, pset.constants))
     expr = sympy.sympify(individual.compile())
     func = sympy.utilities.lambdify(args, expr, modules='numpy')
     return func
