@@ -2,6 +2,7 @@
 
 import pytest
 import numpy
+import dill
 
 from glyph import gp
 from glyph import assessment
@@ -50,5 +51,14 @@ def test_const_opt_scalar_agreement(case):
     m = Measure(target, x)
     popt, _ = assessment.const_opt_leastsq(m, ind, p0)
     numpy.testing.assert_allclose(actual=popt, desired=desired, rtol=1e-6)
+
+
+def test_pickle_assessment_runner():
+    arunner = assessment.AAssessmentRunner()
+    brunner = dill.loads(dill.dumps(arunner))
+    assert type(arunner.parallel_factory) == type(brunner.parallel_factory)
+    del arunner.parallel_factory
+    del brunner.parallel_factory
+    assert arunner.__dict__ == brunner.__dict__
 
 
