@@ -1,8 +1,6 @@
 """Provide Individual class for gp."""
 
 import re
-import sys
-import abc
 import deap.gp
 import deap.base
 import sympy
@@ -51,14 +49,17 @@ def sympy_phenotype(individual):
     # args = ','.join(terminal.name for terminal in individual.terminals)
     pset = individual.pset
     args = ','.join(arg for arg in itertools.chain(pset.args, pset.constants))
-    expr = sympy.sympify(individual.compile())
+    expr = sympy.sympify(deap.gp.compile(repr(individual), pset))
     func = sympy.utilities.lambdify(args, expr, modules='numpy')
     return func
 
 
-class Symc(deap.gp.Ephemeral):
+class Symc(deap.gp.Terminal):
     func = staticmethod(lambda: 1.0)
     ret = deap.gp.__type__
+
+    def __repr__(self):
+        return "Symc"
 
 
 def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'exponential', 'symc')):
@@ -67,8 +68,8 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     # Use primitive set built-in for argument representation.
     pset.renameArguments(**{'ARG{}'.format(i): 'x{}'.format(i) for i in range(arity)})
     if 'symc' in categories:
-        pset._add(Symc)
-        pset.terms_count += 1
+        pset.addTerminal(Symc, "Symc")
+        pset.constants = [Symc]
 
     def close_function(func, value):
         @functools.wraps(func)
@@ -101,11 +102,27 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     if "constants" in categories:
         pset.addTerminal(np.pi, name="pi")
         pset.addTerminal(np.e, name="e")
-
-    nan_context = {'nan': np.nan, 'inf': np.inf}
-    pset.context.update(nan_context)
-
     return pset
+
+
+def numpy_phenotype(individual):
+    pset = individual.pset
+    if pset.constants:
+        c = pset.constants[0]
+        index = [i for i, node in enumerate(individual) if node.name == c.__name__]
+    else:
+        index = []
+    consts = ["c{}".format(i) for i in range(len(index))]
+    args = ','.join(arg for arg in pset.arguments)
+    if consts:
+        if args:
+            args += ','
+        args += ','.join("{}=1.0".format(arg) for arg in consts)
+    expr = repr(individual)
+    for c_ in consts:
+        expr = expr.replace(c.__name__, c_, 1)
+    func = sympy.utilities.lambdify(args, expr, modules=pset.context)
+    return func
 
 
 class AExpressionTree(deap.gp.PrimitiveTree):
@@ -144,25 +161,6 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-    def compile(self):
-        """Compile the individual's representation into python code.
-
-        Code taken from deap.gp.compile.
-
-        :returns: either a lambda function if the primitive set has one or more
-                  arguments defined, or just the evluated function body
-                  otherwise.
-        """
-        code = repr(self)
-        if len(self.pset.arguments) > 0:
-            args = ",".join(arg for arg in self.pset.arguments)
-            code = "lambda {}: {}".format(args, code)
-        try:
-            return eval(code, self.pset.context, {})
-        except MemoryError:
-            _, _, traceback = sys.exc_info()
-            raise MemoryError('Error in tree evaluation : '
-                              'Python cannot evaluate a tree higher than 90.').with_traceback(traceback)
 
     @property
     def terminals(self):

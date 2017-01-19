@@ -103,7 +103,7 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     return closure
 
 
-def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
+def const_opt_scalar(measure, individual, p0, bounds=None, method='Powell'):
     """Apply constant optimization on a scalar measure.
 
     Uses scipy.optimize.minimize().
@@ -119,7 +119,6 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.constants))  # Initial guess.
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
@@ -134,7 +133,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
     return popt, measure_opt
 
 
-def const_opt_leastsq(measure, individual):
+def const_opt_leastsq(measure, individual, p0):
     """Apply constant optimization on a vector valued measure.
 
     Uses scipy.optimize.leastsq().
@@ -147,7 +146,6 @@ def const_opt_leastsq(measure, individual):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.constants))  # Initial guess.
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]

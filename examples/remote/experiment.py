@@ -60,8 +60,10 @@ class EventLoop(object):
 
 class Experiment(object):
     def __init__(self):
+
         def target(x):
             return np.array([f(x) for f in [lambda x: x**2, lambda x: x]])
+
         self.x = np.linspace(-1, 1, 30)
         self.y = target(self.x)
 

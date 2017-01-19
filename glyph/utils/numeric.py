@@ -5,7 +5,6 @@ import numpy
 import scipy.integrate
 import scipy.optimize
 import scipy.signal
-import deap.gp
 
 
 @toolz.curry
@@ -103,46 +102,3 @@ def silent_numpy(func):
             return func(*args, **kwargs)
     return closure
 
-
-# this is some legacy code to optimize constants
-
-def generate_context(pset, data):
-    context = {arg: dat for arg, dat in zip(pset.arguments, data.T)}
-    context.update(pset.context)
-
-    return context
-
-
-def optimize_constants(ind, cost, context, precision=3, options=None, constraints=None):
-    """ Update the constant values of ind according to:
-    vec(c) = argmin_c ||yhat(data,c) - y||
-
-    This needs to be called together when using symbolic constants.
-    It may be called as a mutation operator together with the usage of ercs.
-    """
-    idx = [index for index, node in enumerate(ind) if isinstance(node, deap.gp.Ephemeral)]
-
-    if len(idx) == 0:
-        return ind
-
-    values = [ind[i].value for i in idx]
-    args = [("c%i" % i) for i in range(len(idx))]
-
-    code = str(ind)
-    for i, arg in zip(idx, args):
-        code = code.replace(ind[i].format(), arg, 1)
-    code = "lambda {args}: {code}".format(args=",".join(args), code=code)
-    yhat = eval(code, context, {})
-    with numpy.errstate(invalid='ignore', over='ignore'):
-        res = scipy.optimize.minimize(cost, values, args=yhat, options=options, constraints=constraints)
-
-    if res.success and all(numpy.isfinite(res.x)):
-        values = res.x
-
-    for i, value in zip(idx, values):
-        ind[i] = type(ind[i])()   # re-initialize the class, else it will overwrite the parents values too!
-        ind[i].value = round(value, precision)
-
-        del ind.fitness.values
-
-    return ind

@@ -5,6 +5,7 @@ import deap.tools
 import numpy as np
 
 from glyph.utils.numeric import nrmse, silent_numpy
+from glyph.gp.individual import numpy_phenotype
 from glyph.gp.breeding import mutuniform, cxonepoint
 from glyph.assessment import replace_nan
 
@@ -123,7 +124,7 @@ def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
 
     @silent_numpy
     def measure(individual):
-        func = individual.compile()
+        func = numpy_phenotype(individual)
         data = load_boston()
         yhat = func(*data.data.T)
         if np.isscalar(yhat):

@@ -46,8 +46,9 @@ class Measure:
 def test_const_opt_scalar_agreement(case):
     individual_class, expr, target, x, desired = case
     ind = individual_class.from_string(expr)
+    p0 = numpy.ones(len(ind.pset.constants))
     m = Measure(target, x)
-    popt, _ = assessment.const_opt_leastsq(m, ind)
+    popt, _ = assessment.const_opt_leastsq(m, ind, p0)
     numpy.testing.assert_allclose(actual=popt, desired=desired, rtol=1e-6)
 
 
