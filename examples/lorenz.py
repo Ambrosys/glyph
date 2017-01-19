@@ -40,7 +40,7 @@ class AssessmentRunner(assessment.AAssessmentRunner):
         self.target = numpy.zeros_like(self.x)
 
     def measure(self, individual):
-        popt, rmse_opt = assessment.const_opt_leastsq(self.rmse, individual, numpy.ones(len(individual.pset.constants)))
+        popt, rmse_opt = assessment.const_opt_leastsq(self.rmse, individual)
         return rmse_opt[0], rmse_opt[1], rmse_opt[2], len(individual), popt
 
     def assign_fitness(self, individual, fitness):

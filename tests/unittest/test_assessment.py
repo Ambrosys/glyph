@@ -47,9 +47,8 @@ class Measure:
 def test_const_opt_scalar_agreement(case):
     individual_class, expr, target, x, desired = case
     ind = individual_class.from_string(expr)
-    p0 = numpy.ones(len(ind.pset.constants))
     m = Measure(target, x)
-    popt, _ = assessment.const_opt_leastsq(m, ind, p0)
+    popt, _ = assessment.const_opt_leastsq(m, ind)
     numpy.testing.assert_allclose(actual=popt, desired=desired, rtol=1e-6)
 
 
@@ -60,5 +59,3 @@ def test_pickle_assessment_runner():
     del arunner.parallel_factory
     del brunner.parallel_factory
     assert arunner.__dict__ == brunner.__dict__
-
-

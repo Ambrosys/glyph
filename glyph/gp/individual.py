@@ -105,11 +105,15 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     return pset
 
 
+def _get_index(ind, c):
+    return [i for i, node in enumerate(ind) if node.name == c.__name__]
+
+
 def numpy_phenotype(individual):
     pset = individual.pset
     if pset.constants:
         c = pset.constants[0]
-        index = [i for i, node in enumerate(individual) if node.name == c.__name__]
+        index = _get_index(individual, c)
     else:
         index = []
     consts = ["c{}".format(i) for i in range(len(index))]

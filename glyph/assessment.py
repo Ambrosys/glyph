@@ -6,6 +6,7 @@ import toolz
 import functools
 import warnings
 
+from glyph.gp.individual import _get_index
 
 class SingleProcessFactoy(object):
     map = map
@@ -103,7 +104,19 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     return closure
 
 
-def const_opt_scalar(measure, individual, p0, bounds=None, method='Powell'):
+def default_constants(ind):
+    if ind.pset.constants:
+        consts_types = ind.pset.constants
+        if hasattr(ind.pset, "args"):   # sympy case
+            values = numpy.ones(len(consts_types))
+        else:                           # symc case
+            values = numpy.ones(len(_get_index(ind, consts_types[0])))
+    else:
+        values = []
+    return values
+
+
+def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants):
     """Apply constant optimization on a scalar measure.
 
     Uses scipy.optimize.minimize().
@@ -119,6 +132,7 @@ def const_opt_scalar(measure, individual, p0, bounds=None, method='Powell'):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
+    p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
@@ -133,7 +147,7 @@ def const_opt_scalar(measure, individual, p0, bounds=None, method='Powell'):
     return popt, measure_opt
 
 
-def const_opt_leastsq(measure, individual, p0):
+def const_opt_leastsq(measure, individual, default_constants=default_constants):
     """Apply constant optimization on a vector valued measure.
 
     Uses scipy.optimize.leastsq().
@@ -146,6 +160,7 @@ def const_opt_leastsq(measure, individual, p0):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
+    p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
