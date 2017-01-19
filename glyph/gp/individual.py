@@ -70,6 +70,8 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     if 'symc' in categories:
         pset.addTerminal(Symc, "Symc")
         pset.constants = [Symc]
+    else:
+        pset.constants = []
 
     def close_function(func, value):
         @functools.wraps(func)

@@ -136,7 +136,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.consts):
+    if any(constant in terminals for constant in individual.pset.constants):
         res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method)
         popt = res.x if res.x.shape else numpy.array([res.x])
         measure_opt = res.fun
