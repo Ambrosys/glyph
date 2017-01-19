@@ -9,6 +9,15 @@ import itertools
 import numpy as np
 
 
+def _build_args_string(pset, consts):
+    args = ','.join(arg for arg in pset.args)
+    if consts:
+        if args:
+            args += ','
+        args += ','.join("{}=1.0".format(arg) for arg in consts)
+    return args
+
+
 def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential'), arguments=['y_0'], constants=[], arity=0):
     """Create a primitive set with sympy primitves.
 
@@ -48,28 +57,22 @@ def sympy_phenotype(individual):
     """
     # args = ','.join(terminal.name for terminal in individual.terminals)
     pset = individual.pset
-    args = ','.join(arg for arg in itertools.chain(pset.args, pset.constants))
+    args = _build_args_string(pset, pset.constants)
     expr = sympy.sympify(deap.gp.compile(repr(individual), pset))
     func = sympy.utilities.lambdify(args, expr, modules='numpy')
     return func
-
-
-class Symc(deap.gp.Terminal):
-    func = staticmethod(lambda: 1.0)
-    ret = deap.gp.__type__
-
-    def __repr__(self):
-        return "Symc"
 
 
 def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'exponential', 'symc')):
 
     pset = deap.gp.PrimitiveSet("main", arity)
     # Use primitive set built-in for argument representation.
-    pset.renameArguments(**{'ARG{}'.format(i): 'x{}'.format(i) for i in range(arity)})
+    pset.renameArguments(**{'ARG{}'.format(i): 'x_{}'.format(i) for i in range(arity)})
+    pset.args = pset.arguments
     if 'symc' in categories:
-        pset.addTerminal(Symc, "Symc")
-        pset.constants = [Symc]
+        symc = 1.0
+        pset.addTerminal(symc, "Symc")
+        pset.constants = ["Symc"]
     else:
         pset.constants = []
 
@@ -108,7 +111,7 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
 
 
 def _get_index(ind, c):
-    return [i for i, node in enumerate(ind) if node.name == c.__name__]
+    return [i for i, node in enumerate(ind) if node.name == c]
 
 
 def numpy_phenotype(individual):
@@ -118,15 +121,11 @@ def numpy_phenotype(individual):
         index = _get_index(individual, c)
     else:
         index = []
-    consts = ["c{}".format(i) for i in range(len(index))]
-    args = ','.join(arg for arg in pset.arguments)
-    if consts:
-        if args:
-            args += ','
-        args += ','.join("{}=1.0".format(arg) for arg in consts)
+    consts = ["c_{}".format(i) for i in range(len(index))]
+    args = _build_args_string(pset, consts)
     expr = repr(individual)
     for c_ in consts:
-        expr = expr.replace(c.__name__, c_, 1)
+        expr = expr.replace(c, c_, 1)
     func = sympy.utilities.lambdify(args, expr, modules=pset.context)
     return func
 

@@ -26,7 +26,7 @@ def test_gp_runner_reproducibility(SympyIndividual):
     import random
     seed = 1234567890
     pop_size = 10
-    num_generations = 20
+    num_generations = 4
 
     random.seed(seed)
     gp_runner_1 = run(pop_size, num_generations)

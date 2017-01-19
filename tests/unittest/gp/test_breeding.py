@@ -17,7 +17,7 @@ def mate_factory(request):
 def test_mutate_reproducibility(mutate_factory, SympyIndividual):
     import random
     seed = 1234567890
-    num_iterations = 100
+    num_iterations = 10
 
     mutate = mutate_factory(SympyIndividual.pset)
     static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"), max_value=24)
@@ -39,7 +39,7 @@ def test_mutate_reproducibility(mutate_factory, SympyIndividual):
 def test_mate_reproducibility(mate_factory, SympyIndividual):
     import random
     seed = 1234567890
-    num_iterations = 100
+    num_iterations = 10
 
     mate = mate_factory()
     static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"), max_value=24)
