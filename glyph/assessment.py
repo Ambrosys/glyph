@@ -6,6 +6,7 @@ import toolz
 import functools
 import warnings
 
+from glyph.gp.individual import _get_index
 
 class SingleProcessFactoy(object):
     map = map
@@ -86,7 +87,7 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
 
     Optionaly do pre- and/or post-processing.
 
-    :param *funcs: a sequence of measure functions as returned by measure() (eg.
+    :param funcs: a sequence of measure functions as returned by measure() (eg.
                    callable(*a, **kw) -> tuple), and/or single valued functions
                    (eg. callable(*a, **kw) -> numerical value).
     :param pre: some pre-processing function that is to be apllied on input
@@ -103,7 +104,19 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     return closure
 
 
-def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
+def default_constants(ind):
+    if ind.pset.constants:
+        consts_types = ind.pset.constants
+        if len(consts_types) == 1 and "Symc" in consts_types:   # symc case
+            values = numpy.ones(len(_get_index(ind, consts_types[0])))
+        else:                           # sympy case
+            values = numpy.ones(len(consts_types))
+    else:
+        values = []
+    return values
+
+
+def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants):
     """Apply constant optimization on a scalar measure.
 
     Uses scipy.optimize.minimize().
@@ -119,11 +132,11 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.consts))  # Initial guess.
+    p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.consts):
+    if any(constant in terminals for constant in individual.pset.constants):
         res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method)
         popt = res.x if res.x.shape else numpy.array([res.x])
         measure_opt = res.fun
@@ -134,7 +147,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell'):
     return popt, measure_opt
 
 
-def const_opt_leastsq(measure, individual):
+def const_opt_leastsq(measure, individual, default_constants=default_constants):
     """Apply constant optimization on a vector valued measure.
 
     Uses scipy.optimize.leastsq().
@@ -147,11 +160,11 @@ def const_opt_leastsq(measure, individual):
     @functools.wraps(measure)
     def closure(args):
         return measure(individual, *args)
-    p0 = numpy.ones(len(individual.pset.consts))  # Initial guess.
+    p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.consts):
+    if any(str(constant) in terminals for constant in individual.pset.constants):
         res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True)
         popt, infodict, msg, ierr = res[0], res[2], res[-2], res[-1]
         measure_opt = infodict['fvec']

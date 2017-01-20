@@ -7,6 +7,7 @@ from toolz import cons
 import sympy
 import sympy.utilities
 import numpy
+import deap
 
 import glyph.application as application
 import glyph.gp as gp
@@ -24,7 +25,8 @@ class Individual(gp.AExpressionTree):
 
     def __str__(self):
         """Human readable representation of the individual."""
-        return str(sympy.sympify(self.compile()))
+        return str(sympy.sympify(deap.gp.compile(repr(self), self.pset)))
+
 
 
 class AssessmentRunner(assessment.AAssessmentRunner):
@@ -104,7 +106,7 @@ def main():
     lines.append(l)
     uncontrolled = Individual.from_string('Add(y_0, Neg(y_0))')
     for ind in cons(uncontrolled, app.gp_runner.halloffame[:n]):
-        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.consts)))
+        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.constants)))
         label = 'with $a({}) = {}$, $c={}$'.format(','.join(ind.pset.args), str(ind), popt)
         label = label.replace('**', '^').replace('*', '\cdot ')
         y = app.assessment_runner.trajectory(ind, *popt)

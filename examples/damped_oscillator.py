@@ -4,7 +4,6 @@ import logging
 import argparse
 from toolz import cons
 
-import sympy
 import numpy
 import scipy
 
@@ -21,10 +20,6 @@ class Individual(gp.AExpressionTree):
 
     pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
                                   arguments=['y_0', 'y_1'], constants=['c'])
-
-    def __str__(self):
-        """Human readable representation of the individual."""
-        return str(sympy.sympify(self.compile()))
 
 
 class AssessmentRunner(assessment.AAssessmentRunner):
@@ -92,7 +87,7 @@ def main():
     logger.info('Hall of Fame:')
     for individual in app.gp_runner.halloffame:
         popt = getattr(individual, 'popt', ())
-        logger.info('{}  {}, {} = {}'.format(individual.fitness.values, str(individual), individual.pset.consts, popt))
+        logger.info('{}  {}, {} = {}'.format(individual.fitness.values, str(individual), individual.pset.constants, popt))
 
     if not args.plot:
         return
@@ -120,7 +115,7 @@ def main():
     lines.append(l)
     uncontrolled = Individual.from_string('Add(y_0, Neg(y_0))')
     for ind in cons(uncontrolled, reversed(app.gp_runner.halloffame[:n])):
-        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.consts)))
+        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.constants)))
         label = 'with $a(y_0, y_1) = {}$, $c={}$'.format(str(ind), popt)
         label = label.replace('**', '^').replace('*', '\cdot ')
         y = assessment_runner.trajectory(ind, *popt)

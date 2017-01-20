@@ -1,13 +1,21 @@
 """Provide Individual class for gp."""
 
-import sys
-import abc
+import re
 import deap.gp
 import deap.base
 import sympy
 import functools
 import itertools
 import numpy as np
+
+
+def _build_args_string(pset, consts):
+    args = ','.join(arg for arg in pset.args)
+    if consts:
+        if args:
+            args += ','
+        args += ','.join("{}=1.0".format(arg) for arg in consts)
+    return args
 
 
 def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential'), arguments=['y_0'], constants=[], arity=0):
@@ -36,7 +44,7 @@ def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential')
         pset.addTerminal(sympy.Symbol(symbol), name=symbol)
     # Dirty hack to make constant optimization possible.
     pset.args = arguments
-    pset.consts = constants
+    pset.constants = constants
     return pset
 
 
@@ -49,25 +57,24 @@ def sympy_phenotype(individual):
     """
     # args = ','.join(terminal.name for terminal in individual.terminals)
     pset = individual.pset
-    args = ','.join(arg for arg in itertools.chain(pset.args, pset.consts))
-    expr = sympy.sympify(individual.compile())
+    args = _build_args_string(pset, pset.constants)
+    expr = sympy.sympify(deap.gp.compile(repr(individual), pset))
     func = sympy.utilities.lambdify(args, expr, modules='numpy')
     return func
-
-
-class Symc(deap.gp.Ephemeral):
-    func = staticmethod(lambda: 1.0)
-    ret = deap.gp.__type__
 
 
 def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'exponential', 'symc')):
 
     pset = deap.gp.PrimitiveSet("main", arity)
     # Use primitive set built-in for argument representation.
-    pset.renameArguments(**{'ARG{}'.format(i): 'x{}'.format(i) for i in range(arity)})
+    pset.renameArguments(**{'ARG{}'.format(i): 'x_{}'.format(i) for i in range(arity)})
+    pset.args = pset.arguments
     if 'symc' in categories:
-        pset._add(Symc)
-        pset.terms_count += 1
+        symc = 1.0
+        pset.addTerminal(symc, "Symc")
+        pset.constants = ["Symc"]
+    else:
+        pset.constants = []
 
     def close_function(func, value):
         @functools.wraps(func)
@@ -100,11 +107,27 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     if "constants" in categories:
         pset.addTerminal(np.pi, name="pi")
         pset.addTerminal(np.e, name="e")
-
-    nan_context = {'nan': np.nan, 'inf': np.inf}
-    pset.context.update(nan_context)
-
     return pset
+
+
+def _get_index(ind, c):
+    return [i for i, node in enumerate(ind) if node.name == c]
+
+
+def numpy_phenotype(individual):
+    pset = individual.pset
+    if pset.constants:
+        c = pset.constants[0]
+        index = _get_index(individual, c)
+    else:
+        index = []
+    consts = ["c_{}".format(i) for i in range(len(index))]
+    args = _build_args_string(pset, consts)
+    expr = repr(individual)
+    for c_ in consts:
+        expr = expr.replace(c, c_, 1)
+    func = sympy.utilities.lambdify(args, expr, modules=pset.context)
+    return func
 
 
 class AExpressionTree(deap.gp.PrimitiveTree):
@@ -143,25 +166,6 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-    def compile(self):
-        """Compile the individual's representation into python code.
-
-        Code taken from deap.gp.compile.
-
-        :returns: either a lambda function if the primitive set has one or more
-                  arguments defined, or just the evluated function body
-                  otherwise.
-        """
-        code = repr(self)
-        if len(self.pset.arguments) > 0:
-            args = ",".join(arg for arg in self.pset.arguments)
-            code = "lambda {}: {}".format(args, code)
-        try:
-            return eval(code, self.pset.context, {})
-        except MemoryError:
-            _, _, traceback = sys.exc_info()
-            raise MemoryError('Error in tree evaluation : '
-                              'Python cannot evaluate a tree higher than 90.').with_traceback(traceback)
 
     @property
     def terminals(self):
@@ -247,3 +251,43 @@ class Measure(deap.base.Fitness):
         self.wvalues = ()
 
     values = property(get_values, set_values, del_values)
+
+
+def convert_inverse_prim(prim, args):
+    """
+    Convert inverse prims according to:
+    [Dd]iv(a,b) -> Mul[a, 1/b]
+    [Ss]ub(a,b) -> Add[a, -b]
+
+    We achieve this by overwriting the corresponding format method of the sub and div prim.
+    """
+
+    prim.name = re.sub(r'([A-Z])', lambda pat: pat.group(1).lower(), prim.name)    # lower all capital letters
+
+    converter = {
+        'sub': lambda *args_: "Add({}, Mul(-1,{}))".format(*args_),
+        'div': lambda *args_: "Mul({}, Pow({}, -1))".format(*args_)
+    }
+    prim_formatter = converter.get(prim.name, prim.format)
+
+    return prim_formatter(*args)
+
+
+def stringify_for_sympy(f):
+    """Return the expression in a human readable string.
+    """
+    string = ""
+    stack = []
+    for node in f:
+        stack.append((node, []))
+        while len(stack[-1][1]) == stack[-1][0].arity:
+            prim, args = stack.pop()
+            string = convert_inverse_prim(prim, args)
+            if len(stack) == 0:
+                break  # If stack is empty, all nodes should have been seen
+            stack[-1][1].append(string)
+    return string
+
+
+def simplify_this(expr):
+    return sympy.simplify(stringify_for_sympy(expr))

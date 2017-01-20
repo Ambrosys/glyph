@@ -2,11 +2,11 @@
 
 import logging
 import argparse
-from toolz import partial, compose, cons
 
 import sympy
 import sympy.utilities
 import numpy
+import deap
 
 import glyph.application as application
 import glyph.gp as gp
@@ -24,7 +24,8 @@ class Individual(gp.AExpressionTree):
 
     def __str__(self):
         """Human readable representation of the individual."""
-        return str(sympy.sympify(self.compile()))
+        return str(sympy.sympify(deap.gp.compile(repr(self), self.pset)))
+
 
 
 class AssessmentRunner(assessment.AAssessmentRunner):

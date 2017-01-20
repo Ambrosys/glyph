@@ -4,14 +4,14 @@ from deap.tools import selNSGA2, selBest
 import numpy as np
 import toolz
 
-from glyph.gp.individual import AExpressionTree, ANDimTree, numpy_primitive_set
+from glyph.gp.individual import AExpressionTree, ANDimTree, numpy_primitive_set, numpy_phenotype
 from glyph.gp.breeding import cxonepoint, nd_crossover, mutuniform, nd_mutation
 from glyph.gp.algorithms import AgeFitness
 from glyph.utils.numeric import rmse
 
 
 pset = numpy_primitive_set(1, categories=('algebraic', 'symc'))
-MyTree = type("MyTree", (AExpressionTree,), dict(pset=pset))
+MyTree = type("MyTree", (AExpressionTree,), dict(pset=pset, compile=numpy_phenotype))
 MyNDTree = type("MyNDTree", (ANDimTree,), dict(base=MyTree))
 MyNDTree.create_population = partialmethod(MyNDTree.create_population, ndim=2)
 

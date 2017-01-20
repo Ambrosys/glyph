@@ -10,7 +10,7 @@ import toolz
 class Individual(gp.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
 
-    pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential'])
+    pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
 
 
 class Memoize:
@@ -33,7 +33,7 @@ def meassure(ind):
     g = lambda x: x**2 - 1.1
     points = numpy.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
-    f = ind.compile()
+    f = gp.individual.numpy_phenotype(ind)
     yhat = f(points)
     return numpy.sqrt(numpy.mean((yhat - y)**2)), len(ind)
 
@@ -62,3 +62,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
