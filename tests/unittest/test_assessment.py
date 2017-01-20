@@ -41,6 +41,7 @@ const_opt_agreement_cases = [
     # (TwoConstIndividual, 'Add(c_0, exp(c_1, x_0))', lambda x: 8.0 + numpy.exp(1.4 * x), numpy.linspace(0, 100, 100), (8.0, 1.4)),
     (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, numpy.linspace(0, 100, 100), 1.5, 1),
     (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, numpy.linspace(0, 100, 100), (1.0, 2.0), 2),
+    (UnlimitedConstants, 'x_0', lambda x: x, numpy.linspace(0, 100, 100), (), 0),
 ]
 
 
