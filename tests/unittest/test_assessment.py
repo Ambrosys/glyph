@@ -40,6 +40,7 @@ const_opt_agreement_cases = [
     # (TwoConstIndividual, 'Mul(c_0, exp(c_1, Neg(x_0))', lambda x: 3.4 * numpy.exp(-1.5 * x), numpy.linspace(0, 100, 100), (3.4, 1.5)),
     # (TwoConstIndividual, 'Add(c_0, exp(c_1, x_0))', lambda x: 8.0 + numpy.exp(1.4 * x), numpy.linspace(0, 100, 100), (8.0, 1.4)),
     (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, numpy.linspace(0, 100, 100), 1.5, 1),
+    (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, numpy.linspace(0, 100, 100), (1.0, 2.0), 2),
 ]
 
 
@@ -75,7 +76,8 @@ def test__get_index(case):
     individual_class, expr, _, _, _, n_consts = case
     ind = individual_class.from_string(expr)
     c = "Symc"
-    index = [i for i, node in enumerate(re.split("\(|,|\,|\)", expr)) if node == c]
+    splitter = lambda s: [s_.strip() for s_ in re.split("\(|,|\,|\)", s)]
+    index = [i for i, node in enumerate(splitter(expr)) if node == c]
     assert index == gp.individual._get_index(ind, c)
 
 

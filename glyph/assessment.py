@@ -87,7 +87,7 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
 
     Optionaly do pre- and/or post-processing.
 
-    :param *funcs: a sequence of measure functions as returned by measure() (eg.
+    :param funcs: a sequence of measure functions as returned by measure() (eg.
                    callable(*a, **kw) -> tuple), and/or single valued functions
                    (eg. callable(*a, **kw) -> numerical value).
     :param pre: some pre-processing function that is to be apllied on input
@@ -107,10 +107,10 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
 def default_constants(ind):
     if ind.pset.constants:
         consts_types = ind.pset.constants
-        if hasattr(ind.pset, "args"):   # sympy case
-            values = numpy.ones(len(consts_types))
-        else:                           # symc case
+        if len(consts_types) == 1 and "Symc" in consts_types:   # symc case
             values = numpy.ones(len(_get_index(ind, consts_types[0])))
+        else:                           # sympy case
+            values = numpy.ones(len(consts_types))
     else:
         values = []
     return values
