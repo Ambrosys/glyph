@@ -13,7 +13,7 @@ dependencies:
     with open(os.path.join(this_dir, "../requirements.txt"), "r") as f:
         content = filter(lambda line: line[0] != "#", f.readlines())
 
-    with open(os.path.join(this_dir, "../.environment.yml"), "w") as f:
+    with open(os.path.join(this_dir, ".environment.yml"), "w") as f:
         f.writelines(header)
         f.writelines(map(lambda s: "  - "+s, content))
 
