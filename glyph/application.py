@@ -244,30 +244,6 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
         return app, args
 
 
-class SoftTimeOut(object):
-    """Break condition based on a soft time out.
-    Start a new generation as long as there is some time left.
-    """
-    def __init__(self, ttl):
-        """
-        :param ttl: time to live in seconds
-        """
-        self.soft_ttl = ttl
-        self.start = time.time()
-
-    @property
-    def now(self):
-        return time.time() - self.start
-
-    @property
-    def alive(self):
-        return bool(self.soft_ttl - self.now > 0)
-
-    def __call__(self, *args, **kwargs):
-        print(self.now)
-        return self.alive
-
-
 class AFactory(object):
 
     mapping = {}

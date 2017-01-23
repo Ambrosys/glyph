@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to glyph's documentation!
-===============================
+=================================
 
 .. warning::
     While fully usable, glyph is still pre-1.0 software and has **no**  backwards compatibility guarantees until the 1.0 release occurs!
@@ -29,7 +29,7 @@ Know what you're looking for & just need API details? View our auto-generated
 API documentation:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :glob:
 
    api/*

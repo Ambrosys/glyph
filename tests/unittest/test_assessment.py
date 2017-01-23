@@ -101,6 +101,7 @@ def test_const_opt_scalar(case):
     popt, _ = assessment.const_opt_scalar(error, ind)
     assert_all_close(desired, popt)
 
+
 @pytest.mark.parametrize('case', const_opt_agreement_cases)
 def test_default_constants(case):
     individual_class, expr, _, _, _, n_consts = case

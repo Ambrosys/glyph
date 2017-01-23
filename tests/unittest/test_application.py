@@ -1,12 +1,7 @@
-import time
-
 import pytest
 
 import glyph.application as application
 from glyph.assessment import AAssessmentRunner
-
-
-slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need --runslow option to run")
 
 
 class AssessmentRunnerMock(AAssessmentRunner):
@@ -16,7 +11,6 @@ class AssessmentRunnerMock(AAssessmentRunner):
         return 1.0, 1.0
 
 
-@slow
 def test_gp_runner_reproducibility(SympyIndividual):
 
     def run(pop_size, num_generations):
@@ -41,13 +35,3 @@ def test_gp_runner_reproducibility(SympyIndividual):
     assert fit_vals_1 == fit_vals_2
     assert gp_runner_1.halloffame[:] == gp_runner_2.halloffame[:]
     assert gp_runner_1.logbook == gp_runner_2.logbook
-
-
-def test_SoftTimeOut():
-    ttl = 1
-    sttl = application.SoftTimeOut(ttl)
-
-    assert sttl.alive
-    time.sleep(ttl + 1)
-
-    assert not sttl()
