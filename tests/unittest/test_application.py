@@ -1,5 +1,3 @@
-import pytest
-
 import glyph.application as application
 from glyph.assessment import AAssessmentRunner
 

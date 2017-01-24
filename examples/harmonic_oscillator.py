@@ -5,7 +5,7 @@ import argparse
 
 import sympy
 import sympy.utilities
-import numpy
+import numpy as np
 import deap
 
 import glyph.application as application
@@ -34,11 +34,11 @@ class AssessmentRunner(assessment.AAssessmentRunner):
     def setup(self):
         """Setup dynamic system."""
         self.nperiods = 10.0
-        self.x = numpy.linspace(0.0, self.nperiods * 2.0 * numpy.pi, 2000, dtype=numpy.float64)
-        self.yinit = numpy.array([1.0, 0.0])
+        self.x = np.linspace(0.0, self.nperiods * 2.0 * np.pi, 2000, dtype=np.float64)
+        self.yinit = np.array([1.0, 0.0])
         self.params = dict(omega=-1)
         self.dynsys = control_problem.harmonic_oscillator(**self.params)
-        self.target = numpy.zeros_like(self.x)
+        self.target = np.zeros_like(self.x)
 
     def measure(self, individual):
         y = self.trajectory(individual)

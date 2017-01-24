@@ -1,8 +1,9 @@
 from glyph import gp
-from glyph.utils.numeric import silent_numpy
+from glyph.utils.numeric import silent_numpy, nrmse
 from functools import partial
-import numpy
+import numpy as np
 
+import deap.gp
 import deap.tools
 import toolz
 
@@ -31,11 +32,13 @@ class Memoize:
 @silent_numpy
 def meassure(ind):
     g = lambda x: x**2 - 1.1
-    points = numpy.linspace(-1, 1, 100, endpoint=True)
+    points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)
     yhat = f(points)
-    return numpy.sqrt(numpy.mean((yhat - y)**2)), len(ind)
+    if np.isscalar(yhat):
+        yhat = np.ones_like(y) * yhat
+    return nrmse(y, yhat), len(ind)
 
 
 def update_fitness(population, map=map):

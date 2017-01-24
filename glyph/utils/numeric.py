@@ -95,7 +95,7 @@ def cvrmse(x, y):
     return rms(diff) / np.mean(x)
 
 
-def silent_np(func):
+def silent_numpy(func):
     @functools.wraps(func)
     def closure(*args, **kwargs):
         with np.errstate(all='ignore'):

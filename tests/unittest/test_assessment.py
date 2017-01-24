@@ -25,7 +25,7 @@ class TwoConstIndividual(gp.AExpressionTree):
 
 
 class UnlimitedConstants(gp.AExpressionTree):
-    pset = gp.np_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
+    pset = gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
     marker = "symc"
 
 
@@ -75,7 +75,7 @@ class Measure:
         self.target = target
 
     def __call__(self, individual, *fargs):
-        phenotype = gp.sympy_phenotype if individual.marker == "sympy" else gp.np_phenotype
+        phenotype = gp.sympy_phenotype if individual.marker == "sympy" else gp.numpy_phenotype
         func = phenotype(individual)
         return func(self.x, *fargs) - self.target(self.x)
 
