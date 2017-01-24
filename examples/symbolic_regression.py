@@ -55,11 +55,10 @@ def main():
 
     algorithm = gp.algorithms.AgeFitness(mate, mutate, deap.tools.selNSGA2, Individual.create_population)
 
-    loop = toolz.iterate(toolz.compose(algorithm.evolve, update_fitness), Individual.create_population(pop_size))
+    loop = toolz.iterate(toolz.compose(update_fitness, algorithm.evolve), update_fitness(Individual.create_population(pop_size)))
     populations = list(toolz.take(10, loop))
     best = deap.tools.selBest(populations[-1], 1)[0]
     print(best)
 
 if __name__ == "__main__":
     main()
-

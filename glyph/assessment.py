@@ -1,6 +1,6 @@
 """Some usefull classes/functions for the fitness assessment part in gp problems."""
 
-import numpy
+import numpy as np
 import scipy
 import toolz
 import functools
@@ -108,9 +108,9 @@ def default_constants(ind):
     if ind.pset.constants:
         consts_types = ind.pset.constants
         if len(consts_types) == 1 and "Symc" in consts_types:   # symc case
-            values = numpy.ones(len(_get_index(ind, consts_types[0])))
+            values = np.ones(len(_get_index(ind, consts_types[0])))
         else:                           # sympy case
-            values = numpy.ones(len(consts_types))
+            values = np.ones(len(consts_types))
     else:
         values = []
     return values
@@ -138,7 +138,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
         res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method)
-        popt = res.x if res.x.shape else numpy.array([res.x])
+        popt = res.x if res.x.shape else np.array([res.x])
         measure_opt = res.fun
         if not res.success:
             warnings.warn(res.message, UserWarning)
@@ -175,15 +175,15 @@ def const_opt_leastsq(measure, individual, default_constants=default_constants):
     return popt, measure_opt
 
 
-def replace_nan(x, rep=numpy.infty):
-    """Replace occurences of numpy.NAN in x.
+def replace_nan(x, rep=np.infty):
+    """Replace occurences of np.NAN in x.
 
-    Heads-up: Does not work on numpy.arrays.
+    Heads-up: Does not work on np.arrays.
     """
     try:
-        return type(x)(each if not numpy.isnan(each) else rep for each in x)
+        return type(x)(each if not np.isnan(each) else rep for each in x)
     except TypeError:
-        return x if not numpy.isnan(x) else rep
+        return x if not np.isnan(x) else rep
 
 
 def _tt_flatten(tt):

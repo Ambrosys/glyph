@@ -1,6 +1,6 @@
 """Collection of dynamic system creation classes for control problems."""
 
-import numpy
+import numpy as np
 import toolz
 import networkx
 
@@ -65,7 +65,7 @@ def van_der_pol(actuator, sensor=toolz.identity, omega=1.0, a=0.1, b=0.01, A=0.0
         y0, y1 = y[:N], y[N:]
         dy0 = y1
         dy1 = - omega**2 * y0 + a * y1 * (1 - b * y0**2) + A.dot(y1) + actuator(*sensor(y), *args)
-        return numpy.hstack((dy0, dy1))
+        return np.hstack((dy0, dy1))
     return dy
 
 
@@ -81,7 +81,7 @@ def fitzhugh_nagumo(actuator, sensor=toolz.identity, a=0.7, b=0.8, tau=12.5, A=0
         y0, y1 = y[:N], y[N:]
         dy0 = y0 - y0**3 / 3.0 - y1
         dy1 = (y0 + a - b * y1) / tau + A.dot(y1) + actuator(*sensor(y), *args)
-        return numpy.hstack((dy0, dy1))
+        return np.hstack((dy0, dy1))
     return dy
 
 
@@ -95,7 +95,7 @@ def hindmarsh_rose(actuator, sensor=toolz.identity, a=1.0, b=3.0, c=1.0, d=5.0, 
         dy0 = y1 - a * y0**3 + b * y0**2 - y2
         dy1 = c - d * y0**2 - y1 + A.dot(y1) + actuator(*sensor(y), *args)
         dy2 = r * (s * (y0 - xR) - y2)
-        return numpy.hstack((dy0, dy1, dy2))
+        return np.hstack((dy0, dy1, dy2))
     return dy
 
 
@@ -106,8 +106,8 @@ def global_coupling(N):
                [ 1 -2  1]
                [ 1  1 -2]
     """
-    A = numpy.ones((N, N))
-    numpy.fill_diagonal(A, -1.0 * float(N - 1))
+    A = np.ones((N, N))
+    np.fill_diagonal(A, -1.0 * float(N - 1))
     return A
 
 
@@ -118,9 +118,9 @@ def pairwise_coupling(N):
                [ 1 -1]
     """
     assert N % 2 == 0
-    a = numpy.array([[-1, 1],
+    a = np.array([[-1, 1],
                      [1, -1]])
-    A = numpy.kron(numpy.eye(int(N / 2)), a)
+    A = np.kron(np.eye(int(N / 2)), a)
     return A
 
 

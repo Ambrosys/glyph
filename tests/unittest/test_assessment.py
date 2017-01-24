@@ -4,7 +4,7 @@ import re
 import operator
 
 import pytest
-import numpy
+import numpy as np
 import dill
 
 from glyph import gp
@@ -25,7 +25,7 @@ class TwoConstIndividual(gp.AExpressionTree):
 
 
 class UnlimitedConstants(gp.AExpressionTree):
-    pset = gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
+    pset = gp.np_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
     marker = "symc"
 
 
@@ -55,17 +55,17 @@ def assert_all_close(a, b, r_tol=1e-6):
 
 
 const_opt_agreement_cases = [
-    (SingleConstIndividual, 'x_0', lambda x: x, numpy.linspace(0, 100, 100), 1.0, 1),
-    (SingleConstIndividual, 'Mul(c, x_0)', lambda x: x, numpy.linspace(0, 100, 100), 1.0, 1),
-    (SingleConstIndividual, 'Mul(c, Neg(x_0))', lambda x: 1.5 * x, numpy.linspace(0, 100, 100), -1.5, 1),
-    (SingleConstIndividual, 'Add(c, Mul(c, x_0))', lambda x: 8.0 + 8.0 * x, numpy.linspace(0, 100, 100), 8.0, 1),
-    (SingleConstIndividual, 'Add(c, x_0)', lambda x: 5.5 + 5.5 * x, numpy.linspace(-100, 100, 200), 5.5, 1),
-    (TwoConstIndividual, 'x_0', lambda x: x, numpy.linspace(0, 100, 100), 1.0, 2),
-    (TwoConstIndividual, 'Mul(c_1, x_0)', lambda x: 2.0 * x, numpy.linspace(0, 100, 100), (Any(), 2.0), 2),
-    (TwoConstIndividual, 'Add(Mul(c_0, x_0), c_1)', lambda x: 4.1 * x + 2.3, numpy.linspace(0, 100, 100), (4.1, 2.3), 2),
-    (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, numpy.linspace(0, 100, 100), 1.5, 1),
-    (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, numpy.linspace(0, 100, 100), (1.0, 2.0), 2),
-    (UnlimitedConstants, 'x_0', lambda x: x, numpy.linspace(0, 100, 100), (), 0),
+    (SingleConstIndividual, 'x_0', lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
+    (SingleConstIndividual, 'Mul(c, x_0)', lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
+    (SingleConstIndividual, 'Mul(c, Neg(x_0))', lambda x: 1.5 * x, np.linspace(0, 100, 100), -1.5, 1),
+    (SingleConstIndividual, 'Add(c, Mul(c, x_0))', lambda x: 8.0 + 8.0 * x, np.linspace(0, 100, 100), 8.0, 1),
+    (SingleConstIndividual, 'Add(c, x_0)', lambda x: 5.5 + 5.5 * x, np.linspace(-100, 100, 200), 5.5, 1),
+    (TwoConstIndividual, 'x_0', lambda x: x, np.linspace(0, 100, 100), 1.0, 2),
+    (TwoConstIndividual, 'Mul(c_1, x_0)', lambda x: 2.0 * x, np.linspace(0, 100, 100), (Any(), 2.0), 2),
+    (TwoConstIndividual, 'Add(Mul(c_0, x_0), c_1)', lambda x: 4.1 * x + 2.3, np.linspace(0, 100, 100), (4.1, 2.3), 2),
+    (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, np.linspace(0, 100, 100), 1.5, 1),
+    (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, np.linspace(0, 100, 100), (1.0, 2.0), 2),
+    (UnlimitedConstants, 'x_0', lambda x: x, np.linspace(0, 100, 100), (), 0),
 ]
 
 
@@ -75,9 +75,10 @@ class Measure:
         self.target = target
 
     def __call__(self, individual, *fargs):
-        phenotype = gp.sympy_phenotype if individual.marker == "sympy" else gp.numpy_phenotype
+        phenotype = gp.sympy_phenotype if individual.marker == "sympy" else gp.np_phenotype
         func = phenotype(individual)
         return func(self.x, *fargs) - self.target(self.x)
+
 
 @pytest.mark.parametrize('case', const_opt_agreement_cases)
 def test_const_opt_leastsq(case):
@@ -97,7 +98,7 @@ def test_const_opt_scalar(case):
     def error(individual, *fargs):
         residuals = m(individual, *fargs)
         return rms(residuals)
-    r_tol = 1e-6
+
     popt, _ = assessment.const_opt_scalar(error, ind)
     assert_all_close(desired, popt)
 
@@ -106,7 +107,7 @@ def test_const_opt_scalar(case):
 def test_default_constants(case):
     individual_class, expr, _, _, _, n_consts = case
     ind = individual_class.from_string(expr)
-    numpy.testing.assert_allclose(actual=assessment.default_constants(ind), desired=numpy.ones(n_consts), rtol=0)
+    np.testing.assert_allclose(actual=assessment.default_constants(ind), desired=np.ones(n_consts), rtol=0)
 
 
 @pytest.mark.parametrize('case', filter(lambda x: x[0] is UnlimitedConstants, const_opt_agreement_cases))
