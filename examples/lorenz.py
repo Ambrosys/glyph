@@ -6,7 +6,7 @@ from toolz import cons
 
 import sympy
 import sympy.utilities
-import numpy
+import numpy as np
 import deap
 
 import glyph.application as application
@@ -34,10 +34,10 @@ class AssessmentRunner(assessment.AAssessmentRunner):
 
     def setup(self):
         """Setup dynamic system."""
-        self.x = numpy.linspace(0.0, 100.0, 5000, dtype=numpy.float64)
-        self.yinit = numpy.array([10.0, 1.0, 5.0])
+        self.x = np.linspace(0.0, 100.0, 5000, dtype=np.float64)
+        self.yinit = np.array([10.0, 1.0, 5.0])
         self.params = dict(s=10.0, r=28.0, b=8.0 / 3.0)
-        self.target = numpy.zeros_like(self.x)
+        self.target = np.zeros_like(self.x)
 
     def measure(self, individual):
         popt, rmse_opt = assessment.const_opt_leastsq(self.rmse, individual)
@@ -106,7 +106,7 @@ def main():
     lines.append(l)
     uncontrolled = Individual.from_string('Add(y_0, Neg(y_0))')
     for ind in cons(uncontrolled, app.gp_runner.halloffame[:n]):
-        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.constants)))
+        popt = getattr(ind, 'popt', np.zeros(len(ind.pset.constants)))
         label = 'with $a({}) = {}$, $c={}$'.format(','.join(ind.pset.args), str(ind), popt)
         label = label.replace('**', '^').replace('*', '\cdot ')
         y = app.assessment_runner.trajectory(ind, *popt)

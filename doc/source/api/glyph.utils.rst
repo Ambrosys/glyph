@@ -28,6 +28,14 @@ glyph.utils.numeric module
     :undoc-members:
     :show-inheritance:
 
+glyph.utils.timeout module
+--------------------------
+
+.. automodule:: glyph.utils.timeout
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

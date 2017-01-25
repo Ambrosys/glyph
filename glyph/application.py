@@ -11,7 +11,7 @@ import operator
 from contextlib import contextmanager
 
 import dill
-import numpy
+import numpy as np
 import toolz
 import deap
 import deap.tools
@@ -448,8 +448,8 @@ def create_stats(n):
     for i in range(n):
         stats['fit{}'.format(i)] = deap.tools.Statistics(toolz.partial(val, i))
     mstats = deap.tools.MultiStatistics(**stats)
-    mstats.register("min", numpy.nanmin)
-    mstats.register("max", numpy.nanmax)
+    mstats.register("min", np.nanmin)
+    mstats.register("max", np.nanmax)
     return mstats
 
 

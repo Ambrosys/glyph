@@ -69,6 +69,7 @@ simplify_cases = [
     (Tree, 'Div(sin(x_0), cos(x_0))', 'tan(x_0)')
 ]
 
+
 @pytest.mark.parametrize('case', simplify_cases)
 def test_simplify_this(case):
     individual_class, expr, desired = case

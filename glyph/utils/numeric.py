@@ -1,7 +1,7 @@
 import itertools
 import functools
 import toolz
-import numpy
+import numpy as np
 import scipy.integrate
 import scipy.optimize
 import scipy.signal
@@ -27,10 +27,10 @@ def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
     :returns: y(x)
     """
     res = odeint(dy, yinit, x, f_args=f_args, integrator=integrator, **integrator_args)
-    y = numpy.vstack(res).T
+    y = np.vstack(res).T
     if y.shape[1] != x.shape[0]:
-        y = numpy.empty((y.shape[0], x.shape[0]))
-        y[:] = numpy.NAN
+        y = np.empty((y.shape[0], x.shape[0]))
+        y[:] = np.NAN
     if y.shape[0] == 1:
         return y[0, :]
     return y
@@ -66,7 +66,7 @@ def odeint(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
 
 def rms(y):
     """Root mean square."""
-    return numpy.sqrt(numpy.mean(numpy.square(y)))
+    return np.sqrt(np.mean(np.square(y)))
 
 
 def strict_subtract(x, y):
@@ -86,19 +86,19 @@ def rmse(x, y):
 def nrmse(x, y):
     """Normalized, with respect to x, root mean square error."""
     diff = strict_subtract(x, y)
-    return rms(diff) / (numpy.max(x) - numpy.min(x))
+    return rms(diff) / (np.max(x) - np.min(x))
 
 
 def cvrmse(x, y):
     """Coefficient of variation, with respect to x, of the rmse."""
     diff = strict_subtract(x, y)
-    return rms(diff) / numpy.mean(x)
+    return rms(diff) / np.mean(x)
 
 
 def silent_numpy(func):
     @functools.wraps(func)
     def closure(*args, **kwargs):
-        with numpy.errstate(all='ignore'):
+        with np.errstate(all='ignore'):
             return func(*args, **kwargs)
     return closure
 

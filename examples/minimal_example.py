@@ -1,7 +1,7 @@
 """minimal gp application."""
 
 from toolz import partial, compose
-import numpy
+import numpy as np
 
 from glyph import gp
 from glyph import control_problem
@@ -11,6 +11,7 @@ from glyph import application
 
 
 pop_size = 10
+
 
 # Define genotype data structure and phenotype function.
 class Individual(gp.AExpressionTree):
@@ -25,10 +26,10 @@ def phenotype(individual):
     return gp.sympy_phenotype(individual)
 
 # Setup dynamic system.
-x = numpy.linspace(0.0, 2.0 * numpy.pi, 2000, dtype=numpy.float64)
+x = np.linspace(0.0, 2.0 * np.pi, 2000, dtype=np.float64)
 dynsys = control_problem.anharmonic_oscillator(omega=1.0, c=3.0/8.0, k=0.0)
 # Define target of control.
-target = numpy.sin(x)
+target = np.sin(x)
 # Define measure.
 trajectory = compose(partial(utils.numeric.integrate, yinit=[1.0, 0.0], x=x), dynsys, phenotype)
 rmse = partial(utils.numeric.rmse, target)

@@ -1,9 +1,5 @@
-import pytest
 import glyph.application as application
 from glyph.assessment import AAssessmentRunner
-
-
-slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need --runslow option to run")
 
 
 class AssessmentRunnerMock(AAssessmentRunner):
@@ -13,7 +9,6 @@ class AssessmentRunnerMock(AAssessmentRunner):
         return 1.0, 1.0
 
 
-@slow
 def test_gp_runner_reproducibility(SympyIndividual):
 
     def run(pop_size, num_generations):

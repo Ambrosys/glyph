@@ -4,7 +4,7 @@ import logging
 import argparse
 from toolz import cons
 
-import numpy
+import numpy as np
 import scipy
 
 from glyph import application
@@ -32,13 +32,13 @@ class AssessmentRunner(assessment.AAssessmentRunner):
     def setup(self):
         # Setup dynamic system.
         self.nperiods = 50.0
-        self.x = numpy.linspace(0.0, self.nperiods * 2.0 * numpy.pi, 2000, dtype=numpy.float64)
-        self.yinit = numpy.array([0.0, 1.0])
+        self.x = np.linspace(0.0, self.nperiods * 2.0 * np.pi, 2000, dtype=np.float64)
+        self.yinit = np.array([0.0, 1.0])
         self.params = dict(omega=1.0, c=3.0/8.0, k=0.0)
         # Target parameters.
         self.omega = 1.0
         self.ampl = 1.0
-        self.NT = self.nperiods * 2.0 * numpy.pi / self.omega
+        self.NT = self.nperiods * 2.0 * np.pi / self.omega
 
     def measure(self, individual):
         popt, rmse_opt = assessment.const_opt_leastsq(self.rmse, individual)
@@ -54,14 +54,14 @@ class AssessmentRunner(assessment.AAssessmentRunner):
     def rmse(self, individual, *f_args):
         y = self.trajectory(individual, *f_args)
         # 2/NT * ∫y0^2 dt from 0 to N*T.
-        ampl_ = numpy.sqrt(scipy.trapz(y[0, :]**2, x=self.x) * 2.0 / self.NT)
+        ampl_ = np.sqrt(scipy.trapz(y[0, :]**2, x=self.x) * 2.0 / self.NT)
         # 2/NTA^2 * ∫y1^2 dt from 0 to N*T.
-        omega_ = numpy.sqrt(scipy.trapz(y[1, :]**2, x=self.x) * 2.0 / (self.NT * ampl_**2))
+        omega_ = np.sqrt(scipy.trapz(y[1, :]**2, x=self.x) * 2.0 / (self.NT * ampl_**2))
         rmse_ampl = utils.numeric.rmse(self.ampl, ampl_)
         rmse_omega = utils.numeric.rmse(self.omega, omega_)
         # Alternative measure.
-        # rmse_ampl = utils.numeric.rmse(self.ampl * numpy.sin(self.omega * self.x), y[0, :])
-        # rmse_omega = utils.numeric.rmse(self.ampl * self.omega * numpy.cos(self.omega * self.x), y[1, :])
+        # rmse_ampl = utils.numeric.rmse(self.ampl * np.sin(self.omega * self.x), y[0, :])
+        # rmse_omega = utils.numeric.rmse(self.ampl * self.omega * np.cos(self.omega * self.x), y[1, :])
         return assessment.replace_nan((rmse_ampl, rmse_omega))
 
     def trajectory(self, individual, *f_args):
@@ -107,7 +107,7 @@ def main():
     ax1 = plt.subplot2grid((2, 2), (1, 0))
     ax2 = plt.subplot2grid((2, 2), (1, 1))
     lines, labels = [], []
-    target = (ampl * numpy.sin(omega * x), ampl * omega * numpy.cos(omega * x))
+    target = (ampl * np.sin(omega * x), ampl * omega * np.cos(omega * x))
     l, = ax2.plot(target[0], target[1], linestyle='dotted', alpha=alpha)
     ax0.plot(x, target[0], linestyle='dotted', alpha=alpha, color=l.get_color())
     ax1.plot(x, target[1], linestyle='dotted', alpha=alpha, color=l.get_color())
@@ -115,7 +115,7 @@ def main():
     lines.append(l)
     uncontrolled = Individual.from_string('Add(y_0, Neg(y_0))')
     for ind in cons(uncontrolled, reversed(app.gp_runner.halloffame[:n])):
-        popt = getattr(ind, 'popt', numpy.zeros(len(ind.pset.constants)))
+        popt = getattr(ind, 'popt', np.zeros(len(ind.pset.constants)))
         label = 'with $a(y_0, y_1) = {}$, $c={}$'.format(str(ind), popt)
         label = label.replace('**', '^').replace('*', '\cdot ')
         y = assessment_runner.trajectory(ind, *popt)
