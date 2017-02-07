@@ -1,17 +1,21 @@
 """gp application."""
 
-import logging
 import argparse
-from toolz import cons
+import logging
 
 import numpy as np
 import scipy
 
 from glyph import application
-from glyph import gp
-from glyph import control_problem
 from glyph import assessment
+from glyph import gp
 from glyph import utils
+from toolz import cons
+
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+import control_problem
 
 
 # Setup of the control problem and gp algorithm.

@@ -1,18 +1,19 @@
 """gp application."""
 
-import logging
 import argparse
+import logging
 
-import sympy
-import sympy.utilities
-import numpy as np
 import deap
 
 import glyph.application as application
-import glyph.gp as gp
-import glyph.control_problem as control_problem
 import glyph.assessment as assessment
+import glyph.gp as gp
 import glyph.utils as utils
+import numpy as np
+import sympy
+import sympy.utilities
+
+from examples import control_problem
 
 
 # Setup of the control problem and gp algorithm.

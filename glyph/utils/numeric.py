@@ -1,16 +1,9 @@
 import itertools
 import functools
-import toolz
 import numpy as np
 import scipy.integrate
 import scipy.optimize
 import scipy.signal
-
-
-@toolz.curry
-def row(n, array):
-    """Take the nth row from array."""
-    return array[n, :]
 
 
 def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):

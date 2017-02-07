@@ -42,6 +42,7 @@ def meassure(ind):
 
 
 def update_fitness(population, map=map):
+    global client
     invalid = [p for p in population if not p.fitness.valid]
     fitnesses = map(meassure, invalid)
     for ind, fit in zip(invalid, fitnesses):

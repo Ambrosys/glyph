@@ -7,7 +7,6 @@ import networkx
 
 # Simple Systems
 
-@toolz.curry
 def harmonic_oscillator(actuator, omega=1.0):
     """Return harmonic oscillator with actuator built in.
 
@@ -21,7 +20,6 @@ def harmonic_oscillator(actuator, omega=1.0):
     return dy
 
 
-@toolz.curry
 def anharmonic_oscillator(actuator, omega=1.0, c=1.0, k=1.0):
     """Return anharmonic oscillator with actuator built in."""
     def dy(t, y, *args):
@@ -31,7 +29,6 @@ def anharmonic_oscillator(actuator, omega=1.0, c=1.0, k=1.0):
     return dy
 
 
-@toolz.curry
 def lorenz_in_3(actuator, s=10.0, r=28.0, b=8.0 / 3.0):
     """Return lorenz attractor with actuator built in."""
     # TODO(jg): How to apply actuator to dynamic system?
@@ -43,7 +40,6 @@ def lorenz_in_3(actuator, s=10.0, r=28.0, b=8.0 / 3.0):
     return dy
 
 
-@toolz.curry
 def lorenz_in_2(actuator, s=10.0, r=28.0, b=8.0 / 3.0):
     """Return lorenz attractor with actuator built in."""
     # TODO(jg): How to apply actuator to dynamic system?
@@ -57,7 +53,6 @@ def lorenz_in_2(actuator, s=10.0, r=28.0, b=8.0 / 3.0):
 
 # Coupled Systems
 
-@toolz.curry
 def van_der_pol(actuator, sensor=toolz.identity, omega=1.0, a=0.1, b=0.01, A=0.0):
     """Return Van der Pol oscillator with actuator built in."""
     def dy(t, y, *args):
@@ -69,8 +64,6 @@ def van_der_pol(actuator, sensor=toolz.identity, omega=1.0, a=0.1, b=0.01, A=0.0
     return dy
 
 
-# TODO(jg): untested
-@toolz.curry
 def fitzhugh_nagumo(actuator, sensor=toolz.identity, a=0.7, b=0.8, tau=12.5, A=0.0):
     """Return FitzHugh-Nagumo oscillator with actuator built in."""
     if tau == 0.0:
@@ -85,8 +78,6 @@ def fitzhugh_nagumo(actuator, sensor=toolz.identity, a=0.7, b=0.8, tau=12.5, A=0
     return dy
 
 
-# TODO(jg): untested
-@toolz.curry
 def hindmarsh_rose(actuator, sensor=toolz.identity, a=1.0, b=3.0, c=1.0, d=5.0, r=1e-3, s=4.0, xR=-8.0/5.0, A=0.0):
     """Return Hindmarsh-Rose oscillator with actuator built in."""
     def dy(t, y, *args):

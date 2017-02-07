@@ -1,14 +1,17 @@
 """minimal gp application."""
 
-from toolz import partial, compose
 import numpy as np
 
-from glyph import gp
-from glyph import control_problem
-from glyph import assessment
-from glyph import utils
 from glyph import application
+from glyph import assessment
+from glyph import gp
+from glyph import utils
+from toolz import partial, compose
 
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+import control_problem
 
 pop_size = 10
 
@@ -27,13 +30,13 @@ def phenotype(individual):
 
 # Setup dynamic system.
 x = np.linspace(0.0, 2.0 * np.pi, 2000, dtype=np.float64)
-dynsys = control_problem.anharmonic_oscillator(omega=1.0, c=3.0/8.0, k=0.0)
+dynsys = partial(control_problem.anharmonic_oscillator, omega=1.0, c=3.0 / 8.0, k=0.0)
 # Define target of control.
 target = np.sin(x)
 # Define measure.
 trajectory = compose(partial(utils.numeric.integrate, yinit=[1.0, 0.0], x=x), dynsys, phenotype)
 rmse = partial(utils.numeric.rmse, target)
-dynsys_measure = assessment.measure(rmse, pre=compose(utils.numeric.row(0), trajectory))
+dynsys_measure = assessment.measure(rmse, pre=compose(lambda arr: arr[0], trajectory))
 complete_measure = assessment.measure(dynsys_measure, len, post=assessment.replace_nan)
 
 
