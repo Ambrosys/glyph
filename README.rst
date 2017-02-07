@@ -1,7 +1,9 @@
 glyph
 =====
 
-|Build Status| |PyPI version| |codecov| |DOI|
+|Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
+
+
 
 Documentation
 -------------
@@ -11,6 +13,8 @@ The online documentation is available at
 
 Installation
 ------------
+
+Glyph is a **python 3.5+** only package.
 
 You can install the latest stable version from PyPI with pip
 
@@ -47,5 +51,9 @@ guide <https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING>`__.
    :target: https://badge.fury.io/py/pyglyph
 .. |codecov| image:: https://codecov.io/gh/Ambrosys/glyph/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/Ambrosys/glyph
+.. |PythonVersion| image:: https://img.shields.io/pypi/pyversions/pyglyph.svg
+   :target: https://img.shields.io/pypi/pyversions/pyglyph.svg
+.. |Licence| image:: https://img.shields.io/pypi/l/pyglyph.svg
+   :target: https://img.shields.io/pypi/l/pyglyph.svg
 .. |DOI| image:: https://zenodo.org/badge/75950324.svg
    :target: https://zenodo.org/badge/latestdoi/75950324
