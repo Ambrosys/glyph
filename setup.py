@@ -1,5 +1,3 @@
-"""Symbolic regression tools."""
-
 import re
 import ast
 from setuptools import setup, find_packages
@@ -22,8 +20,8 @@ setup(
     version=version,
     author='Markus Abel, Julien Gout, Markus Quade',
     author_email='markus.abel@ambrosys.de, julien.gout@ambrosys.de, markus.quade@ambrosys.de',
-    description=__doc__.split('\n'),
-    long_description=read('README.md', split=False),
+    description="Symbolic regression tools.",
+    long_description=read('README.rst', split=False),
     license=read('LICENCE', split=False),
     keywords='complex systems, control, machine learning, genetic programming',
     url='https://www.github.com/ambrosys/glyph',
