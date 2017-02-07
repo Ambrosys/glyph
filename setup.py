@@ -22,7 +22,7 @@ setup(
     author_email='markus.abel@ambrosys.de, julien.gout@ambrosys.de, markus.quade@ambrosys.de',
     description="Symbolic regression tools.",
     long_description=read('README.rst', split=False),
-    license=read('LICENCE', split=False),
+    license='LGPL',
     keywords='complex systems, control, machine learning, genetic programming',
     url='https://www.github.com/ambrosys/glyph',
     packages=find_packages(exclude=["tests", "doc", "examples"]),
