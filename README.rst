@@ -3,13 +3,11 @@ glyph
 
 |Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
 
-
-
-Documentation
--------------
-
-The online documentation is available at
-`glyph.readthedocs.io <https://glyph.readthedocs.io>`__.
+Features
+--------
+- Batteries included: no need to write boiler-plate code to setup symbolic regression problems.
+- Integrated constant optimization
+- Remote evaluation via glyph-remote useful for real world setups
 
 Installation
 ------------
@@ -35,6 +33,12 @@ run them you need to:
 - ``make init``
 - ``cd examples``
 - Run any example, e.g. ``python lorenz.py --help``
+
+Documentation
+-------------
+
+The online documentation is available at
+`glyph.readthedocs.io <https://glyph.readthedocs.io>`__.
 
 Bugs, feature requests, contributions
 -------------------------------------

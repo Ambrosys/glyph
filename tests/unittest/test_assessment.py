@@ -14,18 +14,18 @@ from glyph.utils.numeric import rms
 
 class SingleConstIndividual(gp.AExpressionTree):
     """An individual class."""
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential'], arguments=['x_0'], constants=['c'])
+    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'], arguments=['x_0'], constants=['c'])
     marker = "sympy"
 
 
 class TwoConstIndividual(gp.AExpressionTree):
     """An individual class."""
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential'], arguments=['x_0'], constants=['c_0', 'c_1'])
+    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'], arguments=['x_0'], constants=['c_0', 'c_1'])
     marker = "sympy"
 
 
 class UnlimitedConstants(gp.AExpressionTree):
-    pset = gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
+    pset = gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'exponential', 'symc'))
     marker = "symc"
 
 
@@ -74,10 +74,10 @@ class Measure:
         self.x = x
         self.target = target
 
-    def __call__(self, individual, *fargs):
+    def __call__(self, individual, *consts):
         phenotype = gp.sympy_phenotype if individual.marker == "sympy" else gp.numpy_phenotype
         func = phenotype(individual)
-        return func(self.x, *fargs) - self.target(self.x)
+        return func(self.x, *consts) - self.target(self.x)
 
 
 @pytest.mark.parametrize('case', const_opt_agreement_cases)
@@ -95,8 +95,8 @@ def test_const_opt_scalar(case):
     ind = individual_class.from_string(expr)
     m = Measure(target, x)
 
-    def error(individual, *fargs):
-        residuals = m(individual, *fargs)
+    def error(individual, *consts):
+        residuals = m(individual, *consts)
         return rms(residuals)
 
     popt, _ = assessment.const_opt_scalar(error, ind)
@@ -108,6 +108,19 @@ def test_default_constants(case):
     individual_class, expr, _, _, _, n_consts = case
     ind = individual_class.from_string(expr)
     np.testing.assert_allclose(actual=assessment.default_constants(ind), desired=np.ones(n_consts), rtol=0)
+
+
+def test_numpy_phenotype():
+    expr = "Add(Mul(Symc, x_1), Mul(Symc, x_0)))"
+    pset = gp.numpy_primitive_set(2, categories=('algebraic', 'trigonometric', 'exponential', 'symc'))
+    ind = type("ind", (gp.AExpressionTree, ), dict(pset=pset)).from_string(expr)
+    f = gp.numpy_phenotype(ind)
+    assert f(0, 0) == 0
+    assert f(1, 1) == 2
+    assert f(1, 2, 2, 1) == 5
+    assert f(1, 2, c_0=2, c_1=1) == 5
+    with pytest.raises(TypeError):
+        f(1, 1, 1, 1, 1)
 
 
 @pytest.mark.parametrize('case', filter(lambda x: x[0] is UnlimitedConstants, const_opt_agreement_cases))
@@ -127,3 +140,22 @@ def test_pickle_assessment_runner():
     del arunner.parallel_factory
     del brunner.parallel_factory
     assert arunner.__dict__ == brunner.__dict__
+
+
+def test_replace_nan():
+    assert assessment.replace_nan(np.nan) == np.infty
+    assert assessment.replace_nan([np.nan]) == [np.infty]
+
+
+def test__tt_flatten():
+    tpl = ((1,), (3,))
+    assert assessment._tt_flatten(tpl) == (1, 3)
+
+
+def test_tuple_wrap():
+    f = lambda x: x
+    f = assessment.tuple_wrap(f)
+    f1 = f(1)
+    assert isinstance(f1, tuple)
+    f = assessment.tuple_wrap(f)
+    assert f1 == f(1)

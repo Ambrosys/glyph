@@ -50,7 +50,6 @@ class AssessmentRunner(assessment.AAssessmentRunner):
         individual.fitness.values = fitness[:-1]
         individual.popt = fitness[-1]
 
-    # TODO(jg): maybe as cached (because of constant optimization).
     def rmse(self, individual, *f_args):
         y = self.trajectory(individual, *f_args)
         rmse_y_0 = utils.numeric.rmse(self.target, y[0, :])

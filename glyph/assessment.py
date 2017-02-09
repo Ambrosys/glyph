@@ -113,7 +113,7 @@ def default_constants(ind):
             values = np.ones(len(consts_types))
     else:
         values = []
-    return values
+    return tuple(values)
 
 
 def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants):
@@ -130,8 +130,8 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
               measure_opt: the measure evaluated at popt.
     """
     @functools.wraps(measure)
-    def closure(args):
-        return measure(individual, *args)
+    def closure(consts):
+        return measure(individual, *consts)
     p0 = default_constants(individual)
     popt = p0
     measure_opt = None
@@ -158,8 +158,8 @@ def const_opt_leastsq(measure, individual, default_constants=default_constants):
               measure_opt: the measure evaluated at popt.
     """
     @functools.wraps(measure)
-    def closure(args):
-        return measure(individual, *args)
+    def closure(consts):
+        return measure(individual, *consts)
     p0 = default_constants(individual)
     popt = p0
     measure_opt = None
