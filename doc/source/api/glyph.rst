@@ -29,14 +29,6 @@ glyph.assessment module
     :undoc-members:
     :show-inheritance:
 
-glyph.control_problem module
-----------------------------
-
-.. automodule:: glyph.control_problem
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
