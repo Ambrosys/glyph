@@ -17,6 +17,7 @@ from glyph.gp import AExpressionTree
 from glyph.utils import Memoize
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
+from glyph.assessment import tuple_wrap
 import glyph.application
 
 
@@ -179,6 +180,7 @@ class RemoteAssessmentRunner:
         if caching:
             self.evaluate = Memoize(self.evaluate)
 
+    @tuple_wrap
     def evaluate(self, individual, constants=None):
         """Evaluate a single individual.
         """

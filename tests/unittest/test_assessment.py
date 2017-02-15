@@ -159,3 +159,5 @@ def test_tuple_wrap():
     assert isinstance(f1, tuple)
     f = assessment.tuple_wrap(f)
     assert f1 == f(1)
+    g = assessment.tuple_wrap(lambda x: [x])
+    assert isinstance(g(1), tuple)

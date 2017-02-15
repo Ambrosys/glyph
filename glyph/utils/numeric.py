@@ -95,3 +95,7 @@ def silent_numpy(func):
             return func(*args, **kwargs)
     return closure
 
+def hill_climb(fun, x0, args, kwargs, options):
+    """
+    """
+    pass

@@ -205,24 +205,25 @@ def annotate(func, annotations):
     return func
 
 
-def returns(func, type):
+def returns(func, types):
     """Check func's annotation dictionary for return type tuple."""
     try:
-        return func.__annotations__['return'] is type
+        return func.__annotations__['return'] in types
     except (AttributeError, KeyError):
         return False
 
 
 def tuple_wrap(func):
+    types = tuple, list
     """Wrap func's return value into a tuple if it is not one already."""
-    if returns(func, type=tuple):
+    if returns(func, types=types):
         return func  # No need to wrap.
     else:
         @functools.wraps(func)
         def closure(*args, **kwargs):
             res = func(*args, **kwargs)
-            if isinstance(res, tuple):
-                return res
+            if isinstance(res, types):
+                return tuple(res)
             else:
                 return res,
         annotate(closure, {'return': tuple})
