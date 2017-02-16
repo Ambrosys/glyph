@@ -16,7 +16,7 @@ import numpy as np
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
-from glyph.assessment import tuple_wrap
+from glyph.assessment import tuple_wrap, const_opt_scalar
 import glyph.application
 import glyph.utils
 
@@ -154,21 +154,6 @@ def build_pset_gp(primitives):
     return pset
 
 
-class hashabledict(dict):
-    """We can use this as dict key"""
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-
-def default_constants(individual, default=1):
-    """Finds all constants which are used in the individual and tries to inherit old values (from parents).
-    If a constant cannot be inherited, the default value will be used as initial guess.
-    """
-    constants_in_ind = {k for k in individual.base.pset.constants if any(k in str(i) for i in individual)}
-    old_values = getattr(individual, "constants", {})
-    return hashabledict({k: old_values.get(k, default) for k in constants_in_ind})  # try hotstart = inherited values
-
-
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, max_steps=5, directions=5, caching=True, precision=3):
         """Contains assessment logic. Uses zmq connection to request evaluation.
@@ -177,54 +162,31 @@ class RemoteAssessmentRunner:
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
-        self.max_steps = max_steps
-        self.directions = directions
-        self.precision = precision
+        self.options = dict(max_steps=max_steps, directions=directions, precision=precision)
         if caching:
             self.evaluate = glyph.utils.Memoize(self.evaluate)
 
-    @tuple_wrap
-    def evaluate(self, individual, constants=None):
+    #@tuple_wrap
+    def evaluate(self, individual, *consts):
         """Evaluate a single individual.
         """
-        constants = constants or {}
         self.evaluations += 1
         payload = [str(t) for t in individual]
-        for k, v in constants.items():
+        for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
         self.send(dict(action="EXPERIMENT", payload=payload))
         error = self.recv()["fitness"]
         return error
 
-    def hill_climb(self, individual, rng=np.random):
-        """Stochastic hill climber for constant optimization.
-        Try self.directions different solutions per iteration to select a new best individual.
-        This iterates self.max_steps times.
-        """
-        constants = default_constants(individual)
-        memory = {constants: self.evaluate(individual, constants)}
-        if len(constants.keys()) == 0:
-            return self.evaluate(individual, constants)
-
-        for _ in range(self.max_steps):
-            for _ in range(self.directions):
-                c = toolz.valmap(lambda x: tweak(x, self.precision), constants, factory=hashabledict)
-                error = self.evaluate(individual, c)
-                memory[c] = error
-            constants = min(memory, key=memory.get)  # argmin for dictionaries
-            memory = {constants: memory[constants]}
-        individual.constants = constants
-
-        return memory[constants]
-
     def measure(self, individual):
         """Construct fitness for given individual.
         """
-        error = self.hill_climb(individual)
+        popt, error = const_opt_scalar(self.evaluate, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        individual.popt = popt
         if self.consider_complexity:
-            fitness = *error, sum(map(len, individual))
+            fitness = error, sum(map(len, individual))
         else:
-            fitness = error
+            fitness = error,
         return fitness
 
     def update_fitness(self, population, map=map):
@@ -237,12 +199,6 @@ class RemoteAssessmentRunner:
 
     def __call__(self, population):
         return self.update_fitness(population)
-
-
-def tweak(x, p, rng=np.random):
-    """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))
-    """
-    return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-p)), p)
 
 
 class Individual(AExpressionTree):
@@ -299,6 +255,7 @@ def main():
     print_params(logger.info, vars(args))
     break_condition = glyph.utils.timeout.SoftTimeOut(args.ttl) if args.ttl >= 0 else None
     app.run(break_condition=break_condition)
+
 
 if __name__ == "__main__":
     main()

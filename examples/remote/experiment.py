@@ -54,7 +54,7 @@ class EventLoop(object):
 
     def evaluate(self, individual):
         func = [compile(t, self.pset) for t in individual]
-        fitness = self.experiment(func),
+        fitness = self.experiment(func)
         return dict(fitness=fitness)
 
 

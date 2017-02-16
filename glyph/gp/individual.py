@@ -219,6 +219,15 @@ class ANDimTree(list):
     def height(self):
         return len(self)
 
+    @property
+    def pset(self):
+        return self.base.pset
+
+    @property
+    def terminals(self):
+        """Return terminals that occur in the expression tree."""
+        return [primitive for primitive in itertools.chain.from_iterable(self) if primitive.arity == 0]
+
 
 class Measure(deap.base.Fitness):
     """

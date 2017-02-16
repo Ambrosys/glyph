@@ -116,7 +116,7 @@ def default_constants(ind):
     return tuple(values)
 
 
-def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants):
+def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants, **kwargs):
     """Apply constant optimization on a scalar measure.
 
     Uses scipy.optimize.minimize().
@@ -137,7 +137,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method)
+        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method, **kwargs)
         popt = res.x if res.x.shape else np.array([res.x])
         measure_opt = res.fun
         if not res.success:
@@ -147,7 +147,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     return popt, measure_opt
 
 
-def const_opt_leastsq(measure, individual, default_constants=default_constants):
+def const_opt_leastsq(measure, individual, default_constants=default_constants, **kwargs):
     """Apply constant optimization on a vector valued measure.
 
     Uses scipy.optimize.leastsq().
@@ -165,7 +165,7 @@ def const_opt_leastsq(measure, individual, default_constants=default_constants):
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(str(constant) in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True)
+        res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True, **kwargs)
         popt, infodict, msg, ierr = res[0], res[2], res[-2], res[-1]
         measure_opt = infodict['fvec']
         if ierr < 0 or ierr > 4:
