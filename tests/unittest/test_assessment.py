@@ -9,7 +9,7 @@ import dill
 
 from glyph import gp
 from glyph import assessment
-from glyph.utils.numeric import rms
+from glyph.utils.numeric import rms, hill_climb
 
 
 class SingleConstIndividual(gp.AExpressionTree):
@@ -101,6 +101,24 @@ def test_const_opt_scalar(case):
 
     popt, _ = assessment.const_opt_scalar(error, ind)
     assert_all_close(desired, popt)
+
+def test_hill_climb():
+    rng = np.random.RandomState(seed=1742)
+    case = const_opt_agreement_cases[3]
+    optiones = {"directions": 200, "max_iter": 2000, "target": 0.2, 'rng': rng}
+
+    individual_class, expr, target, x, desired, _ = case
+    ind = individual_class.from_string(expr)
+    m = Measure(target, x)
+
+    def error(individual, *consts):
+        residuals = m(individual, *consts)
+        return rms(residuals)
+
+    popt, rms_opt = assessment.const_opt_scalar(error, ind, method=hill_climb, options=optiones)
+    assert rms_opt <= optiones["target"]
+    assert_all_close(desired, popt, r_tol=0.1)
+
 
 
 @pytest.mark.parametrize('case', const_opt_agreement_cases)

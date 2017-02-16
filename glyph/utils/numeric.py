@@ -98,15 +98,16 @@ def silent_numpy(func):
     return closure
 
 
-def hill_climb(fun, x0, args, options={}, **kwargs):
+def hill_climb(fun, x0, args, **options):
     """Stochastic hill climber for constant optimization.
     Try self.directions different solutions per iteration to select a new best individual.
     This iterates self.max_steps times.
     """
     rng = options.get("rng", np.random)
     precision = options.get("precision", 5)
-    max_steps = options.get("max_steps", 5)
+    max_iter = options.get("max_iter", 5)
     directions = options.get("directions", 5)
+    target = options.get("target", 0)
 
     res = scipy.optimize.OptimizeResult()
 
@@ -120,17 +121,22 @@ def hill_climb(fun, x0, args, options={}, **kwargs):
 
     x = x0
     fx = f(x)
+    it = 1
     if len(x0) > 0:
-        memory = [(x0, f(x0))]
-        for _ in range(max_steps):
-            for _ in range(directions):
+        while fx >= target and it <= max_iter:
+            memory = [(x, fx)]
+            for j in range(directions):
+                it += 1
                 xtweak = np.array([tweak(c) for c in x])
-                memory.append((xtweak, f(xtweak)))
+                fxtweak = f(xtweak)
+                memory.append((xtweak, fxtweak))
+                if fxtweak <= target:
+                    break
             x, fx = min(memory, key=lambda t: t[1])
 
     res["x"] = x
     res["fun"] = fx
     res["success"] = True
-    res["nit"] = 1 + max_steps*directions
+    res["nit"] = it
 
     return res
