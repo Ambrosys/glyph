@@ -14,11 +14,11 @@ import toolz
 import numpy as np
 
 from glyph.gp import AExpressionTree
-from glyph.utils import Memoize
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.assessment import tuple_wrap
 import glyph.application
+import glyph.utils
 
 
 class RemoteApp(glyph.application.Application):
@@ -92,6 +92,9 @@ def get_parser():
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
+
+    break_condition = parser.add_argument_group('break condition')
+    break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     return parser
 
 
@@ -178,7 +181,7 @@ class RemoteAssessmentRunner:
         self.directions = directions
         self.precision = precision
         if caching:
-            self.evaluate = Memoize(self.evaluate)
+            self.evaluate = glyph.utils.Memoize(self.evaluate)
 
     @tuple_wrap
     def evaluate(self, individual, constants=None):
@@ -294,7 +297,8 @@ def main():
     app, args = make_remote_app()
     logger = logging.getLogger(__name__)
     print_params(logger.info, vars(args))
-    app.run()
+    break_condition = glyph.utils.timeout.SoftTimeOut(args.ttl) if args.ttl >= 0 else None
+    app.run(break_condition=break_condition)
 
 if __name__ == "__main__":
     main()
