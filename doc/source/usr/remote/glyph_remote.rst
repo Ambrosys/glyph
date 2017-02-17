@@ -23,7 +23,7 @@ interface. To the left a single experiment plus an event handler is
 depicted. The latter glues optimization method and task together and
 needs to understand the communication protocol defined in
 
-.. figure:: ../_static/communication.png
+.. figure:: ../../_static/communication.png
    :alt:
 
 Currently we use `client server sockets <http://learning-0mq-with-pyzmq.readthedocs.io/en/latest/pyzmq/patterns/client_server.html/>`_ for glyph remote. **The user needs to implement the zmq.REP socket.**
@@ -72,7 +72,7 @@ The *experiment* request expects the following return format:
 .. code:: json
 
     {
-        "fitness": ["value0", ...],
+        "fitness": "value0",
     }
 
 Shutdown
@@ -116,7 +116,7 @@ to one are variables and -1 is reserved for symbolic constants.
     {
       "primitives":
       {
-        "add": 2;
-        "x": 0;
+        "add": 2,
+        "x": 0,
       },
     }

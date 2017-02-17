@@ -8,9 +8,11 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.pngmath',
 ]
 templates_path = ['_templates']
-autodoc_default_flags = ['members', 'show-inheritance']
+autodoc_default_flags = ['members', 'show-inheritance', 'special-members', 'any']
 autodoc_member_order = 'bysource'
 
 source_suffix = ['.rst']
@@ -56,7 +58,7 @@ html_sidebars = {
     ],
     '**': [
         'about.html',
-        'navigation.html',
+        #'navigation.html',
         'localtoc.html',
         'searchbox.html',
         'hacks.html',
@@ -72,4 +74,7 @@ html_show_copyright = True
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3.5', None),
+    'deap': ('http://deap.readthedocs.io/en/master/', None),
+    'numpy'  : ('http://docs.scipy.org/doc/numpy', None)
 }
+default_role='any'

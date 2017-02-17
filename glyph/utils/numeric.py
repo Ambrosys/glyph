@@ -15,10 +15,10 @@ def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
     Uselful if you do not want to step through the integration, but rather get
     the full result in one call.
 
-    :param dy: callable(x, y, *args)
+    :param dy: `callable(x, y, *args)`
     :param yinit: sequence of initial values.
     :param x: sequence of x values.
-    :param *f_args: (optional) extra arguments to pass to function.
+    :param f_args: (optional) extra arguments to pass to function.
     :returns: y(x)
     """
     res = odeint(dy, yinit, x, f_args=f_args, integrator=integrator, **integrator_args)
@@ -37,10 +37,10 @@ def odeint(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
 
     A wrapper around scipy.integrate.ode.
 
-    :param dy: callable(x, y, *args)
+    :param dy: `callable(x, y, *args)`
     :param yinit: sequence of initial values.
     :param x: sequence of x values.
-    :param *f_args: (optional) extra arguments to pass to function.
+    :param f_args: (optional) extra arguments to pass to function.
     :yields: y(x_i)
     """
     @functools.wraps(dy)

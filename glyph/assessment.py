@@ -8,11 +8,9 @@ import warnings
 
 from glyph.gp.individual import _get_index
 
-class SingleProcessFactoy(object):
-    map = map
-
-    def __call__(self):
-        return self
+class SingleProcessFactoy:
+    def init(self):
+        self.map = map
 
 
 class AAssessmentRunner(object):
@@ -88,12 +86,12 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     Optionaly do pre- and/or post-processing.
 
     :param funcs: a sequence of measure functions as returned by measure() (eg.
-                   callable(*a, **kw) -> tuple), and/or single valued functions
-                   (eg. callable(*a, **kw) -> numerical value).
+                   `callable(*a, **kw) -> tuple`), and/or single valued functions
+                   (eg. `callable(*a, **kw)` -> numerical value).
     :param pre: some pre-processing function that is to be apllied on input
-                *once* before passing the result to each function in *funcs.
+                *once* before passing the result to each function in funcs.
     :param post: some post-processing function that is to be apllied on the
-                 tuple of measure values as returned by the combined *funcs.
+                 tuple of measure values as returned by the combined funcs.
     :returns: callable(input) -> tuple of measure values, where input is usually
               a phenotype (eg. an expression tree).
     """
@@ -121,7 +119,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
 
     Uses scipy.optimize.minimize().
 
-    :param measure: callable(individual, *f_args) -> scalar.
+    :param measure: `callable(individual, *f_args) -> scalar`.
     :param individual: an individual tha is passed on to measure.
     :bounds: bounds for the constant values (s. scipy.optimize.minimize).
     :method: Type of solver. Should either be 'leastsq', or one of
@@ -152,7 +150,7 @@ def const_opt_leastsq(measure, individual, default_constants=default_constants, 
 
     Uses scipy.optimize.leastsq().
 
-    :param measure: callable(individual, *f_args) -> numeric sequence.
+    :param measure: `callable(individual, *f_args) -> numeric sequence`.
     :param individual: an individual tha is passed on to measure.
     :returns: (popt, measure_opt), popt: the optimal values for the constants;
               measure_opt: the measure evaluated at popt.

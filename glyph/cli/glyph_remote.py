@@ -87,14 +87,15 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--directions', type=int, default=5, help='Number of directions to try in stochastic hill climber (default: 5)')
-    ass_group.add_argument('--hill_steps', type=int, default=5, help='Number of iterations of stochastic hill climber (default: 5)')
+
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
+    ass_group.add_argument('--maxiter', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
+    break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
     return parser
 
 
@@ -155,14 +156,15 @@ def build_pset_gp(primitives):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, max_steps=5, directions=5, caching=True, precision=3):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True):
         """Contains assessment logic. Uses zmq connection to request evaluation.
         Constant optimization is done using a stochastic hill climber.
         """
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
-        self.options = dict(max_steps=max_steps, directions=directions, precision=precision)
+        self.options = options
+        self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         if caching:
             self.evaluate = glyph.utils.Memoize(self.evaluate)
 
@@ -240,8 +242,7 @@ def make_remote_app():
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=args.hill_steps, directions=args.directions,
-                                                   consider_complexity=args.consider_complexity, precision=args.precision, caching=args.caching)
+        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity, caching=args.caching)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 

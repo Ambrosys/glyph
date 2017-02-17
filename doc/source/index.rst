@@ -11,18 +11,30 @@ glyph - symbolic regression tools
 .. warning::
     While fully usable, glyph is still pre-1.0 software and has **no** backwards compatibility guarantees until the 1.0 release occurs!
 
+Content
+-------
+.. toctree::
+   :maxdepth: 2
 
-Contents:
----------
+   usr/getting_started.rst
+   usr/concepts.rst
+   usr/parallel.rst
 
 .. toctree::
    :maxdepth: 1
 
-   usr/concepts.rst
-   usr/glyph_remote.rst
-   usr/parallel.rst
-   usr/roadmap.rst
-   api.rst
+   usr/remote/glyph_remote.rst
+   usr/remote/tutorials/matlab.rst
+
+Development:
+------------
+Know what you're looking for & just need API details? View our auto-generated API documentation:
+
+.. toctree::
+   :maxdepth: 1
+
+   dev/roadmap.rst
+   dev/api.rst
 
 .. |Build Status| image:: https://travis-ci.org/Ambrosys/glyph.svg?branch=master
   :target: https://travis-ci.org/Ambrosys/glyph
