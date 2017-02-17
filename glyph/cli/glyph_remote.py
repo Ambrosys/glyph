@@ -16,6 +16,7 @@ import numpy as np
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
+from glyph.utils.break_condition import BreakCondition
 from glyph.assessment import tuple_wrap, const_opt_scalar
 import glyph.application
 import glyph.utils
@@ -98,6 +99,7 @@ def get_parser():
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
+    break_condition.add_argument('--max_iter_total', type=float, default=np.infty, help='Target error used in stopping criteria (default: np.infty)')
     return parser
 
 
@@ -267,9 +269,8 @@ def main():
     app, args = make_remote_app()
     logger = logging.getLogger(__name__)
     print_params(logger.info, vars(args))
-    break_condition = glyph.utils.timeout.SoftTimeOut(args.ttl) if args.ttl >= 0 else None
+    break_condition = BreakCondition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
     app.run(break_condition=break_condition)
-
 
 if __name__ == "__main__":
     main()

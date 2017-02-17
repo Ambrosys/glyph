@@ -1,7 +1,7 @@
 from . import argparse
 from . import logging
 from . import numeric
-from . import timeout
+from . import break_condition
 
 from functools import wraps
 

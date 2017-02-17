@@ -60,10 +60,10 @@ Logging
 .. automodule:: glyph.utils.logging
     :members:
 
-Timeout
-+++++++
+Break condition
++++++++++++++++
 
-.. automodule:: glyph.utils.timeout
+.. automodule:: glyph.utils.break_condition
     :members:
 
 
