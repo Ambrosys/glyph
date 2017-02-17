@@ -90,8 +90,10 @@ def get_parser():
 
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
-    ass_group.add_argument('--maxiter', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--maxiter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
+    ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
@@ -114,6 +116,18 @@ def connect(ip, port):
     recv = partial(_recv, socket)
     return send, recv
 
+
+def handle_const_opt_config(args):
+    options = {'maxiter': args.maxiter_const_opt}
+    if args.const_opt_method == 'hill_climb':
+        options['directions'] = args.directions
+        options['precision'] = args.precision
+        options['target'] = args.target
+    else:
+        options['xatol'] = 10**(-args.precision)
+        options['fatol'] = args.target
+    args.options = options
+    return args
 
 def update_namespace(ns, up):
     """Update the argparse.Namespace ns with a dictionairy up.
@@ -168,7 +182,6 @@ class RemoteAssessmentRunner:
         if caching:
             self.evaluate = glyph.utils.Memoize(self.evaluate)
 
-    #@tuple_wrap
     def evaluate(self, individual, *consts):
         """Evaluate a single individual.
         """
@@ -227,7 +240,7 @@ def make_remote_app():
         logger.debug('Loading checkpoint {}'.format(args.resume_file))
         app = RemoteApp.from_checkpoint(args.resume_file, send, recv)
     else:
-        args = handle_gpconfig(args, send, recv)
+        args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
             pset = build_pset_gp(args.primitives)
         except AttributeError:

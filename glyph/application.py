@@ -312,7 +312,7 @@ class AlgorithmFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--algorithm', dest='algorithm', type=str, default='nsga2',
-                            choices=list(AlgorithmFactory.mapping.keys()),
+                            choices=list(AlgorithmFactory._mapping.keys()),
                             help='the gp algorithm (default: nsga2)')
         parser.add_argument('--cxpb', dest='crossover_prob', metavar='p', type=utils.argparse.unit_interval, default=0.5,
                             help='crossover probability for mating (default: 0.5)')
@@ -340,7 +340,7 @@ class MateFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--mating', dest='mating', type=str, default='cxonepoint',
-                            choices=list(MateFactory.mapping.keys()),
+                            choices=list(MateFactory._mapping.keys()),
                             help='the mating method (default: cxonepoint)')
         parser.add_argument('--mating-max-height', dest='mating_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mating (default: 20)')
@@ -364,7 +364,7 @@ class MutateFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--mutation', dest='mutation', type=str, default='mutuniform',
-                            choices=list(MutateFactory.mapping.keys()),
+                            choices=list(MutateFactory._mapping.keys()),
                             help='the mutation method (default: mutuniform)')
         parser.add_argument('--mutation-max-height', dest='mutation_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mutation (default: 20)')
@@ -390,7 +390,7 @@ class SelectFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--select', dest='select', type=str, default='nsga2',
-                            choices=list(SelectFactory.mapping.keys()),
+                            choices=list(SelectFactory._mapping.keys()),
                             help='the selection method (default: nsga2)')
 
 
@@ -408,7 +408,7 @@ class CreateFactory(AFactory):
 
     def add_options(parser):
         parser.add_argument('--create_method', dest='create_method', type=str, default='halfandhalf',
-                            choices=list(SelectFactory.mapping.keys()),
+                            choices=list(SelectFactory._mapping.keys()),
                             help='the create method (default: halfandhalf)')
         parser.add_argument('--create_max_height', dest='create_max_height', default=4, type=utils.argparse.positive_int,
                             help="maximum value for tree based create methods (default: 4)")

@@ -105,7 +105,7 @@ def hill_climb(fun, x0, args, **options):
     """
     rng = options.get("rng", np.random)
     precision = options.get("precision", 5)
-    max_iter = options.get("max_iter", 5)
+    maxiter = options.get("maxiter", 5)
     directions = options.get("directions", 5)
     target = options.get("target", 0)
 
@@ -123,7 +123,7 @@ def hill_climb(fun, x0, args, **options):
     fx = f(x)
     it = 1
     if len(x0) > 0:
-        while fx >= target and it <= max_iter:
+        while fx >= target and it <= maxiter:
             memory = [(x, fx)]
             for j in range(directions):
                 it += 1
