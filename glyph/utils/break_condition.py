@@ -2,6 +2,8 @@ import time
 import signal
 import functools
 
+import numpy as np
+
 
 class SoftTimeOut():
     """Break condition based on a soft time out.
@@ -70,19 +72,20 @@ def max_fitness_on_timeout(max_fitness):
     return decorate
 
 
-def soft_max_iter(app, max_iter=float('nan')):
+def soft_max_iter(app, max_iter=np.infty):
     return sum(app.gp_runner.logbook.select("evals")) >= max_iter
 
 
 def soft_target(app, target=0, error_index=0):
     return app.gp_runner.logbook.chapters["fit{}".format(error_index)].select("min")[-1] <= target
 
+
 class BreakCondition():
-    def __init__(self, target=0, error_index=0, ttl=0, max_iter=float('nan')):
+    def __init__(self, target=0, error_index=0, ttl=0, max_iter=np.infty):
         self.target = target
         self.error_index = error_index
         self.sto = SoftTimeOut(ttl)
         self.max_iter = max_iter
 
     def __call__(self, app):
-        return soft_max_iter(app, max_iter=self.max_iter) or self.sto(app) or soft_target(app, target=self.target, error_index=self.error_index)
+        return soft_max_iter(app, max_iter=self.max_iter) or not self.sto(app) or soft_target(app, target=self.target, error_index=self.error_index)
