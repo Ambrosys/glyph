@@ -105,7 +105,7 @@ def test_const_opt_scalar(case):
 def test_hill_climb():
     rng = np.random.RandomState(seed=1742)
     case = const_opt_agreement_cases[3]
-    optiones = {"directions": 200, "max_iter": 2000, "target": 0.2, 'rng': rng}
+    optiones = {"directions": 200, "maxiter": 2000, "target": 0.2, 'rng': rng}
 
     individual_class, expr, target, x, desired, _ = case
     ind = individual_class.from_string(expr)

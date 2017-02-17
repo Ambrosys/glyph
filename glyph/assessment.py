@@ -9,8 +9,10 @@ import warnings
 from glyph.gp.individual import _get_index
 
 class SingleProcessFactoy:
-    def init(self):
-        self.map = map
+    map = map
+
+    def __call__(self):
+        return self
 
 
 class AAssessmentRunner(object):
