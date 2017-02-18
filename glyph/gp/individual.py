@@ -22,12 +22,13 @@ def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential')
     """Create a primitive set with sympy primitves.
 
     :param categories: an optional list of function categories for the primitive set. The following are available
-                       'algebraic', 'trigonometric', 'exponential', 'exponential', 'logarithm', 'sqrt'.
+                       'algebraic', 'neg', 'trigonometric', 'exponential', 'exponential', 'logarithm', 'sqrt'.
     """
     pset = deap.gp.PrimitiveSet('main', arity=arity)
     if 'algebraic' in categories:
         pset.addPrimitive(sympy.Add, arity=2)
         pset.addPrimitive(sympy.Mul, arity=2)
+    if 'neg' in categories:
         pset.addPrimitive(functools.partial(sympy.Mul, -1.0), arity=1, name='Neg')
     if 'trigonometric' in categories:
         pset.addPrimitive(sympy.sin, arity=1)
@@ -42,7 +43,7 @@ def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential')
     # Use sympy symbols for argument representation.
     for symbol in itertools.chain(arguments, constants):
         pset.addTerminal(sympy.Symbol(symbol), name=symbol)
-    # Dirty hack to make constant optimization possible.
+
     pset.args = arguments
     pset.constants = constants
     return pset
@@ -217,6 +218,15 @@ class ANDimTree(list):
     @property
     def height(self):
         return len(self)
+
+    @property
+    def pset(self):
+        return self.base.pset
+
+    @property
+    def terminals(self):
+        """Return terminals that occur in the expression tree."""
+        return [primitive for primitive in itertools.chain.from_iterable(self) if primitive.arity == 0]
 
 
 class Measure(deap.base.Fitness):

@@ -29,5 +29,6 @@ def main():
 if __name__ == "__main__":
     from distributed import Client
     client = Client()
+    client.upload_file(os.path.join(os.path.dirname(__file__), "control_problem.py"))
     client.upload_file(os.path.join(os.path.dirname(__file__), "minimal_example.py"))
     main()

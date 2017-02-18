@@ -1,19 +1,23 @@
 """gp application."""
 
-import logging
 import argparse
-from toolz import cons
+import logging
 
+import numpy as np
 import sympy
 import sympy.utilities
-import numpy as np
+from toolz import cons
 import deap
 
 import glyph.application as application
-import glyph.gp as gp
-import glyph.control_problem as control_problem
 import glyph.assessment as assessment
+import glyph.gp as gp
 import glyph.utils as utils
+
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+import control_problem
 
 
 # Setup of the control problem and gp algorithm.
@@ -26,7 +30,6 @@ class Individual(gp.AExpressionTree):
     def __str__(self):
         """Human readable representation of the individual."""
         return str(sympy.sympify(deap.gp.compile(repr(self), self.pset)))
-
 
 
 class AssessmentRunner(assessment.AAssessmentRunner):
@@ -47,7 +50,6 @@ class AssessmentRunner(assessment.AAssessmentRunner):
         individual.fitness.values = fitness[:-1]
         individual.popt = fitness[-1]
 
-    # TODO(jg): maybe as cached (because of constant optimization).
     def rmse(self, individual, *f_args):
         y = self.trajectory(individual, *f_args)
         rmse_y_0 = utils.numeric.rmse(self.target, y[0, :])
@@ -84,7 +86,6 @@ def main():
         return
     # Plot n best results.
     import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     import seaborn
     n = 2
     seaborn.set_palette('husl', n + 2)

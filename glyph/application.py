@@ -18,6 +18,7 @@ import deap.tools
 
 from . import gp
 from . import utils
+from . assessment import SingleProcessFactoy
 
 
 class GPRunner(object):
@@ -33,10 +34,10 @@ class GPRunner(object):
     def __init__(self, IndividualClass, algorithm_factory, assessment_runner):
         """Init GPRunner.
 
-        :params IndividualClass: Class inherited from gp.AExpressionTree.
-        :params algorithm_factory: callable() -> gp algorithm, as defined in
+        :param IndividualClass: Class inherited from gp.AExpressionTree.
+        :param algorithm_factory: callable() -> gp algorithm, as defined in
                                    gp.algorithms.
-        :params assessment_runner: callable(population) -> None, updates fitness
+        :param assessment_runner: callable(population) -> None, updates fitness
                                    values of each invalid individual in population.
         """
         self.IndividualClass = IndividualClass
@@ -65,6 +66,7 @@ class GPRunner(object):
         self._update()
 
     def _update(self):
+        """Evaluate invalid individuals and update statistics accordingly."""
         evals = self.assessment_runner(self.population)
         self.halloffame.update(self.population)
         if not self.mstats:
@@ -75,6 +77,15 @@ class GPRunner(object):
 
 @contextmanager
 def random_state(cls, rng=random):
+    """Do work inside this contextmanager with a random state defined by cls.
+
+    Looks for _prev_state to seed the rng.
+    On exit, it will write the current state of the rng as _tmp_state
+    to the cls.
+
+    :params cls: Any object.
+    :params rng: Instance of a random number generator.
+    """
     cls._tmp_state = rng.getstate()
     rng.setstate(getattr(cls, '_prev_state', rng.getstate()))
     yield
@@ -85,7 +96,7 @@ def random_state(cls, rng=random):
 def default_gprunner(Individual, assessment_runner, **kwargs):
     """Create a default GPRunner instance.
 
-    For config options see MateFactory, MutateFactory, and AlgorithmFactory.
+    For config options see `MateFactory`, `MutateFactory`, `AlgorithmFactory`.
     """
     default_config = dict(mating='cxonepoint', mating_max_height=20,
                           mutation='mutuniform', mutation_max_height=20,
@@ -106,7 +117,7 @@ def default_gprunner(Individual, assessment_runner, **kwargs):
 
 
 class Application(object):
-    """An application based on GPRunner.
+    """An application based on `GPRunner`.
 
     Controls execution of the runner and adds checkpointing and logging
     functionality; also defines a set of available command line options and
@@ -117,6 +128,12 @@ class Application(object):
     """
 
     def __init__(self, config, gp_runner, checkpoint_file):
+        """
+        :param config: Container holding all configs
+        :type config: dict or argparse.Namespace
+        :param gp_runner: Instance of `GPRunner`
+        :param checkpoint_file: Path to checkpoint_file
+        """
         self.args = to_argparse_namespace(config)
         self.gp_runner = gp_runner
         self.checkpoint_file = checkpoint_file
@@ -131,7 +148,9 @@ class Application(object):
     def run(self, break_condition=None):
         """Run gp app.
 
-        :param break_condition: callable(application), is called after every evolutionary step.
+        :param break_condition: is called after every evolutionary step.
+        :type break_condition: callable(application)
+
         :return: number of iterations executed during run.
         """
         if break_condition is None:
@@ -151,6 +170,7 @@ class Application(object):
         return iterations
 
     def _update(self):
+        """Execute callbacks (logger, checkpointing, Halloffame"""
         self.logger.info(self.gp_runner.logbook.stream)
         self.pareto_fronts.append(self.gp_runner.halloffame[:])
         if self.valid_checkpointing and (self.gp_runner.step_count % self.args.checkpoint_frequency == 0):
@@ -246,7 +266,7 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
 
 class AFactory(object):
 
-    mapping = {}
+    _mapping = {}
 
     @classmethod
     def create(cls, config, *args, **kwargs):
@@ -261,7 +281,7 @@ class AFactory(object):
     @classmethod
     def get_from_mapping(cls, key):
         try:
-            func = cls.mapping[key]
+            func = cls._mapping[key]
         except KeyError:
             raise RuntimeError('Option {} not supported'.format(key))
         return func
@@ -274,7 +294,7 @@ def get_mapping(group):
 class AlgorithmFactory(AFactory):
     """Factory class for gp algorithms."""
 
-    mapping = get_mapping(gp.all_algorithms)
+    _mapping = get_mapping(gp.all_algorithms)
 
     @classmethod
     def _create(cls, args, mate_func, mutate_func, select, create_func):
@@ -292,7 +312,7 @@ class AlgorithmFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--algorithm', dest='algorithm', type=str, default='nsga2',
-                            choices=list(AlgorithmFactory.mapping.keys()),
+                            choices=list(AlgorithmFactory._mapping.keys()),
                             help='the gp algorithm (default: nsga2)')
         parser.add_argument('--cxpb', dest='crossover_prob', metavar='p', type=utils.argparse.unit_interval, default=0.5,
                             help='crossover probability for mating (default: 0.5)')
@@ -305,7 +325,7 @@ class AlgorithmFactory(AFactory):
 class MateFactory(AFactory):
     """Factory class for gp mating functions."""
 
-    mapping = get_mapping(gp.all_crossover)
+    _mapping = get_mapping(gp.all_crossover)
 
     @staticmethod
     def _create(args, IndividualClass):
@@ -320,7 +340,7 @@ class MateFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--mating', dest='mating', type=str, default='cxonepoint',
-                            choices=list(MateFactory.mapping.keys()),
+                            choices=list(MateFactory._mapping.keys()),
                             help='the mating method (default: cxonepoint)')
         parser.add_argument('--mating-max-height', dest='mating_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mating (default: 20)')
@@ -329,7 +349,7 @@ class MateFactory(AFactory):
 class MutateFactory(AFactory):
     """Factory class for gp mutation functions."""
 
-    mapping = get_mapping(gp.all_mutations)
+    _mapping = get_mapping(gp.all_mutations)
 
     @staticmethod
     def _create(args, IndividualClass):
@@ -344,7 +364,7 @@ class MutateFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--mutation', dest='mutation', type=str, default='mutuniform',
-                            choices=list(MutateFactory.mapping.keys()),
+                            choices=list(MutateFactory._mapping.keys()),
                             help='the mutation method (default: mutuniform)')
         parser.add_argument('--mutation-max-height', dest='mutation_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mutation (default: 20)')
@@ -357,7 +377,7 @@ class MutateFactory(AFactory):
 class SelectFactory(AFactory):
     """Factory class for selection"""
 
-    mapping = {"nsga2": deap.tools.selNSGA2,
+    _mapping = {"nsga2": deap.tools.selNSGA2,
                "spea2": deap.tools.selSPEA2,
             }
 
@@ -370,13 +390,13 @@ class SelectFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         parser.add_argument('--select', dest='select', type=str, default='nsga2',
-                            choices=list(SelectFactory.mapping.keys()),
+                            choices=list(SelectFactory._mapping.keys()),
                             help='the selection method (default: nsga2)')
 
 
 class CreateFactory(AFactory):
 
-    mapping = {"halfandhalf": deap.gp.genHalfAndHalf}
+    _mapping = {"halfandhalf": deap.gp.genHalfAndHalf}
 
     @staticmethod
     def _create(args, IndividualClass):
@@ -388,16 +408,12 @@ class CreateFactory(AFactory):
 
     def add_options(parser):
         parser.add_argument('--create_method', dest='create_method', type=str, default='halfandhalf',
-                            choices=list(SelectFactory.mapping.keys()),
+                            choices=list(SelectFactory._mapping.keys()),
                             help='the create method (default: halfandhalf)')
         parser.add_argument('--create_max_height', dest='create_max_height', default=4, type=utils.argparse.positive_int,
                             help="maximum value for tree based create methods (default: 4)")
         parser.add_argument('--create_min_height', dest='create_min_height', default=1, type=utils.argparse.positive_int,
                             help="maximum value for tree based create methods (default: 1)")
-
-
-class SingleProcessFactory:
-    map = map
 
 
 class ParallelizationFactory(AFactory):

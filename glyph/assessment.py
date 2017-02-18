@@ -8,7 +8,7 @@ import warnings
 
 from glyph.gp.individual import _get_index
 
-class SingleProcessFactoy(object):
+class SingleProcessFactoy:
     map = map
 
     def __call__(self):
@@ -88,12 +88,12 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     Optionaly do pre- and/or post-processing.
 
     :param funcs: a sequence of measure functions as returned by measure() (eg.
-                   callable(*a, **kw) -> tuple), and/or single valued functions
-                   (eg. callable(*a, **kw) -> numerical value).
+                   `callable(*a, **kw) -> tuple`), and/or single valued functions
+                   (eg. `callable(*a, **kw)` -> numerical value).
     :param pre: some pre-processing function that is to be apllied on input
-                *once* before passing the result to each function in *funcs.
+                *once* before passing the result to each function in funcs.
     :param post: some post-processing function that is to be apllied on the
-                 tuple of measure values as returned by the combined *funcs.
+                 tuple of measure values as returned by the combined funcs.
     :returns: callable(input) -> tuple of measure values, where input is usually
               a phenotype (eg. an expression tree).
     """
@@ -113,15 +113,15 @@ def default_constants(ind):
             values = np.ones(len(consts_types))
     else:
         values = []
-    return values
+    return tuple(values)
 
 
-def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants):
+def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants, **kwargs):
     """Apply constant optimization on a scalar measure.
 
     Uses scipy.optimize.minimize().
 
-    :param measure: callable(individual, *f_args) -> scalar.
+    :param measure: `callable(individual, *f_args) -> scalar`.
     :param individual: an individual tha is passed on to measure.
     :bounds: bounds for the constant values (s. scipy.optimize.minimize).
     :method: Type of solver. Should either be 'leastsq', or one of
@@ -130,14 +130,14 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
               measure_opt: the measure evaluated at popt.
     """
     @functools.wraps(measure)
-    def closure(args):
-        return measure(individual, *args)
+    def closure(consts):
+        return measure(individual, *consts)
     p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method)
+        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method, **kwargs)
         popt = res.x if res.x.shape else np.array([res.x])
         measure_opt = res.fun
         if not res.success:
@@ -147,25 +147,25 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     return popt, measure_opt
 
 
-def const_opt_leastsq(measure, individual, default_constants=default_constants):
+def const_opt_leastsq(measure, individual, default_constants=default_constants, **kwargs):
     """Apply constant optimization on a vector valued measure.
 
     Uses scipy.optimize.leastsq().
 
-    :param measure: callable(individual, *f_args) -> numeric sequence.
+    :param measure: `callable(individual, *f_args) -> numeric sequence`.
     :param individual: an individual tha is passed on to measure.
     :returns: (popt, measure_opt), popt: the optimal values for the constants;
               measure_opt: the measure evaluated at popt.
     """
     @functools.wraps(measure)
-    def closure(args):
-        return measure(individual, *args)
+    def closure(consts):
+        return measure(individual, *consts)
     p0 = default_constants(individual)
     popt = p0
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(str(constant) in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True)
+        res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True, **kwargs    )
         popt, infodict, msg, ierr = res[0], res[2], res[-2], res[-1]
         measure_opt = infodict['fvec']
         if ierr < 0 or ierr > 4:
@@ -205,24 +205,25 @@ def annotate(func, annotations):
     return func
 
 
-def returns(func, type):
+def returns(func, types):
     """Check func's annotation dictionary for return type tuple."""
     try:
-        return func.__annotations__['return'] is type
+        return func.__annotations__['return'] in types
     except (AttributeError, KeyError):
         return False
 
 
 def tuple_wrap(func):
+    types = tuple, list
     """Wrap func's return value into a tuple if it is not one already."""
-    if returns(func, type=tuple):
+    if returns(func, types=types):
         return func  # No need to wrap.
     else:
         @functools.wraps(func)
         def closure(*args, **kwargs):
             res = func(*args, **kwargs)
-            if isinstance(res, tuple):
-                return res
+            if isinstance(res, types):
+                return tuple(res)
             else:
                 return res,
         annotate(closure, {'return': tuple})

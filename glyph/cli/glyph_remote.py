@@ -14,10 +14,12 @@ import toolz
 import numpy as np
 
 from glyph.gp import AExpressionTree
-from glyph.utils import Memoize
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
+from glyph.utils.break_condition import BreakCondition
+from glyph.assessment import tuple_wrap, const_opt_scalar
 import glyph.application
+import glyph.utils
 
 
 class RemoteApp(glyph.application.Application):
@@ -86,11 +88,18 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--directions', type=int, default=5, help='Number of directions to try in stochastic hill climber (default: 5)')
-    ass_group.add_argument('--hill_steps', type=int, default=5, help='Number of iterations of stochastic hill climber (default: 5)')
+
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
+    ass_group.add_argument('--maxiter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
+    ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
+
+    break_condition = parser.add_argument_group('break condition')
+    break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
+    break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
+    break_condition.add_argument('--max_iter_total', type=float, default=np.infty, help='Target error used in stopping criteria (default: np.infty)')
     return parser
 
 
@@ -109,6 +118,18 @@ def connect(ip, port):
     recv = partial(_recv, socket)
     return send, recv
 
+
+def handle_const_opt_config(args):
+    options = {'maxiter': args.maxiter_const_opt}
+    if args.const_opt_method == 'hill_climb':
+        options['directions'] = args.directions
+        options['precision'] = args.precision
+        options['target'] = args.target
+    else:
+        options['xatol'] = 10**(-args.precision)
+        options['fatol'] = args.target
+    args.options = options
+    return args
 
 def update_namespace(ns, up):
     """Update the argparse.Namespace ns with a dictionairy up.
@@ -150,76 +171,39 @@ def build_pset_gp(primitives):
     return pset
 
 
-class hashabledict(dict):
-    """We can use this as dict key"""
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-
-def default_constants(individual, default=1):
-    """Finds all constants which are used in the individual and tries to inherit old values (from parents).
-    If a constant cannot be inherited, the default value will be used as initial guess.
-    """
-    constants_in_ind = {k for k in individual.base.pset.constants if any(k in str(i) for i in individual)}
-    old_values = getattr(individual, "constants", {})
-    return hashabledict({k: old_values.get(k, default) for k in constants_in_ind})  # try hotstart = inherited values
-
-
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, max_steps=5, directions=5, caching=True, precision=3):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True):
         """Contains assessment logic. Uses zmq connection to request evaluation.
         Constant optimization is done using a stochastic hill climber.
         """
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
-        self.max_steps = max_steps
-        self.directions = directions
-        self.precision = precision
+        self.options = options
+        self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         if caching:
-            self.evaluate = Memoize(self.evaluate)
+            self.evaluate = glyph.utils.Memoize(self.evaluate)
 
-    def evaluate(self, individual, constants=None):
+    def evaluate(self, individual, *consts):
         """Evaluate a single individual.
         """
-        constants = constants or {}
         self.evaluations += 1
         payload = [str(t) for t in individual]
-        for k, v in constants.items():
+        for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
         self.send(dict(action="EXPERIMENT", payload=payload))
         error = self.recv()["fitness"]
         return error
 
-    def hill_climb(self, individual, rng=np.random):
-        """Stochastic hill climber for constant optimization.
-        Try self.directions different solutions per iteration to select a new best individual.
-        This iterates self.max_steps times.
-        """
-        constants = default_constants(individual)
-        memory = {constants: self.evaluate(individual, constants)}
-        if len(constants.keys()) == 0:
-            return self.evaluate(individual, constants)
-
-        for _ in range(self.max_steps):
-            for _ in range(self.directions):
-                c = toolz.valmap(lambda x: tweak(x, self.precision), constants, factory=hashabledict)
-                error = self.evaluate(individual, c)
-                memory[c] = error
-            constants = min(memory, key=memory.get)  # argmin for dictionaries
-            memory = {constants: memory[constants]}
-        individual.constants = constants
-
-        return memory[constants]
-
     def measure(self, individual):
         """Construct fitness for given individual.
         """
-        error = self.hill_climb(individual)
+        popt, error = const_opt_scalar(self.evaluate, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        individual.popt = popt
         if self.consider_complexity:
-            fitness = *error, sum(map(len, individual))
+            fitness = error, sum(map(len, individual))
         else:
-            fitness = error
+            fitness = error,
         return fitness
 
     def update_fitness(self, population, map=map):
@@ -232,12 +216,6 @@ class RemoteAssessmentRunner:
 
     def __call__(self, population):
         return self.update_fitness(population)
-
-
-def tweak(x, p, rng=np.random):
-    """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))
-    """
-    return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-p)), p)
 
 
 class Individual(AExpressionTree):
@@ -264,7 +242,7 @@ def make_remote_app():
         logger.debug('Loading checkpoint {}'.format(args.resume_file))
         app = RemoteApp.from_checkpoint(args.resume_file, send, recv)
     else:
-        args = handle_gpconfig(args, send, recv)
+        args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
             pset = build_pset_gp(args.primitives)
         except AttributeError:
@@ -279,8 +257,7 @@ def make_remote_app():
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=args.hill_steps, directions=args.directions,
-                                                   consider_complexity=args.consider_complexity, precision=args.precision, caching=args.caching)
+        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity, caching=args.caching)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
@@ -292,7 +269,8 @@ def main():
     app, args = make_remote_app()
     logger = logging.getLogger(__name__)
     print_params(logger.info, vars(args))
-    app.run()
+    break_condition = BreakCondition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
+    app.run(break_condition=break_condition)
 
 if __name__ == "__main__":
     main()

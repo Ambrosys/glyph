@@ -1,16 +1,11 @@
 import itertools
 import functools
+
 import toolz
 import numpy as np
 import scipy.integrate
 import scipy.optimize
 import scipy.signal
-
-
-@toolz.curry
-def row(n, array):
-    """Take the nth row from array."""
-    return array[n, :]
 
 
 def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
@@ -20,10 +15,10 @@ def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
     Uselful if you do not want to step through the integration, but rather get
     the full result in one call.
 
-    :param dy: callable(x, y, *args)
+    :param dy: `callable(x, y, *args)`
     :param yinit: sequence of initial values.
     :param x: sequence of x values.
-    :param *f_args: (optional) extra arguments to pass to function.
+    :param f_args: (optional) extra arguments to pass to function.
     :returns: y(x)
     """
     res = odeint(dy, yinit, x, f_args=f_args, integrator=integrator, **integrator_args)
@@ -42,10 +37,10 @@ def odeint(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
 
     A wrapper around scipy.integrate.ode.
 
-    :param dy: callable(x, y, *args)
+    :param dy: `callable(x, y, *args)`
     :param yinit: sequence of initial values.
     :param x: sequence of x values.
-    :param *f_args: (optional) extra arguments to pass to function.
+    :param f_args: (optional) extra arguments to pass to function.
     :yields: y(x_i)
     """
     @functools.wraps(dy)
@@ -102,3 +97,46 @@ def silent_numpy(func):
             return func(*args, **kwargs)
     return closure
 
+
+def hill_climb(fun, x0, args, **options):
+    """Stochastic hill climber for constant optimization.
+    Try self.directions different solutions per iteration to select a new best individual.
+    This iterates self.max_steps times.
+    """
+    rng = options.get("rng", np.random)
+    precision = options.get("precision", 5)
+    maxiter = options.get("maxiter", 5)
+    directions = options.get("directions", 5)
+    target = options.get("target", 0)
+
+    res = scipy.optimize.OptimizeResult()
+
+    def tweak(x):
+        """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))
+        """
+        return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-precision)), precision)
+
+    def f(x):
+        return fun(x, *args)
+
+    x = x0
+    fx = f(x)
+    it = 1
+    if len(x0) > 0:
+        while fx >= target and it <= maxiter:
+            memory = [(x, fx)]
+            for j in range(directions):
+                it += 1
+                xtweak = np.array([tweak(c) for c in x])
+                fxtweak = f(xtweak)
+                memory.append((xtweak, fxtweak))
+                if fxtweak <= target:
+                    break
+            x, fx = min(memory, key=lambda t: t[1])
+
+    res["x"] = x
+    res["fun"] = fx
+    res["success"] = True
+    res["nit"] = it
+
+    return res

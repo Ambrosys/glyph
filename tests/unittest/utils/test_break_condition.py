@@ -1,16 +1,15 @@
 import pytest
 
-from glyph.utils.timeout import *
+from glyph.utils.break_condition import *
 
-
-def test_SoftTimeOut():
-    ttl = 1
+@pytest.mark.parametrize("ttl", [0, 1])
+def test_SoftTimeOut(ttl):
     sttl = SoftTimeOut(ttl)
 
     assert sttl.alive
     time.sleep(ttl + 1)
 
-    assert not sttl()
+    assert bool(ttl) != bool(sttl())
 
 
 def test_timeout_decorator():
