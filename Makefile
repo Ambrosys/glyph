@@ -21,7 +21,6 @@ freeze:
 
 doc: dev
 	make -C doc clean
-	sphinx-apidoc -T -d 1 -o doc/source/api glyph
 	make -C doc html
 
 pypi: dev
