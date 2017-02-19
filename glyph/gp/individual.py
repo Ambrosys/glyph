@@ -189,8 +189,12 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         return toolbox.population(n=size)
 
 
-class ANDimTree(list):
+def nd_phenotype(nd_tree, backend=sympy_phenotype):
+    funcs = [backend(t) for t in nd_tree]
+    return lambda *x: [f(*x) for f in funcs]
 
+
+class ANDimTree(list):
     def __init__(self, trees):
         super().__init__(trees)
         self.dim = len(trees)
@@ -199,10 +203,6 @@ class ANDimTree(list):
     @property
     def base(self):
         pass
-
-    def compile(self):
-        funcs = [tree.compile() for tree in self]
-        return lambda *x: [func(*x) for func in funcs]
 
     def __repr__(self):
         return str([str(tree) for tree in self])
@@ -227,6 +227,10 @@ class ANDimTree(list):
     def terminals(self):
         """Return terminals that occur in the expression tree."""
         return [primitive for primitive in itertools.chain.from_iterable(self) if primitive.arity == 0]
+
+    @classmethod
+    def from_string(cls, strs):
+        return cls([cls.base.from_string(s) for s in strs])
 
 
 class Measure(deap.base.Fitness):

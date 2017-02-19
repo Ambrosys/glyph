@@ -75,3 +75,29 @@ def test_simplify_this(case):
     individual_class, expr, desired = case
     ind = individual_class.from_string(expr)
     assert str(simplify_this(ind)) == desired
+
+
+class NDTree(ANDimTree):
+    base = SympyTree
+
+
+nd_tree_case = (
+    (["Add(x_0, x_0)", "Mul(c_0, x_0)"], [1], [2, 1]),
+    (["Add(x_0, x_0)", "Mul(c_0, x_0)"], [1, 2], [2, 2]),
+)
+
+@pytest.mark.parametrize("case", nd_tree_case)
+def test_nd_from_string(case):
+    strs, _, _ = case
+    ind = NDTree.from_string(strs)
+
+    assert str(ind) == str(strs)
+
+@pytest.mark.parametrize("case", nd_tree_case)
+def test_nd_tree_phenotype(case):
+    strs, x, res = case
+    ind = NDTree.from_string(strs)
+    f = nd_phenotype(ind)
+
+    out = f(*x)
+    assert np.allclose(out, res)

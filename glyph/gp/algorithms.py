@@ -7,6 +7,7 @@ import deap.algorithms
 
 
 def _all_valid(population):
+    """Checks if all individuals in a population have been evaluated"""
     return all(ind.fitness.valid for ind in population)
 
 
@@ -79,7 +80,7 @@ class SPEA2(MOGP):
 
 
 class DeapEaSimple(object):
-    """Basically a copy of deap.algorithm's eaSimple algorithm."""
+    """Basically a copy of `deap.algorithm.eaSimple` algorithm."""
 
     def __init__(self, mate_func, mutate_func):
         self.mate = mate_func
