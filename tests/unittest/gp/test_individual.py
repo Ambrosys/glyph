@@ -1,5 +1,6 @@
 import inspect
 
+import dill
 import pytest
 
 from glyph.gp.individual import *
@@ -15,11 +16,22 @@ class SympyTree(AExpressionTree):
     marker = "sympy"
 
 
+class NDTree(ANDimTree):
+    base = SympyTree
+
+
 def test_hash(IndividualClass):
     ind = IndividualClass.create_population(1)[0]
     pop = [ind, ind]
     assert len(set(pop)) == 1
 
+@pytest.mark.parametrize("cls", [Tree, SympyTree, NDTree])
+def test_pickle(cls):
+    defaults = inspect.getargspec(cls.create_population).defaults#
+    defaults = len(defaults) if defaults else 0
+    argcount = len(inspect.getargspec(cls.create_population).args)
+    ind = cls.create_population(*[1]*(argcount-defaults-1))[0]
+    assert dill.loads(dill.dumps(ind)) == ind
 
 def test_reproducibility(IndividualClass):
     import random
@@ -75,10 +87,6 @@ def test_simplify_this(case):
     individual_class, expr, desired = case
     ind = individual_class.from_string(expr)
     assert str(simplify_this(ind)) == desired
-
-
-class NDTree(ANDimTree):
-    base = SympyTree
 
 
 nd_tree_case = (
