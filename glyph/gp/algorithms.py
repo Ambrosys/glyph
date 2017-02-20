@@ -43,7 +43,7 @@ class MOGP(object):
         self.mutate = mutate_func
         self.select = select
         self.clone = copy.deepcopy
-        self.crossover_prob = 0.5
+        self.crossover_prob = 0.7
         self.mutation_prob = 0.2
         self.tournament_size = 2
         self._initialized = False
@@ -80,7 +80,7 @@ class SPEA2(MOGP):
 
 
 class DeapEaSimple(object):
-    """Basically a copy of `deap.algorithm.eaSimple` algorithm."""
+    """Basically a copy of `deap.algorithms.eaSimple` algorithm."""
 
     def __init__(self, mate_func, mutate_func):
         self.mate = mate_func
@@ -100,6 +100,9 @@ class DeapEaSimple(object):
 
 
 class AgeFitness(MOGP):
+    """AgeFitness algorithm as described in Schmidt & Lipson.
+    DOI: 10.1007/978-1-4419-7747-2_8
+    """
     def __init__(self, mate_func, mutate_func, select, create_func):
         super().__init__(mate_func, mutate_func, select)
         self.num_new_blood = 1
@@ -133,6 +136,9 @@ class AgeFitness(MOGP):
 
 
 def make_unique_version(obj):
+    """Takes an algorithm class and creates a sublcass with a modified evolve method.
+    The modified version will ensures uniqueness of individuals.
+    """
     uname = "U{}".format(obj.__name__)
     uobj = type(uname, (obj,), {})
 

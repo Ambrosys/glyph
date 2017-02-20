@@ -18,13 +18,17 @@ def _build_args_string(pset, consts):
     return args
 
 
-def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential'), arguments=['y_0'], constants=[], arity=0):
+def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential'), arguments=['y_0'], constants=[]):
     """Create a primitive set with sympy primitves.
 
+    :param arguments: variables to use in primitive set
+    :param constants: symbolic constants to use in primitive set
     :param categories: an optional list of function categories for the primitive set. The following are available
                        'algebraic', 'neg', 'trigonometric', 'exponential', 'exponential', 'logarithm', 'sqrt'.
+
+     :return: `deap.gp.PrimitiveSet`
     """
-    pset = deap.gp.PrimitiveSet('main', arity=arity)
+    pset = deap.gp.PrimitiveSet('main', arity=0)
     if 'algebraic' in categories:
         pset.addPrimitive(sympy.Add, arity=2)
         pset.addPrimitive(sympy.Mul, arity=2)
@@ -55,8 +59,11 @@ def sympy_phenotype(individual):
     Uses sympy's lambdify function. Terminals from the primitive set will be
     used as parameters to the constructed lambda function; primitives (like
     sympy.exp) will be converted into numpy expressions (eg. numpy.exp).
+
+    :param individual:
+    :type individual: `glyph.gp.individual.AExpressionTree`
+    :return: lambda function
     """
-    # args = ','.join(terminal.name for terminal in individual.terminals)
     pset = individual.pset
     args = _build_args_string(pset, pset.constants)
     expr = sympy.sympify(deap.gp.compile(repr(individual), pset))
@@ -65,7 +72,15 @@ def sympy_phenotype(individual):
 
 
 def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'exponential', 'symc')):
+    """Create a primitive set based on numpys vectorized functions.
 
+
+    :param arity: Number of variables in the primitive set
+    :param categories:
+    :return: `deap.gp.PrimitiveSet`
+
+    .. note :: All functions will be closed, that is non-defined values will be mapped to 1. 1/0 = 1!
+    """
     pset = deap.gp.PrimitiveSet("main", arity)
     # Use primitive set built-in for argument representation.
     pset.renameArguments(**{'ARG{}'.format(i): 'x_{}'.format(i) for i in range(arity)})
@@ -116,6 +131,25 @@ def _get_index(ind, c):
 
 
 def numpy_phenotype(individual):
+    """ Lambdify the individual
+
+    :param individual:
+    :type individual: `glyph.gp.individual.AExpressionTree`
+    :return: lambda function
+
+    :Note:
+    In constrast to sympy_phenotype the callable will have a variable number of keyword arguments depending on the number
+    of symbolic constants in the individual.
+
+    :Example:
+    >>> pset = numpy_primitive_set(1)
+    >>> class Individual(AExpressionTree)
+    >>>    pset = pset
+    >>> ind = Individual.from_string("Add(x_0, Symc)")
+    >>> f = numpy_phenotype(ind)
+    >>> f(1, 1)
+    2
+    """
     pset = individual.pset
     if pset.constants:
         c = pset.constants[0]
@@ -190,11 +224,20 @@ class AExpressionTree(deap.gp.PrimitiveTree):
 
 
 def nd_phenotype(nd_tree, backend=sympy_phenotype):
+    """
+    :param nd_tree:
+    :type  nd_tree: ANDimTree
+    :param backend: sympy_phenotype or numpy_phenotype
+    :return: lambda function
+    """
     funcs = [backend(t) for t in nd_tree]
     return lambda *x: [f(*x) for f in funcs]
 
 
 class ANDimTree(list):
+    """
+    A naive tree class representing a vector-valued expression. Each dimension is encoded as a expression tree.
+    """
     def __init__(self, trees):
         super().__init__(trees)
         self.dim = len(trees)
@@ -304,4 +347,11 @@ def stringify_for_sympy(f):
 
 
 def simplify_this(expr):
+    """
+    :param expr:
+    :type expr: str
+    :return: Sympy representation of simplified expression#
+
+    :warning: does not respect closures
+    """
     return sympy.simplify(stringify_for_sympy(expr))

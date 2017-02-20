@@ -105,6 +105,13 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
 
 
 def default_constants(ind):
+    """
+    Return a one for each different constant in the primitive set.
+
+    :param ind:
+    :type ind: `glyph.gp.individual.AExpressionTree`
+    :returns: A value for each constant in the primitive set.
+    """
     if ind.pset.constants:
         consts_types = ind.pset.constants
         if len(consts_types) == 1 and "Symc" in consts_types:   # symc case
@@ -113,7 +120,7 @@ def default_constants(ind):
             values = np.ones(len(consts_types))
     else:
         values = []
-    return tuple(values)
+    return values
 
 
 def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants, **kwargs):
@@ -123,8 +130,8 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
 
     :param measure: `callable(individual, *f_args) -> scalar`.
     :param individual: an individual tha is passed on to measure.
-    :bounds: bounds for the constant values (s. scipy.optimize.minimize).
-    :method: Type of solver. Should either be 'leastsq', or one of
+    :param bounds: bounds for the constant values (s. `scipy.optimize.minimize`).
+    :param method: Type of solver. Should either be 'leastsq', or one of
              scipy.optimize.minimize's solvers.
     :returns: (popt, measure_opt), popt: the optimal values for the constants;
               measure_opt: the measure evaluated at popt.
@@ -150,10 +157,11 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
 def const_opt_leastsq(measure, individual, default_constants=default_constants, **kwargs):
     """Apply constant optimization on a vector valued measure.
 
-    Uses scipy.optimize.leastsq().
+    Uses `scipy.optimize.leastsq`
 
     :param measure: `callable(individual, *f_args) -> numeric sequence`.
     :param individual: an individual tha is passed on to measure.
+
     :returns: (popt, measure_opt), popt: the optimal values for the constants;
               measure_opt: the measure evaluated at popt.
     """
@@ -176,14 +184,19 @@ def const_opt_leastsq(measure, individual, default_constants=default_constants, 
 
 
 def replace_nan(x, rep=np.infty):
-    """Replace occurences of np.NAN in x.
+    """Replace occurences of np.nan in x.
 
-    Heads-up: Does not work on np.arrays.
+    :param x: Any data structure
+    :type x: list, tuple, float, np.ndarray
+    :param rep: value to replace np.nan with
+
+    :returns: x without nan's
     """
-    try:
-        return type(x)(each if not np.isnan(each) else rep for each in x)
-    except TypeError:
-        return x if not np.isnan(x) else rep
+    @np.vectorize
+    def repl(x):
+        return rep if np.isnan(x) else x
+    t = toolz.identity if isinstance(x, np.ndarray) else type(x)
+    return t(repl(x))
 
 
 def _tt_flatten(tt):
@@ -214,8 +227,8 @@ def returns(func, types):
 
 
 def tuple_wrap(func):
-    types = tuple, list
     """Wrap func's return value into a tuple if it is not one already."""
+    types = tuple, list
     if returns(func, types=types):
         return func  # No need to wrap.
     else:

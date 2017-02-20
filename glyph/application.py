@@ -18,7 +18,7 @@ import deap.tools
 
 from . import gp
 from . import utils
-from . assessment import SingleProcessFactoy
+from .assessment import SingleProcessFactoy
 
 
 class GPRunner(object):
@@ -244,7 +244,8 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
     log_level = utils.logging.log_level(args.verbosity)
-    utils.logging.load_config(config_file=args.logging_config, default_level=log_level, placeholders=dict(workdir=workdir))
+    utils.logging.load_config(config_file=args.logging_config, default_level=log_level,
+                              placeholders=dict(workdir=workdir))
     logger = logging.getLogger(__name__)
 
     if args.resume_file is not None:
@@ -265,7 +266,6 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
 
 
 class AFactory(object):
-
     _mapping = {}
 
     @classmethod
@@ -314,11 +314,14 @@ class AlgorithmFactory(AFactory):
         parser.add_argument('--algorithm', dest='algorithm', type=str, default='nsga2',
                             choices=list(AlgorithmFactory._mapping.keys()),
                             help='the gp algorithm (default: nsga2)')
-        parser.add_argument('--cxpb', dest='crossover_prob', metavar='p', type=utils.argparse.unit_interval, default=0.5,
+        parser.add_argument('--cxpb', dest='crossover_prob', metavar='p', type=utils.argparse.unit_interval,
+                            default=0.5,
                             help='crossover probability for mating (default: 0.5)')
-        parser.add_argument('--mutpb', dest='mutation_prob', metavar='p', type=utils.argparse.unit_interval, default=0.2,
+        parser.add_argument('--mutpb', dest='mutation_prob', metavar='p', type=utils.argparse.unit_interval,
+                            default=0.2,
                             help='mutation probability (default: 0.2)')
-        parser.add_argument('--tournament-size', dest='tournament_size', metavar='n', type=utils.argparse.unit_interval, default=2,
+        parser.add_argument('--tournament-size', dest='tournament_size', metavar='n', type=utils.argparse.unit_interval,
+                            default=2,
                             help='tournament size for tournament selection (default: 2)')
 
 
@@ -332,7 +335,8 @@ class MateFactory(AFactory):
         """Setup mating function."""
         args.mating = args.mating.lower()
         mate = MateFactory.get_from_mapping(args.mating)(**vars(args))
-        static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"), max_value=args.mating_max_height)
+        static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"),
+                                                     max_value=args.mating_max_height)
         static_limit_decorator(mate)
         return mate
 
@@ -342,7 +346,8 @@ class MateFactory(AFactory):
         parser.add_argument('--mating', dest='mating', type=str, default='cxonepoint',
                             choices=list(MateFactory._mapping.keys()),
                             help='the mating method (default: cxonepoint)')
-        parser.add_argument('--mating-max-height', dest='mating_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
+        parser.add_argument('--mating-max-height', dest='mating_max_height', metavar='n',
+                            type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mating (default: 20)')
 
 
@@ -356,7 +361,8 @@ class MutateFactory(AFactory):
         """Setup mutation function."""
         args.mutation = args.mutation.lower()
         mutate = MutateFactory.get_from_mapping(args.mutation)(IndividualClass.pset, **vars(args))
-        static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"), max_value=args.mutation_max_height)
+        static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"),
+                                                     max_value=args.mutation_max_height)
         mutate = static_limit_decorator(mutate)
         return mutate
 
@@ -366,11 +372,14 @@ class MutateFactory(AFactory):
         parser.add_argument('--mutation', dest='mutation', type=str, default='mutuniform',
                             choices=list(MutateFactory._mapping.keys()),
                             help='the mutation method (default: mutuniform)')
-        parser.add_argument('--mutation-max-height', dest='mutation_max_height', metavar='n', type=utils.argparse.positive_int, default=20,
+        parser.add_argument('--mutation-max-height', dest='mutation_max_height', metavar='n',
+                            type=utils.argparse.positive_int, default=20,
                             help='limit for the expression tree height as a result of mutation (default: 20)')
-        parser.add_argument('--mutate_tree_min', dest='mutate_tree_min', default=0, metavar='min_', type=utils.argparse.positive_int,
+        parser.add_argument('--mutate_tree_min', dest='mutate_tree_min', default=0, metavar='min_',
+                            type=utils.argparse.positive_int,
                             help="minimum value for tree based mutation methods (default: 0)")
-        parser.add_argument('--mutate_tree_max', dest='mutate_tree_max', default=2, metavar='max_', type=utils.argparse.positive_int,
+        parser.add_argument('--mutate_tree_max', dest='mutate_tree_max', default=2, metavar='max_',
+                            type=utils.argparse.positive_int,
                             help="maximum value for tree based mutation methods (default: 2)")
 
 
@@ -378,8 +387,8 @@ class SelectFactory(AFactory):
     """Factory class for selection"""
 
     _mapping = {"nsga2": deap.tools.selNSGA2,
-               "spea2": deap.tools.selSPEA2,
-            }
+                "spea2": deap.tools.selSPEA2,
+                }
 
     @staticmethod
     def _create(args):
@@ -395,7 +404,7 @@ class SelectFactory(AFactory):
 
 
 class CreateFactory(AFactory):
-
+    """Factory class for creation"""
     _mapping = {"halfandhalf": deap.gp.genHalfAndHalf}
 
     @staticmethod
@@ -410,9 +419,11 @@ class CreateFactory(AFactory):
         parser.add_argument('--create_method', dest='create_method', type=str, default='halfandhalf',
                             choices=list(SelectFactory._mapping.keys()),
                             help='the create method (default: halfandhalf)')
-        parser.add_argument('--create_max_height', dest='create_max_height', default=4, type=utils.argparse.positive_int,
+        parser.add_argument('--create_max_height', dest='create_max_height', default=4,
+                            type=utils.argparse.positive_int,
                             help="maximum value for tree based create methods (default: 4)")
-        parser.add_argument('--create_min_height', dest='create_min_height', default=1, type=utils.argparse.positive_int,
+        parser.add_argument('--create_min_height', dest='create_min_height', default=1,
+                            type=utils.argparse.positive_int,
                             help="maximum value for tree based create methods (default: 1)")
 
 
@@ -421,7 +432,7 @@ class ParallelizationFactory(AFactory):
 
     @staticmethod
     def _create(args):
-        return SingleProcessFactory
+        return SingleProcessFactoy
 
     @staticmethod
     def add_options(parser):
@@ -458,8 +469,10 @@ def _create_logger(verbosity, config_file, workdir):
 
 def create_stats(n):
     """Create deap.tools.MultiStatistics object for n fitness values."""
+
     def val(i, ind):
         return ind.fitness.values[i]
+
     stats = dict()
     for i in range(n):
         stats['fit{}'.format(i)] = deap.tools.Statistics(toolz.partial(val, i))

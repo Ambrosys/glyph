@@ -12,7 +12,7 @@ extensions = [
     'sphinx.ext.pngmath',
 ]
 templates_path = ['_templates']
-autodoc_default_flags = ['members', 'show-inheritance', 'special-members', 'any']
+autodoc_default_flags = ['members']
 autodoc_member_order = 'bysource'
 
 source_suffix = ['.rst']
@@ -75,6 +75,7 @@ html_show_copyright = True
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3.5', None),
     'deap': ('http://deap.readthedocs.io/en/master/', None),
-    'numpy'  : ('http://docs.scipy.org/doc/numpy', None)
+    'np'  : ('http://docs.scipy.org/doc/numpy', None),
+    'scipy'  : ('http://docs.scipy.org/doc/scipy/reference', None)
 }
 default_role='any'

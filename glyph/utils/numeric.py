@@ -1,7 +1,6 @@
 import itertools
 import functools
 
-import toolz
 import numpy as np
 import scipy.integrate
 import scipy.optimize
@@ -98,22 +97,26 @@ def silent_numpy(func):
     return closure
 
 
-def hill_climb(fun, x0, args, **options):
+def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, rng=np.random):
     """Stochastic hill climber for constant optimization.
     Try self.directions different solutions per iteration to select a new best individual.
-    This iterates self.max_steps times.
+
+    :param fun: function to optimize
+    :param x0: initial guess
+    :param args: additional arguments to pass to fun
+    :param precision: maximum precision of x0
+    :param maxiter: maximum number of iteration before stopping
+    :param directions: number of directions to explore before doing a hill climb step
+    :param target: stop if fun(x) <= target
+    :param rng: (seeded) random number generator
+
+    :return: `scipy.optimize.OptimizeResult`
     """
-    rng = options.get("rng", np.random)
-    precision = options.get("precision", 5)
-    maxiter = options.get("maxiter", 5)
-    directions = options.get("directions", 5)
-    target = options.get("target", 0)
 
     res = scipy.optimize.OptimizeResult()
 
     def tweak(x):
-        """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))
-        """
+        """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))"""
         return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-precision)), precision)
 
     def f(x):
