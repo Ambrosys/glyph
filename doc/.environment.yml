@@ -14,3 +14,4 @@ dependencies:
   - scipy==0.18.1
   - sympy==1.0
   - toolz==0.8.1
+  - docutils <0.13.1
