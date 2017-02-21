@@ -8,7 +8,8 @@ glyph - symbolic regression tools
 
 |Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
 
-glyph is a library based on deap providing abstraction layers for symbolic regression problems.
+**glyph** is a python 3 library based on deap providing abstraction layers for symbolic regression problems.
+
 It comes with batteries included:
 
 - predefined primitive sets
@@ -18,7 +19,7 @@ It comes with batteries included:
 - boilerplate code for logging, checkpointing, break conditions and command line applications
 - rich set of algorithms
 
-glyph also includes a plug and play command line application glyph-remote which lets non-domain experts apply symbolic regression to their optimization tasks.
+glyph also includes a plug and play command line application **glyph-remote** which lets non-domain experts apply symbolic regression to their optimization tasks.
 
 .. warning::
     While fully usable, glyph is still pre-1.0 software and has **no** backwards compatibility guarantees until the 1.0 release occurs!
