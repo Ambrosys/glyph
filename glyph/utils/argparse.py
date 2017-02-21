@@ -1,7 +1,11 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 """Collection of helper functions for arparse."""
 
 import argparse
 import os
+
 
 def positive_int(string):
     """Check whether string is an integer greater than 0."""
@@ -37,8 +41,8 @@ def unit_interval(string):
 
 
 def ntuple(n, to_type=float):
+    """Check whether string is an n-tuple."""
     def evaluate(string):
-        """Check whether string is an n-tuple."""
         try:
             value = tuple(to_type(val) for val in string.split(','))
             if len(value) != n:
@@ -50,6 +54,7 @@ def ntuple(n, to_type=float):
 
 
 def readable_file(string):
+    """Check weather file is readable"""
     path = os.path.abspath(string)
     try:
         with open(path, 'r'):

@@ -160,9 +160,15 @@ def test_pickle_assessment_runner():
     assert arunner.__dict__ == brunner.__dict__
 
 
-def test_replace_nan():
-    assert assessment.replace_nan(np.nan) == np.infty
-    assert assessment.replace_nan([np.nan]) == [np.infty]
+@pytest.mark.parametrize("x", [[np.nan], np.array([np.nan]), np.nan])
+def test_replace_nan(x):
+    print(x)
+    x_clean = assessment.replace_nan(x)
+    assert isinstance(x_clean, type(x))
+    try:
+        assert np.nan not in x_clean
+    except:
+        assert not np.isnan(x_clean)
 
 
 def test__tt_flatten():

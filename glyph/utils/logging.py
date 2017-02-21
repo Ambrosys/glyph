@@ -1,3 +1,6 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 import os
 import sys
 import logging
@@ -29,10 +32,17 @@ def log_level(verbosity):
 
 
 def print_dict(p_func, d):
+    """
+    Pretty print a dictionary
+
+    :param p_func: printer to use (print or logging)
+    :type d: dict
+    """
     for k, v in sorted(d.items()):
         p_func('{} = {}'.format(k, v))
 
 
 def print_params(p_func, gp_config):
+    """Pretty print a glyph app config"""
     print_dict(p_func, gp_config)
     p_func('')

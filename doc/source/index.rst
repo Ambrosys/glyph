@@ -8,26 +8,47 @@ glyph - symbolic regression tools
 
 |Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
 
+**glyph** is a python 3 library based on deap providing abstraction layers for symbolic regression problems.
+
+It comes with batteries included:
+
+- predefined primitive sets
+- n-dimensional expression tree class
+- interfacing constant optimization to scipy.optimize
+- easy integration with joblib or dask.distributed
+- boilerplate code for logging, checkpointing, break conditions and command line applications
+- rich set of algorithms
+
+glyph also includes a plug and play command line application **glyph-remote** which lets non-domain experts apply symbolic regression to their optimization tasks.
+
 .. warning::
     While fully usable, glyph is still pre-1.0 software and has **no** backwards compatibility guarantees until the 1.0 release occurs!
 
 Content
 -------
-.. toctree::
-   :maxdepth: 2
-
-   usr/getting_started.rst
-   usr/concepts.rst
-   usr/parallel.rst
 
 .. toctree::
    :maxdepth: 1
 
-   usr/remote/glyph_remote.rst
-   usr/remote/tutorials/matlab.rst
+   usr/getting_started.rst
+   usr/concepts.rst
+   usr/glyph_remote.rst
+
+   Publications <usr/publications.rst>
+   About <usr/about.rst>
+
+Tutorials
++++++++++
+
+.. toctree::
+   :maxdepth: 1
+
+   usr/tutorials/parallel.rst
+   usr/tutorials/labview.rst
+   usr/tutorials/matlab.rst
 
 Development:
-------------
+++++++++++++
 Know what you're looking for & just need API details? View our auto-generated API documentation:
 
 .. toctree::
