@@ -1,3 +1,6 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 import itertools
 import functools
 
@@ -97,7 +100,7 @@ def silent_numpy(func):
     return closure
 
 
-def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, rng=np.random):
+def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, rng=np.random, **kwargs):
     """Stochastic hill climber for constant optimization.
     Try self.directions different solutions per iteration to select a new best individual.
 

@@ -1,3 +1,6 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 """Convenience classes and functions that allow you to quickly build gp apps."""
 
 import os

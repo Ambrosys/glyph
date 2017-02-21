@@ -1,3 +1,6 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 """Collection of helper functions for arparse."""
 
 import argparse

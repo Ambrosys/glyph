@@ -1,3 +1,6 @@
+# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
+# Licence: LGPL
+
 """Some usefull classes/functions for the fitness assessment part in gp problems."""
 
 import numpy as np
