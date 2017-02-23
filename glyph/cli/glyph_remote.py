@@ -94,7 +94,7 @@ def get_parser():
 
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
-    ass_group.add_argument('--maxiter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--max_iter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
@@ -123,7 +123,7 @@ def connect(ip, port):
 
 
 def handle_const_opt_config(args):
-    options = {'maxiter': args.maxiter_const_opt}
+    options = {'maxiter': args.max_iter_const_opt}
     if args.const_opt_method == 'hill_climb':
         options['directions'] = args.directions
         options['precision'] = args.precision
@@ -135,14 +135,12 @@ def handle_const_opt_config(args):
     return args
 
 def update_namespace(ns, up):
-    """Update the argparse.Namespace ns with a dictionairy up.
-    """
+    """Update the argparse.Namespace ns with a dictionairy up."""
     return argparse.Namespace(**{**vars(ns), **up})
 
 
 def handle_gpconfig(config, send, recv):
-    """Will try to load config from file or from remote and update the cli/default config accordingly.
-    """
+    """Will try to load config from file or from remote and update the cli/default config accordingly."""
     if config.cfile:
         with open(config.cfile, 'r') as cf:
             gpconfig = yaml.load(cf)
@@ -177,7 +175,6 @@ def build_pset_gp(primitives):
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True):
         """Contains assessment logic. Uses zmq connection to request evaluation.
-        Constant optimization is done using a stochastic hill climber.
         """
         self.send = send
         self.recv = recv
@@ -188,8 +185,7 @@ class RemoteAssessmentRunner:
             self.evaluate = glyph.utils.Memoize(self.evaluate)
 
     def evaluate(self, individual, *consts):
-        """Evaluate a single individual.
-        """
+        """Evaluate a single individual."""
         self.evaluations += 1
         payload = [str(t) for t in individual]
         for k, v in zip(individual.pset.constants, consts):
@@ -268,7 +264,6 @@ def make_remote_app():
 
 
 def main():
-
     app, args = make_remote_app()
     logger = logging.getLogger(__name__)
     print_params(logger.info, vars(args))
