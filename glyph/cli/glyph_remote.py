@@ -7,6 +7,7 @@ import logging
 import random
 import argparse
 import copy
+import itertools
 from functools import partial
 
 import zmq
@@ -21,8 +22,16 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import BreakCondition
 from glyph.assessment import tuple_wrap, const_opt_scalar
+from glyph.gp.individual import simplify_this
 import glyph.application
 import glyph.utils
+
+
+def partition(pred, iterable):
+    """Use a predicate to partition entries into false entries and true entries"""
+    # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+    t1, t2 = itertools.tee(iterable)
+    return itertools.filterfalse(pred, t1), filter(pred, t2)
 
 
 class RemoteApp(glyph.application.Application):
@@ -134,6 +143,7 @@ def handle_const_opt_config(args):
     args.options = options
     return args
 
+
 def update_namespace(ns, up):
     """Update the argparse.Namespace ns with a dictionairy up."""
     return argparse.Namespace(**{**vars(ns), **up})
@@ -181,13 +191,21 @@ class RemoteAssessmentRunner:
         self.consider_complexity = consider_complexity
         self.options = options
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
-        if caching:
-            self.evaluate = glyph.utils.Memoize(self.evaluate)
+        self.caching = caching
+        self.cache = {}
+
+    def predicate(self, ind):
+        """Does this individual need to be evaluated?"""
+        return self.caching and self._hash(ind) in self.cache
+
+    @staticmethod
+    def _hash(ind):
+        return json.dumps([str(simplify_this(t)) for t in ind])
 
     def evaluate(self, individual, *consts):
         """Evaluate a single individual."""
         self.evaluations += 1
-        payload = [str(t) for t in individual]
+        payload = [str(simplify_this(t)) for t in individual]
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
         self.send(dict(action="EXPERIMENT", payload=payload))
@@ -195,8 +213,7 @@ class RemoteAssessmentRunner:
         return error
 
     def measure(self, individual):
-        """Construct fitness for given individual.
-        """
+        """Construct fitness for given individual."""
         popt, error = const_opt_scalar(self.evaluate, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
         individual.popt = popt
         if self.consider_complexity:
@@ -207,11 +224,24 @@ class RemoteAssessmentRunner:
 
     def update_fitness(self, population, map=map):
         self.evaluations = 0
+
         invalid = [p for p in population if not p.fitness.valid]
-        fitnesses = map(self.measure, invalid)
-        for ind, fit in zip(invalid, fitnesses):
+
+        calculate, cached = map(list, partition(self.predicate, invalid))
+
+        cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
+        calculate_fitness = [self.measure(ind) for ind in calculate]
+
+        # save to cache
+        for key, fit in zip(map(self._hash, calculate), calculate_fitness):
+            self.cache[key] = fit
+
+        # assign fitness to individuals
+        for ind, fit in zip(cached + calculate, cached_fitness + calculate_fitness):
             ind.fitness.values = fit
+
         return self.evaluations
+
 
     def __call__(self, population):
         return self.update_fitness(population)

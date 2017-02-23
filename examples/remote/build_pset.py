@@ -15,12 +15,13 @@ def close_function(func, value):
         return res
     return closure
 
+m = {'Mul': 'multiply', 'Sub': 'subtract', 'Add': 'add'}
 
 def build_pset(primitives):
     pset = deap.gp.PrimitiveSet('main', arity=0)
     for fname, arity in primitives.items():
         if arity > 0:
-            func = getattr(np, fname)
+            func = getattr(np, m.get(fname, fname))
             # func = close_function(func, 1)
             pset.addPrimitive(func, arity, name=fname)
         elif arity == 0:
@@ -28,18 +29,4 @@ def build_pset(primitives):
             pset.arguments.append(fname)
         else:
             pass
-    return pset
-
-
-def build_pset_gp(primitives):
-    pset = deap.gp.PrimitiveSet('main', arity=0)
-    for fname, arity in primitives.items():
-        if arity > 0:
-            func = lambda *args: args
-            pset.addPrimitive(func, arity, name=fname)
-        elif arity == 0:
-            pset.addTerminal(fname, name=fname)
-            pset.arguments.append(fname)
-        else:
-            raise ValueError("Wrong arity in primitive specification.")
     return pset
