@@ -13,6 +13,30 @@ import itertools
 import numpy as np
 
 
+#def len_subtree(i):
+#    sl_left = ind.searchSubtree(i+1)
+#    len_left = sl_left.stop - sl_left.start
+#    sl_right = ind.searchSubtree(sl_left.stop)
+#    len_right = sl_right.stop - sl_right.start
+#    return len_left, len_right
+
+class StructConst(deap.gp.Primitive):
+    def __init__(self, func):
+        """
+        :param func: evaluate left and right subtree and assign a constant.
+        """
+        self.func = func
+        super().__init__("SC", [deap.gp.__type__]*2, deap.gp.__type__)
+
+    @staticmethod
+    def get_len(expr):
+        return sum((len(x.split(",")) for x in expr.split("(")))
+
+    def format(self, *args):
+        left, right = args
+        return str(self.func(self.get_len(left), self.get_len(right)))
+
+
 def _build_args_string(pset, consts):
     args = ','.join(arg for arg in pset.args)
     if consts:

@@ -109,3 +109,43 @@ def test_nd_tree_phenotype(case):
 
     out = f(*x)
     assert np.allclose(out, res)
+
+get_len_case = (
+    ("x_0", 1),
+    ("exp(x_0)", 2),
+    ("Add(x_0, x_0)", 3),
+    ("Add(x_0, Add(x_0, x_0))", 5),
+)
+
+@pytest.mark.parametrize("case", get_len_case)
+def test_get_len(case):
+    expr, x = case
+    assert StructConst.get_len(expr) == x
+
+
+def test_struct_const_format():
+    f = lambda x, y: x + y
+    sc = StructConst(f)
+
+    left = "Add(x0, x0)"
+    right = "y0"
+
+    assert sc.format(left, right) == str(4)
+
+@pytest.mark.parametrize("case", get_len_case)
+def test_struct_const_repr(case):
+    subexpr, _ = case
+    pset = numpy_primitive_set(1)
+    f = lambda x, y: 0
+    sc = StructConst(f)
+    pset._add(sc)
+    pset.prims_count += 1
+
+    class Ind(AExpressionTree):
+        pset = pset
+
+    expr = "Add(x_0, SC({subexpr}, {subexpr}))".format(subexpr=subexpr)
+    ind = Ind.from_string(expr)
+
+    func = numpy_phenotype(ind)
+    assert func(1) == 1
