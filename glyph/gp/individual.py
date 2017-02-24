@@ -20,6 +20,18 @@ import numpy as np
 #    len_right = sl_right.stop - sl_right.start
 #    return len_left, len_right
 
+
+def sc_qout(x, y):
+    """SC is the quotient of the number of nodes of its left and right child-trees x and y"""
+    return x / y
+
+
+def sc_mmqout(x, y, cmin=-1, cmax=1):
+    """SC is the minimum-maximum quotient of the number of nodes of both
+    child-trees x and y mapped into the constant interval [cmin, cmax]"""
+    return cmin + min(x, y)/max(x, y) * (cmax - cmin)
+
+
 class StructConst(deap.gp.Primitive):
     def __init__(self, func):
         """
@@ -36,6 +48,17 @@ class StructConst(deap.gp.Primitive):
         left, right = args
         return str(self.func(self.get_len(left), self.get_len(right)))
 
+
+def add_sc(pset, func):
+    """Adds a structural constant to a given primitive set.
+    :param func: `callable(x, y) -> float` where x and y are the expressions of the left and right subtree
+    :param pset: You may want to use `sympy_primitive_set` or `numpy_primitive_set` without symbolic constants.
+    :type pset: `deap.gp.PrimitiveSet`
+    """
+    sc = StructConst(func)
+    pset._add(sc)
+    pset.prims_count += 1
+    return pset
 
 def _build_args_string(pset, consts):
     args = ','.join(arg for arg in pset.args)
