@@ -41,8 +41,9 @@ class StructConst(deap.gp.Primitive):
         super().__init__("SC", [deap.gp.__type__]*2, deap.gp.__type__)
 
     @staticmethod
-    def get_len(expr):
-        return sum((len(x.split(",")) for x in expr.split("(")))
+    def get_len(expr, tokens=("(,")):
+        regex = "|".join("\\{}".format(t) for t in tokens)
+        return len(re.split(regex, expr))
 
     def format(self, *args):
         left, right = args
