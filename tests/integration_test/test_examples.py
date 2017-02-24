@@ -16,7 +16,7 @@ def test_example(file):
     error_code = os.system("python {} -n 1 -p 4".format(file))
     assert error_code == 0
 
-
+@slow
 def test_run_glyph_remote():
     example = os.path.abspath(os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py"))
     exp = subprocess.Popen("python {}".format(example), shell=True)

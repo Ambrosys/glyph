@@ -135,14 +135,12 @@ def test_struct_const_format():
 @pytest.mark.parametrize("case", get_len_case)
 def test_struct_const_repr(case):
     subexpr, _ = case
-    pset = numpy_primitive_set(1)
+    this_pset = numpy_primitive_set(1)
     f = lambda x, y: 0
-    sc = StructConst(f)
-    pset._add(sc)
-    pset.prims_count += 1
+    this_pset = add_sc(this_pset, f)
 
     class Ind(AExpressionTree):
-        pset = pset
+        pset = this_pset
 
     expr = "Add(x_0, SC({subexpr}, {subexpr}))".format(subexpr=subexpr)
     ind = Ind.from_string(expr)
