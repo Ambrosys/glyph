@@ -49,8 +49,17 @@ class EventLoop(object):
             return self.shutdown()
         elif action == "EXPERIMENT":
             return self.evaluate(request['payload'])
+        elif action == "EXPERIMENT_ALL":
+            return self.evaluate_all(request['payload'])
         else:
             raise ValueError("Unknown action")
+
+    def evaluate_all(self, pop):
+        fitnesses = []
+        for ind in pop:
+            func = [compile(t, self.pset) for t in ind]
+            fitnesses.append(self.experiment(func))
+        return dict(fitness=fitnesses)
 
     def evaluate(self, individual):
         func = [compile(t, self.pset) for t in individual]

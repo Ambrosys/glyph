@@ -9,6 +9,10 @@ import argparse
 import copy
 import itertools
 from functools import partial
+from threading import Thread
+import concurrent.futures
+from queue import Queue
+from time import sleep
 
 import zmq
 import yaml
@@ -184,6 +188,42 @@ def build_pset_gp(primitives):
     return pset
 
 
+class MyQueue(Queue):
+    def __init__(self, send, recv, result_queue, expect, chunk_size=1):
+        self.recv = recv
+        self.send = send
+        self.chunk_size = min(chunk_size, expect)
+        self.result_queue = result_queue
+        self.expect = expect
+        super().__init__()
+
+    def run(self):
+        payloads = []
+        keys = []
+
+        def process(keys, payloads):
+            self.send(dict(action="EXPERIMENT_ALL", payload=payloads))
+            fitnesses = self.recv()["fitness"]
+            for key,fit in zip(keys, fitnesses):
+                self.result_queue[key] = fit
+
+        while self.expect > 0:
+            key_payload = self.get()
+
+            print(self.qsize())
+            if key_payload is None:
+                self.expect -= 1
+            else:
+                key,payload = key_payload
+                payloads.append(payload)
+                keys.append(key)
+            if len(payloads) == self.chunk_size:
+                process(keys, payloads)
+                payloads = []
+                keys = []
+        if payloads:
+            process(keys, payloads)
+
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True, send_all=False):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
@@ -196,6 +236,7 @@ class RemoteAssessmentRunner:
         self.cache = {}
         self.send_all = send_all
         self.make_str = lambda i: str(simplify_this(i)) if simplify else str
+        self.result_queue = {}
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -204,23 +245,35 @@ class RemoteAssessmentRunner:
     def _hash(self, ind):
         return json.dumps([self.make_str(t) for t in ind])
 
+    def _evaluate_callback():
+        while True:
+            payload = self._queue.get()
+            if payload == None:
+                break
+
+        data = self.recv()["fitness"]
+
     def evaluate_single(self, individual, *consts):
         """Evaluate a single individual."""
-        cache = {}
         payload = [self.make_str(t) for t in individual]
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
-        if  key not in cache:
-            self.send(dict(action="EXPERIMENT", payload=payload))
-            cache[key] = self.recv()["fitness"]
-            self.evaluations += 1
-        return cache[key]
+        self.queue.put((key, payload))
+        self.evaluations += 1
+
+        result = None
+        while result is None:
+            sleep(1)
+            result = self.result_queue.get(key)
+        return result
 
     def measure(self, individual):
         """Construct fitness for given individual."""
         popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        print("adding none")
+        self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
             fitness = error, sum(map(len, individual))
@@ -247,7 +300,16 @@ class RemoteAssessmentRunner:
         if self.send_all:
             calculate_fitness = self.evaluate_all(population)
         else:
-            calculate_fitness = [self.measure(ind) for ind in calculate]
+            calculate_fitness = []
+            self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate))
+            thread = Thread(target=self.queue.run)
+            thread.start()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(calculate)) as executor:
+                futures = {executor.submit(self.measure, ind): ind for ind in calculate}
+                for future in futures:
+                    calculate_fitness.append(future.result())
+            thread.join()
+            #calculate_fitness = [self.measure(ind) for ind in calculate]
 
         # save to cache
         for key, fit in zip(map(self._hash, calculate), calculate_fitness):
