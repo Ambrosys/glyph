@@ -183,7 +183,7 @@ def build_pset_gp(primitives):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True):
         """Contains assessment logic. Uses zmq connection to request evaluation.
         """
         self.send = send
@@ -193,24 +193,28 @@ class RemoteAssessmentRunner:
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         self.caching = caching
         self.cache = {}
+        self.make_str = lambda i: str(simplify_this(i)) if simplify else str
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
         return self.caching and self._hash(ind) in self.cache
 
-    @staticmethod
-    def _hash(ind):
-        return json.dumps([str(simplify_this(t)) for t in ind])
+    def _hash(self, ind):
+        return json.dumps([self.make_str(t) for t in ind])
 
     def evaluate(self, individual, *consts):
         """Evaluate a single individual."""
-        self.evaluations += 1
-        payload = [str(simplify_this(t)) for t in individual]
+        cache = {}
+        payload = [self.make_str(t) for t in individual]
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
-        self.send(dict(action="EXPERIMENT", payload=payload))
-        error = self.recv()["fitness"]
-        return error
+
+        key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
+        if  key not in cache:
+            self.send(dict(action="EXPERIMENT", payload=payload))
+            cache[key] = self.recv()["fitness"]
+            self.evaluations += 1
+        return cache[key]
 
     def measure(self, individual):
         """Construct fitness for given individual."""
