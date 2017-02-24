@@ -245,7 +245,7 @@ class RemoteAssessmentRunner:
 
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
         if self.send_all:
-            calculate_fitness = evaluate_all(pop)
+            calculate_fitness = self.evaluate_all(population)
         else:
             calculate_fitness = [self.measure(ind) for ind in calculate]
 
