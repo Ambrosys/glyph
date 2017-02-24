@@ -53,7 +53,8 @@ class RemoteApp(glyph.application.Application):
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
         gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=cp['args'].hill_steps, directions=cp['args'].directions,
-                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching)
+                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching,
+                                         send_all=cp['args'].send_all, simplify=cp['args'].simplify)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -100,7 +101,8 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-
+    ass_group.add_argument('--send_all', type=bool, default=False, help='Send all invalid individuals at once. (default: False)')
+    ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
     ass_group.add_argument('--max_iter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
@@ -183,9 +185,8 @@ def build_pset_gp(primitives):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True):
-        """Contains assessment logic. Uses zmq connection to request evaluation.
-        """
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True, send_all=False):
+        """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
@@ -193,6 +194,7 @@ class RemoteAssessmentRunner:
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         self.caching = caching
         self.cache = {}
+        self.send_all = send_all
         self.make_str = lambda i: str(simplify_this(i)) if simplify else str
 
     def predicate(self, ind):
@@ -202,7 +204,7 @@ class RemoteAssessmentRunner:
     def _hash(self, ind):
         return json.dumps([self.make_str(t) for t in ind])
 
-    def evaluate(self, individual, *consts):
+    def evaluate_single(self, individual, *consts):
         """Evaluate a single individual."""
         cache = {}
         payload = [self.make_str(t) for t in individual]
@@ -218,13 +220,21 @@ class RemoteAssessmentRunner:
 
     def measure(self, individual):
         """Construct fitness for given individual."""
-        popt, error = const_opt_scalar(self.evaluate, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
         individual.popt = popt
         if self.consider_complexity:
             fitness = error, sum(map(len, individual))
         else:
             fitness = error,
         return fitness
+
+    def evaluate_all(self, pop):
+        payload = [[self.make_str(t) for t in ind] for ind in pop]
+        self.send(dict(action="EXPERIMENT_ALL", payload=payload))
+        errors = self.recv()["fitness"]
+        self.evaluations += len(payload)
+        fitnesses = zip(errors, sum(map(len, individual)))
+        return list(fitnesses)
 
     def update_fitness(self, population, map=map):
         self.evaluations = 0
@@ -234,7 +244,10 @@ class RemoteAssessmentRunner:
         calculate, cached = map(list, partition(self.predicate, invalid))
 
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
-        calculate_fitness = [self.measure(ind) for ind in calculate]
+        if self.send_all:
+            calculate_fitness = evaluate_all(pop)
+        else:
+            calculate_fitness = [self.measure(ind) for ind in calculate]
 
         # save to cache
         for key, fit in zip(map(self._hash, calculate), calculate_fitness):
@@ -290,7 +303,8 @@ def make_remote_app():
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity, caching=args.caching)
+        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity,
+                                                   caching=args.caching, send_all=args.send_all, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
