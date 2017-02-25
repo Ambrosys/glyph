@@ -216,7 +216,7 @@ class MyQueue(Queue):
         keys = []
 
         def process(keys, payloads):
-            self.send(dict(action="EXPERIMENT_ALL", payload=payloads))
+            self.send(dict(action="EXPERIMENT", payload=payloads))
             fitnesses = self.recv()["fitness"]
             for key,fit in zip(keys, fitnesses):
                 self.logger.debug("Writing result for key: {}".format(key))
@@ -293,14 +293,6 @@ class RemoteAssessmentRunner:
         else:
             fitness = error,
         return fitness
-
-    def evaluate_all(self, pop):
-        payload = [[self.make_str(t) for t in ind] for ind in pop]
-        self.send(dict(action="EXPERIMENT_ALL", payload=payload))
-        errors = self.recv()["fitness"]
-        self.evaluations += len(payload)
-        fitnesses = zip(errors, sum(map(len, individual)))
-        return list(fitnesses)
 
     def update_fitness(self, population, map=map):
         self.evaluations = 0
