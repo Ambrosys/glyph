@@ -22,7 +22,7 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import BreakCondition
 from glyph.assessment import tuple_wrap, const_opt_scalar
-from glyph.gp.individual import simplify_this
+from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
@@ -110,6 +110,10 @@ def get_parser():
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
+    ass_group.add_argument('--structural_constants', type=bool, default=False, help='Make use of structural constants. (default: False)')
+    ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
+    ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
+
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
@@ -170,12 +174,12 @@ def handle_gpconfig(config, send, recv):
     return update_namespace(config, gpconfig)
 
 
-def build_pset_gp(primitives):
+def build_pset_gp(args):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
     pset.constants = set()
-    for fname, arity in primitives.items():
+    for fname, arity in args.primitives.items():
         if arity > 0:
             func = lambda *args: args
             pset.addPrimitive(func, arity, name=fname)
@@ -187,6 +191,10 @@ def build_pset_gp(primitives):
             pset.constants.add(fname)
     if len(pset.terminals) == 0:
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
+
+    if args.structural_constants:
+        f = partial(sc_mmqout, cmin=args.sc_min, cmax=args.sc_max)
+        pset = add_sc(pset, f)
     return pset
 
 
@@ -296,7 +304,7 @@ def make_remote_app():
     else:
         args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
-            pset = build_pset_gp(args.primitives)
+            pset = build_pset_gp(args)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
         Individual.pset = pset
