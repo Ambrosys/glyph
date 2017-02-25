@@ -178,12 +178,12 @@ def handle_gpconfig(config, send, recv):
     return update_namespace(config, gpconfig)
 
 
-def build_pset_gp(args):
+def build_pset_gp(primitives, structural_constants=False):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
     pset.constants = set()
-    for fname, arity in args.primitives.items():
+    for fname, arity in primitives.items():
         if arity > 0:
             func = lambda *args: args
             pset.addPrimitive(func, arity, name=fname)
@@ -196,7 +196,7 @@ def build_pset_gp(args):
     if len(pset.terminals) == 0:
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
 
-    if args.structural_constants:
+    if structural_constants:
         f = partial(sc_mmqout, cmin=args.sc_min, cmax=args.sc_max)
         pset = add_sc(pset, f)
     return pset
@@ -363,7 +363,7 @@ def make_remote_app():
     else:
         args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
-            pset = build_pset_gp(args)
+            pset = build_pset_gp(args.primitives, args.structural_constants)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
         Individual.pset = pset
