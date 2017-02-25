@@ -38,7 +38,7 @@ def test_constraint_decorator(i, NumpyIndividual):
 
     [this_mock] = apply_constraints([this_mock], build_constraints(ns))
 
-    with pytest.raises(RuntimeWarning):
+    with pytest.raises(UserWarning):
         this_mock(*[ind]*i)
 
 
@@ -55,5 +55,5 @@ def test_constraint_in_nd(NumpyIndividual):
 
     nd_ind = NDTree([ind]*2)
     print(nd_ind)
-    with pytest.raises(RuntimeWarning):
+    with pytest.raises(UserWarning):
         mate(nd_ind)

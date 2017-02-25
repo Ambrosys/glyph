@@ -265,15 +265,15 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         return super(AExpressionTree, cls).from_string(string, cls.pset)
 
     @classmethod
+    def create(cls, gen_method=deap.gp.genHalfAndHalf, min=1, max=4):
+        return cls(gen_method(cls.pset, min_=min, max_=max))
+
+    @classmethod
     def create_population(cls, size, gen_method=deap.gp.genHalfAndHalf, min=1, max=4):
         """Create a list of individuals of class Individual."""
         if size < 0:
             raise RuntimeError('Cannot create population of size {}'.format(size))
-        toolbox = deap.base.Toolbox()
-        toolbox.register("expr", gen_method, pset=cls.pset, min_=min, max_=max)
-        toolbox.register("individual", deap.tools.initIterate, cls, toolbox.expr)
-        toolbox.register("population", deap.tools.initRepeat, list, toolbox.individual)
-        return toolbox.population(n=size)
+        return [cls.create(gen_method=gen_method, min=min, max=max) for _ in range(size)]
 
 
 def nd_phenotype(nd_tree, backend=sympy_phenotype):

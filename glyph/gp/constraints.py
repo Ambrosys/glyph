@@ -40,9 +40,9 @@ def build_constraints(null_space, n_trials=10):
     :return: list of constraint decorators
     """
     def reject(operator):
-        def inner(*inds):
+        def inner(*inds, **kw):
             for i in range(n_trials):
-                out = operator(*inds)
+                out = operator(*inds, **kw)
                 if isinstance(out, (list, tuple)):
                     t = out[0]
                 else:
