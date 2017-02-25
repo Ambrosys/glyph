@@ -23,6 +23,7 @@ from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import BreakCondition
 from glyph.assessment import tuple_wrap, const_opt_scalar
 from glyph.gp.individual import simplify_this
+from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
 
@@ -114,6 +115,11 @@ def get_parser():
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
     break_condition.add_argument('--max_iter_total', type=float, default=np.infty, help='Target error used in stopping criteria (default: np.infty)')
+
+    constraints = parser.add_argument_group('constraints')
+    constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
+    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: False)')
+    constraints.add_argument('--constraints_infty', type=bool, default=True, help='Discard individuals with infinities (default: True)')
     return parser
 
 
@@ -297,10 +303,10 @@ def make_remote_app():
         mate = glyph.application.MateFactory.create(args, Individual)
         mutate = glyph.application.MutateFactory.create(args, Individual)
         select = glyph.application.SelectFactory.create(args)
-
-        constraints = build_constraints(args.null_space)
-        mate, mutate, select = apply_constraints([mate, mutate, select], constraints=constraints)
         create_method = glyph.application.CreateFactory.create(args, Individual)
+
+        ns = NullSpace(zero=args.constraints_zero, constant=args.constraints_constant, infty=args.constraints_infty)
+        mate, mutate = apply_constraints([mate, mutate], constraints=build_constraints(ns))
 
         ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
         ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)

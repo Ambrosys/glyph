@@ -12,6 +12,7 @@ import functools
 import itertools
 import numpy as np
 
+import glyph.utils
 
 #def len_subtree(i):
 #    sl_left = ind.searchSubtree(i+1)
@@ -398,6 +399,7 @@ def stringify_for_sympy(f):
     return string
 
 
+@glyph.utils.Memoize
 def simplify_this(expr):
     """
     :param expr:

@@ -1,8 +1,6 @@
 # Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
 # Licence: LGPL
 
-from functools import wraps
-
 from sympy import Float
 
 from .individual import simplify_this
@@ -42,14 +40,17 @@ def build_constraints(null_space, n_trials=10):
     :return: list of constraint decorators
     """
     def reject(operator):
-        #@wraps(operator)
         def inner(*inds):
             for i in range(n_trials):
                 out = operator(*inds)
-                if not out in null_space:
+                if isinstance(out, (list, tuple)):
+                    t = out[0]
+                else:
+                    t = out
+                if not t in null_space:
                     break
             else:
-                raise RuntimeWarning("Individual after {} trials still in null space".format(out))
+                raise UserWarning("Individual {} after {} trials still in null space".format(out, n_trials))
             return out
         return inner
     return [reject]
