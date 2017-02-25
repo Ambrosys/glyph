@@ -102,7 +102,7 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--send_all', type=bool, default=False, help='Send all invalid individuals at once. (default: False)')
+    ass_group.add_argument('--send_all', action='store_true', default=False, help='Send all invalid individuals at once. (default: False)')
     ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
@@ -110,7 +110,7 @@ def get_parser():
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
-    ass_group.add_argument('--structural_constants', type=bool, default=False, help='Make use of structural constants. (default: False)')
+    ass_group.add_argument('--structural_constants', action='store_true', default=False, help='Make use of structural constants. (default: False)')
     ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
     ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
 
