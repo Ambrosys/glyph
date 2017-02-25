@@ -9,6 +9,10 @@ import argparse
 import copy
 import itertools
 from functools import partial, wraps
+from threading import Thread
+import concurrent.futures
+from queue import Queue
+from time import sleep
 
 import zmq
 import yaml
@@ -174,12 +178,12 @@ def handle_gpconfig(config, send, recv):
     return update_namespace(config, gpconfig)
 
 
-def build_pset_gp(args):
+def build_pset_gp(primitives, structural_constants=False):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
     pset.constants = set()
-    for fname, arity in args.primitives.items():
+    for fname, arity in primitives.items():
         if arity > 0:
             func = lambda *args: args
             pset.addPrimitive(func, arity, name=fname)
@@ -192,11 +196,45 @@ def build_pset_gp(args):
     if len(pset.terminals) == 0:
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
 
-    if args.structural_constants:
+    if structural_constants:
         f = partial(sc_mmqout, cmin=args.sc_min, cmax=args.sc_max)
         pset = add_sc(pset, f)
     return pset
 
+
+class MyQueue(Queue):
+    def __init__(self, send, recv, result_queue, expect):
+        self.recv = recv
+        self.send = send
+        self.result_queue = result_queue
+        self.expect = expect
+        self.logger = logging.getLogger(self.__class__.__name__)
+        super().__init__()
+
+    def run(self):
+        payloads = []
+        keys = []
+
+        def process(keys, payloads):
+            self.send(dict(action="EXPERIMENT", payload=payloads))
+            fitnesses = self.recv()["fitness"]
+            for key,fit in zip(keys, fitnesses):
+                self.logger.debug("Writing result for key: {}".format(key))
+                self.result_queue[key] = fit
+
+        while self.expect > 0:
+            key_payload = self.get()
+
+            if key_payload is None:
+                self.expect -= 1
+            else:
+                key,payload = key_payload
+                payloads.append(payload)
+                keys.append(key)
+            if len(payloads) == self.expect:
+                process(keys, payloads)
+                payloads = []
+                keys = []
 
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True, send_all=False):
@@ -210,6 +248,8 @@ class RemoteAssessmentRunner:
         self.cache = {}
         self.send_all = send_all
         self.make_str = lambda i: str(simplify_this(i)) if simplify else str
+        self.result_queue = {}
+        #self.logger = logging.getLogger(self.__class__.__name__)
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -218,37 +258,41 @@ class RemoteAssessmentRunner:
     def _hash(self, ind):
         return json.dumps([self.make_str(t) for t in ind])
 
+    def _evaluate_callback():
+        while True:
+            payload = self._queue.get()
+            if payload == None:
+                break
+
+        data = self.recv()["fitness"]
+
     def evaluate_single(self, individual, *consts):
         """Evaluate a single individual."""
-        cache = {}
         payload = [self.make_str(t) for t in individual]
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
-        if  key not in cache:
-            self.send(dict(action="EXPERIMENT", payload=payload))
-            cache[key] = self.recv()["fitness"]
-            self.evaluations += 1
-        return cache[key]
+        self.queue.put((key, payload))
+        self.evaluations += 1
+
+        result = None
+        while result is None:
+            sleep(0.1)
+            #self.logger.debug("Waiting for result for key: {}".format(key))
+            result = self.result_queue.get(key)
+        return result
 
     def measure(self, individual):
         """Construct fitness for given individual."""
         popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
             fitness = error, sum(map(len, individual))
         else:
             fitness = error,
         return fitness
-
-    def evaluate_all(self, pop):
-        payload = [[self.make_str(t) for t in ind] for ind in pop]
-        self.send(dict(action="EXPERIMENT_ALL", payload=payload))
-        errors = self.recv()["fitness"]
-        self.evaluations += len(payload)
-        fitnesses = zip(errors, sum(map(len, individual)))
-        return list(fitnesses)
 
     def update_fitness(self, population, map=map):
         self.evaluations = 0
@@ -258,10 +302,17 @@ class RemoteAssessmentRunner:
         calculate, cached = map(list, partition(self.predicate, invalid))
 
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
-        if self.send_all:
-            calculate_fitness = self.evaluate_all(population)
-        else:
-            calculate_fitness = [self.measure(ind) for ind in calculate]
+        calculate_fitness = []
+        if len(calculate) > 0:
+            self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate))
+            thread = Thread(target=self.queue.run)
+            thread.start()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(calculate)) as executor:
+                futures = {executor.submit(self.measure, ind): ind for ind in calculate}
+                for future in futures:
+                    calculate_fitness.append(future.result())
+            thread.join()
+            del self.queue
 
         # save to cache
         for key, fit in zip(map(self._hash, calculate), calculate_fitness):
@@ -304,7 +355,7 @@ def make_remote_app():
     else:
         args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
-            pset = build_pset_gp(args)
+            pset = build_pset_gp(args.primitives, args.structural_constants)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
         Individual.pset = pset

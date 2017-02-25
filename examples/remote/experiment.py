@@ -52,10 +52,12 @@ class EventLoop(object):
         else:
             raise ValueError("Unknown action")
 
-    def evaluate(self, individual):
-        func = [compile(t, self.pset) for t in individual]
-        fitness = self.experiment(func)
-        return dict(fitness=fitness)
+    def evaluate(self, pop):
+        fitnesses = []
+        for ind in pop:
+            func = [compile(t, self.pset) for t in ind]
+            fitnesses.append(self.experiment(func))
+        return dict(fitness=fitnesses)
 
 
 class Experiment(object):
