@@ -222,11 +222,13 @@ class MyQueue(Queue):
                 self.logger.debug("Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
-        while self.expect > 0:
+        while True:
             key_payload = self.get()
 
             if key_payload is None:
                 self.expect -= 1
+                if self.expect == 0:
+                    break
             else:
                 key,payload = key_payload
                 payloads.append(payload)
