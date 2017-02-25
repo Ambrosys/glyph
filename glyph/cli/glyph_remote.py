@@ -8,7 +8,7 @@ import random
 import argparse
 import copy
 import itertools
-from functools import partial
+from functools import partial, wraps
 
 import zmq
 import yaml
@@ -297,7 +297,11 @@ def make_remote_app():
         mate = glyph.application.MateFactory.create(args, Individual)
         mutate = glyph.application.MutateFactory.create(args, Individual)
         select = glyph.application.SelectFactory.create(args)
+
+        constraints = build_constraints(args.null_space)
+        mate, mutate, select = apply_constraints([mate, mutate, select], constraints=constraints)
         create_method = glyph.application.CreateFactory.create(args, Individual)
+
         ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
         ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
