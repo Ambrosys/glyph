@@ -189,12 +189,12 @@ def build_pset_gp(primitives):
 
 
 class MyQueue(Queue):
-    def __init__(self, send, recv, result_queue, expect, chunk_size=1):
+    def __init__(self, send, recv, result_queue, expect):
         self.recv = recv
         self.send = send
-        self.chunk_size = min(chunk_size, expect)
         self.result_queue = result_queue
         self.expect = expect
+        self.logger = logging.getLogger(self.__class__.__name__)
         super().__init__()
 
     def run(self):
@@ -205,24 +205,22 @@ class MyQueue(Queue):
             self.send(dict(action="EXPERIMENT_ALL", payload=payloads))
             fitnesses = self.recv()["fitness"]
             for key,fit in zip(keys, fitnesses):
+                self.logger.debug("Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
         while self.expect > 0:
             key_payload = self.get()
 
-            print(self.qsize())
             if key_payload is None:
                 self.expect -= 1
             else:
                 key,payload = key_payload
                 payloads.append(payload)
                 keys.append(key)
-            if len(payloads) == self.chunk_size:
+            if len(payloads) == self.expect:
                 process(keys, payloads)
                 payloads = []
                 keys = []
-        if payloads:
-            process(keys, payloads)
 
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True, send_all=False):
@@ -237,6 +235,7 @@ class RemoteAssessmentRunner:
         self.send_all = send_all
         self.make_str = lambda i: str(simplify_this(i)) if simplify else str
         self.result_queue = {}
+        #self.logger = logging.getLogger(self.__class__.__name__)
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -265,14 +264,14 @@ class RemoteAssessmentRunner:
 
         result = None
         while result is None:
-            sleep(1)
+            sleep(0.1)
+            #self.logger.debug("Waiting for result for key: {}".format(key))
             result = self.result_queue.get(key)
         return result
 
     def measure(self, individual):
         """Construct fitness for given individual."""
         popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
-        print("adding none")
         self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
@@ -297,10 +296,8 @@ class RemoteAssessmentRunner:
         calculate, cached = map(list, partition(self.predicate, invalid))
 
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
-        if self.send_all:
-            calculate_fitness = self.evaluate_all(population)
-        else:
-            calculate_fitness = []
+        calculate_fitness = []
+        if len(calculate) > 0:
             self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate))
             thread = Thread(target=self.queue.run)
             thread.start()
@@ -309,7 +306,7 @@ class RemoteAssessmentRunner:
                 for future in futures:
                     calculate_fitness.append(future.result())
             thread.join()
-            #calculate_fitness = [self.measure(ind) for ind in calculate]
+            del self.queue
 
         # save to cache
         for key, fit in zip(map(self._hash, calculate), calculate_fitness):
