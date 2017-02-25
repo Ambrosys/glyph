@@ -43,15 +43,15 @@ two members:
 
 The possible action values are:
 
-+-------------------+-----------------+----------------------------+
-| Action name       | Payload         | Expected return Value      |
-+===================+=================+============================+
-| *CONFIG*          | –               | config settings            |
-+-------------------+-----------------+----------------------------+
-| *EXPERIMENT*      | expression      | fitness value(s)           |
-+-------------------+-----------------+----------------------------+
-| *SHUTDOWN*        | –               | –                          |
-+-------------------+-----------------+----------------------------+
++-------------------+--------------------+----------------------------+
+| Action name       | Payload            | Expected return Value      |
++===================+====================+============================+
+| *CONFIG*          | –                  | config settings            |
++-------------------+--------------------+----------------------------+
+| *EXPERIMENT*      | list of expressions| list of fitness value(s)           |
++-------------------+--------------------+----------------------------+
+| *SHUTDOWN*        | –                  | –                          |
++-------------------+--------------------+----------------------------+
 
 The config action is performed prior to the evolutionary loop. Entering
 the loop, for every discovered solution an *experiment* action will be

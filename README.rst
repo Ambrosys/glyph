@@ -1,13 +1,22 @@
-glyph
-=====
+glyph - symbolic regression tools
+=================================
 
 |Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
 
-Features
---------
-- Batteries included: no need to write boiler-plate code to setup symbolic regression problems.
-- Integrated constant optimization
-- Remote evaluation via glyph-remote useful for real world setups
+**glyph** is a python 3 library based on deap providing abstraction layers for symbolic regression problems.
+
+It comes with batteries included:
+
+- predefined primitive sets
+- n-dimensional expression tree class
+- symbolic and structural constants
+- interfacing constant optimization to scipy.optimize
+- easy integration with joblib or dask.distributed
+- symbolic constraints
+- boilerplate code for logging, checkpointing, break conditions and command line applications
+- rich set of algorithms
+
+glyph also includes a plug and play command line application **glyph-remote** which lets non-domain experts apply symbolic regression to their optimization tasks.
 
 Installation
 ------------
