@@ -3,7 +3,7 @@
 
 from sympy import Float
 
-from .individual import simplify_this
+from .individual import simplify_this, AExpressionTree
 
 
 class NullSpace:    # todo documentation
@@ -43,10 +43,12 @@ def build_constraints(null_space, n_trials=10):
         def inner(*inds, **kw):
             for i in range(n_trials):
                 out = operator(*inds, **kw)
-                if isinstance(out, (list, tuple)):
+                if isinstance(out, AExpressionTree):  # can this be done w/o type checking?
+                    t = out
+                elif isinstance(out, (list, tuple)):
                     t = out[0]
                 else:
-                    t = out
+                    raise RuntimeError
                 if not t in null_space:
                     break
             else:

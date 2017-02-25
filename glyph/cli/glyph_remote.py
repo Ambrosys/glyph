@@ -306,7 +306,7 @@ def make_remote_app():
         create_method = glyph.application.CreateFactory.create(args, Individual)
 
         ns = NullSpace(zero=args.constraints_zero, constant=args.constraints_constant, infty=args.constraints_infty)
-        mate, mutate = apply_constraints([mate, mutate], constraints=build_constraints(ns))
+        mate, mutate, Individual.create = apply_constraints([mate, mutate, Individual.create], constraints=build_constraints(ns))
 
         ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
         ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)
