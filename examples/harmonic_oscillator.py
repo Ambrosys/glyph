@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+from functools import partial
 
 import deap
 
@@ -38,7 +39,7 @@ class AssessmentRunner(assessment.AAssessmentRunner):
         self.x = np.linspace(0.0, self.nperiods * 2.0 * np.pi, 2000, dtype=np.float64)
         self.yinit = np.array([1.0, 0.0])
         self.params = dict(omega=-1)
-        self.dynsys = control_problem.harmonic_oscillator(**self.params)
+        self.dynsys = partial(control_problem.harmonic_oscillator, **self.params)
         self.target = np.zeros_like(self.x)
 
     def measure(self, individual):
