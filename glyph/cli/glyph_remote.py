@@ -58,8 +58,7 @@ class RemoteApp(glyph.application.Application):
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
         gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=cp['args'].hill_steps, directions=cp['args'].directions,
-                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching,
-                                         send_all=cp['args'].send_all, simplify=cp['args'].simplify)
+                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching, simplify=cp['args'].simplify)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -106,7 +105,7 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--send_all', action='store_true', default=False, help='Send all invalid individuals at once. (default: False)')
+    #ass_group.add_argument('--send_all', action='store_true', default=False, help='Send all invalid individuals at once. (default: False)')
     ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
@@ -178,7 +177,7 @@ def handle_gpconfig(config, send, recv):
     return update_namespace(config, gpconfig)
 
 
-def build_pset_gp(primitives, structural_constants=False):
+def build_pset_gp(primitives, structural_constants=False, cmin=-1, cmax=1):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
@@ -197,7 +196,7 @@ def build_pset_gp(primitives, structural_constants=False):
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
 
     if structural_constants:
-        f = partial(sc_mmqout, cmin=args.sc_min, cmax=args.sc_max)
+        f = partial(sc_mmqout, cmin=cmin, cmax=cmax)
         pset = add_sc(pset, f)
     return pset
 
@@ -209,11 +208,13 @@ class MyQueue(Queue):
         self.result_queue = result_queue
         self.expect = expect
         self.logger = logging.getLogger(self.__class__.__name__)
+
         super().__init__()
 
     def run(self):
         payloads = []
         keys = []
+        cache = {}   # cache
 
         def process(keys, payloads):
             self.send(dict(action="EXPERIMENT", payload=payloads))
@@ -222,7 +223,7 @@ class MyQueue(Queue):
                 self.logger.debug("Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
-        while True:
+        while self.expect > 0:
             key_payload = self.get()
 
             if key_payload is None:
@@ -238,8 +239,15 @@ class MyQueue(Queue):
                 payloads = []
                 keys = []
 
+
+def key_set(itr, key=hash):
+    keys = map(key, itr)
+    s = {k: v for k, v in zip(keys, itr)}
+    return list(s.values())
+
+
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True, send_all=False):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
@@ -248,7 +256,6 @@ class RemoteAssessmentRunner:
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         self.caching = caching
         self.cache = {}
-        self.send_all = send_all
         self.make_str = lambda i: str(simplify_this(i)) if simplify else str
         self.result_queue = {}
         #self.logger = logging.getLogger(self.__class__.__name__)
@@ -304,17 +311,23 @@ class RemoteAssessmentRunner:
         calculate, cached = map(list, partition(self.predicate, invalid))
 
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
-        calculate_fitness = []
-        if len(calculate) > 0:
-            self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate))
+        calculate_duplicate_free = key_set(calculate, key=self._hash)
+        # if we have duplicates in the calculate list, dont calculate these more than once.
+        dup_free_cache = {}
+        if len(calculate) > 0:             # main work is done here
+            self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate_duplicate_free))
             thread = Thread(target=self.queue.run)
             thread.start()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(calculate)) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(calculate_duplicate_free)) as executor:
                 futures = {executor.submit(self.measure, ind): ind for ind in calculate}
-                for future in futures:
-                    calculate_fitness.append(future.result())
+                for k, future in zip(calculate_duplicate_free, futures):
+                    dup_free_cache[self._hash(k)] = future.result()
             thread.join()
             del self.queue
+
+            calculate_fitness = [dup_free_cache[self._hash(k)] for k in calculate]
+        else:
+            calculate_fitness = []
 
         # save to cache
         for key, fit in zip(map(self._hash, calculate), calculate_fitness):
@@ -338,6 +351,9 @@ class Individual(AExpressionTree):
 class NDTree(glyph.gp.individual.ANDimTree):
     base = Individual
 
+    def __hash__(self):
+        return hash(hash(x) for x in self)
+
 
 def make_remote_app():
     parser = get_parser()
@@ -357,7 +373,7 @@ def make_remote_app():
     else:
         args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
-            pset = build_pset_gp(args.primitives, args.structural_constants)
+            pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
         Individual.pset = pset
@@ -375,7 +391,7 @@ def make_remote_app():
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity,
-                                                   caching=args.caching, send_all=args.send_all, simplify=args.simplify)
+                                                   caching=args.caching, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 

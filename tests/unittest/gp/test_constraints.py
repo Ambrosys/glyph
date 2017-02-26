@@ -11,7 +11,7 @@ cases = (
     ("Sub(x_0, x_0)", False, dict(zero=False, constant=True, infty=True)),
     ("Div(x_0, Sub(x_0, x_0))", True, dict(zero=False, constant=True, infty=True)),
     ("Div(x_0, Sub(x_0, x_0))", False, dict(zero=False, constant=True, infty=False)),
-    ("1.0", True, dict(zero=True, constant=True, infty=True)),
+    ("-1.0", True, dict(zero=True, constant=True, infty=True)),
     ("1.0", False, dict(zero=True, constant=False, infty=True)),
 )
 
@@ -38,8 +38,13 @@ def test_constraint_decorator(i, NumpyIndividual):
 
     [this_mock] = apply_constraints([this_mock], build_constraints(ns))
 
-    with pytest.raises(UserWarning):
-        this_mock(*[ind]*i)
+    if i == 0:
+        with pytest.raises(UserWarning):
+            this_mock()
+    else:
+
+        other_ind = this_mock(*[ind]*i)
+        assert ind == other_ind
 
 
 def test_constraint_in_nd(NumpyIndividual):
@@ -54,6 +59,8 @@ def test_constraint_in_nd(NumpyIndividual):
     mate = partial(nd_mutation, mut1d=this_mock)
 
     nd_ind = NDTree([ind]*2)
-    print(nd_ind)
-    with pytest.raises(UserWarning):
-        mate(nd_ind)
+
+    new_nd_ind = mate(nd_ind)[0]
+
+    for c, d in zip(nd_ind, new_nd_ind):
+        assert c == d

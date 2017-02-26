@@ -19,7 +19,7 @@ setup(
     name='pyglyph',
     version=version,
     author='Markus Abel, Julien Gout, Markus Quade',
-    author_email='markus.abel@ambrosys.de, julien.gout@ambrosys.de, markus.quade@ambrosys.de',
+    author_email='markus.quade@ambrosys.de',
     description="Symbolic regression tools.",
     long_description=read('README.rst', split=False),
     license='LGPL',

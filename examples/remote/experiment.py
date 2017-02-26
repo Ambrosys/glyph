@@ -85,7 +85,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.INFO)
 
-    primitives = {"x": 0, "k": -1, "Add": 2, "Mul": 2, "Sub":2 }
+    primitives = {"x": 0, "Add": 2, "Mul": 2, "Sub":2 }
     experiment = Experiment()
 
     loop = EventLoop(experiment, primitives)

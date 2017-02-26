@@ -30,12 +30,11 @@ class NullSpace:    # todo documentation
 
         return False
 
-
-def build_constraints(null_space, n_trials=10):
+def build_constraints(null_space, n_trials=20):
     """Create constraints decorators based on rules.
 
     :param null_space:
-    :param n_trials: Number of tries. Give up afterwards (raise RuntimeWarning).
+    :param n_trials: Number of tries. Give up afterwards (return input).
 
     :return: list of constraint decorators
     """
@@ -52,11 +51,13 @@ def build_constraints(null_space, n_trials=10):
                 if not t in null_space:
                     break
             else:
-                raise UserWarning("Individual {} after {} trials still in null space".format(out, n_trials))
+                if inds:
+                    return inds[0]
+                else:
+                    raise UserWarning
             return out
         return inner
     return [reject]
-
 
 def apply_constraints(funcs, constraints):
     """Decorate a list of genetic operators with constraints.
