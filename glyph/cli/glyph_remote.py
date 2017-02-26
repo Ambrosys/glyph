@@ -57,8 +57,8 @@ class RemoteApp(glyph.application.Application):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=cp['args'].hill_steps, directions=cp['args'].directions,
-                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching, simplify=cp['args'].simplify)
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
+                                                             options=cp['args'].options, caching=cp['args'].caching, simplify=cp['args'].simplify)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -211,10 +211,10 @@ class MyQueue(Queue):
 
         super().__init__()
 
-    def run(self):
+    def run(self, chunk_size=100):
         payloads = []
         keys = []
-        cache = {}   # cache
+        #cache = {}
 
         def process(keys, payloads):
             self.send(dict(action="EXPERIMENT", payload=payloads))
@@ -231,13 +231,15 @@ class MyQueue(Queue):
                 if self.expect == 0:
                     break
             else:
-                key,payload = key_payload
+                key, payload = key_payload
                 payloads.append(payload)
                 keys.append(key)
-            if len(payloads) == self.expect:
+            if len(payloads) == min(self.expect, chunk_size):
                 process(keys, payloads)
                 payloads = []
                 keys = []
+        if payloads:
+            process(keys, payloads)
 
 
 def key_set(itr, key=hash):
@@ -258,6 +260,7 @@ class RemoteAssessmentRunner:
         self.cache = {}
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
+        self.chunk_size = 30
         #self.logger = logging.getLogger(self.__class__.__name__)
 
     def predicate(self, ind):
@@ -266,14 +269,6 @@ class RemoteAssessmentRunner:
 
     def _hash(self, ind):
         return json.dumps([self.make_str(t) for t in ind])
-
-    def _evaluate_callback():
-        while True:
-            payload = self._queue.get()
-            if payload == None:
-                break
-
-        data = self.recv()["fitness"]
 
     def evaluate_single(self, individual, *consts):
         """Evaluate a single individual."""
@@ -315,14 +310,18 @@ class RemoteAssessmentRunner:
         calculate_duplicate_free = key_set(calculate, key=self._hash)
         # if we have duplicates in the calculate list, dont calculate these more than once.
         dup_free_cache = {}
-        if len(calculate) > 0:             # main work is done here
-            self.queue = MyQueue(self.send, self.recv, self.result_queue, len(calculate_duplicate_free))
-            thread = Thread(target=self.queue.run)
+        n = len(calculate_duplicate_free)
+        if n > 0:             # main work is done here
+            n_workers = min(n, self.chunk_size)
+
+            # start queue and the broker
+            self.queue = MyQueue(self.send, self.recv, self.result_queue, n)
+            thread = Thread(target=self.queue.run, args=(n_workers,))
             thread.start()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(calculate_duplicate_free)) as executor:
-                futures = {executor.submit(self.measure, ind): ind for ind in calculate}
-                for k, future in zip(calculate_duplicate_free, futures):
-                    dup_free_cache[self._hash(k)] = future.result()
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as exe:
+                for k, future in zip(calculate_duplicate_free, exe.map(self.measure, calculate_duplicate_free)):
+                    dup_free_cache[self._hash(k)] = future
             thread.join()
             del self.queue
 

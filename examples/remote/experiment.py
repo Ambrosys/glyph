@@ -18,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, pop_size=500, num_generations=100, consider_complexity=True, simplify=False)
+        return dict(primitives=self.primitives, pop_size=100, num_generations=100, consider_complexity=True, simplify=False)
 
     @property
     def address(self):
@@ -54,6 +54,7 @@ class EventLoop(object):
 
     def evaluate(self, pop):
         fitnesses = []
+        logger.debug(len(pop))
         for ind in pop:
             func = [compile(t, self.pset) for t in ind]
             fitnesses.append(self.experiment(func))
@@ -83,7 +84,7 @@ class Experiment(object):
 if __name__ == "__main__":
 
     logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub":2 }
     experiment = Experiment()
