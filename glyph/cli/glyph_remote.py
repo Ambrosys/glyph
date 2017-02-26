@@ -256,7 +256,7 @@ class RemoteAssessmentRunner:
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         self.caching = caching
         self.cache = {}
-        self.make_str = lambda i: str(simplify_this(i)) if simplify else str
+        self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         #self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -278,6 +278,7 @@ class RemoteAssessmentRunner:
     def evaluate_single(self, individual, *consts):
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
+
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
 

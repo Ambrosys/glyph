@@ -18,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, pop_size=100, num_generations=5, consider_complexity=True)
+        return dict(primitives=self.primitives, pop_size=500, num_generations=100, consider_complexity=True, simplify=False)
 
     @property
     def address(self):
@@ -64,7 +64,7 @@ class Experiment(object):
     def __init__(self):
 
         def target(x):
-            return np.array([f(x) for f in [lambda x: x**2, lambda x: x]])
+            return np.array([f(x) for f in [lambda x: 1.2*x**2, lambda x: 0.3*x + 1.1]])
 
         self.x = np.linspace(-1, 1, 30)
         self.y = target(self.x)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.INFO)
 
-    primitives = {"x": 0, "Add": 2, "Mul": 2, "Sub":2 }
+    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub":2 }
     experiment = Experiment()
 
     loop = EventLoop(experiment, primitives)

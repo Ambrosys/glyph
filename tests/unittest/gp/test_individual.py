@@ -156,3 +156,14 @@ def test_simplify_this_struct_const(sc_ind):
     expr = "SC(0.0, Add(x_0, Neg(x_0)))"
     ind = sc_ind.from_string(expr)
     assert str(ind) == str(simplify_this(ind))
+
+
+#def test_sc_nd_terminals(sc_ind):
+#    class NDTree(ANDimTree):
+#        base = sc_ind
+#
+#    expr = "SC(x_0, x_0)"
+#
+#    ind = sc_ind.from_string(expr)
+#    nd_ind = NDTree([ind, ind])
+#    assert nd.terminals

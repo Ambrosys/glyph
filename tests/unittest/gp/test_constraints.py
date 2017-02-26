@@ -26,7 +26,7 @@ def test_nullspace(case, NumpyIndividual):
 
 
 def mock(*inds, ret=None):
-    return ret,
+    return [ret] * max(len(inds), 1)
 
 
 @pytest.mark.parametrize("i", range(3)) # create = 0, mutate = 1, mate = 2
@@ -45,7 +45,7 @@ def test_constraint_decorator(i, NumpyIndividual):
             this_mock()
     else:
 
-        other_ind = this_mock(*[ind]*i)
+        other_ind, *rest = this_mock(*[ind]*i)
         assert ind == other_ind
 
 
@@ -62,7 +62,7 @@ def test_constraint_in_nd(NumpyIndividual):
 
     nd_ind = NDTree([ind]*2)
 
-    new_nd_ind = mate(nd_ind)[0]
+    new_nd_ind, *rest = mate(nd_ind)
 
     for c, d in zip(nd_ind, new_nd_ind):
         assert c == d

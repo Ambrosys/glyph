@@ -52,7 +52,7 @@ def build_constraints(null_space, n_trials=20):
                     break
             else:
                 if inds:
-                    return inds[0]
+                    return inds
                 else:
                     raise UserWarning
             return out
