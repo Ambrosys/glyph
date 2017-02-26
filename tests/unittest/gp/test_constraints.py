@@ -3,7 +3,7 @@ from functools import partial
 import pytest
 
 from glyph.gp.constraints import *
-from glyph.gp.individual import ANDimTree
+from glyph.gp.individual import ANDimTree, add_sc, sc_qout
 from glyph.gp.breeding import nd_mutation
 
 cases = (
@@ -13,10 +13,12 @@ cases = (
     ("Div(x_0, Sub(x_0, x_0))", False, dict(zero=False, constant=True, infty=False)),
     ("-1.0", True, dict(zero=True, constant=True, infty=True)),
     ("1.0", False, dict(zero=True, constant=False, infty=True)),
+    ("SC(x_0, x_0)", True, dict(zero=True, constant=True, infty=True)),
 )
 
 @pytest.mark.parametrize("case", cases)
 def test_nullspace(case, NumpyIndividual):
+    NumpyIndividual.pset = add_sc(NumpyIndividual.pset, sc_qout)
     expr, res, settings = case
     ns = NullSpace(**settings)
     ind = NumpyIndividual.from_string(expr)

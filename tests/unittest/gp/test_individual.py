@@ -122,7 +122,6 @@ def test_get_len(case):
     expr, x = case
     assert StructConst.get_len(expr) == x
 
-
 def test_struct_const_format():
     f = lambda x, y: x + y
     sc = StructConst(f)
@@ -132,18 +131,28 @@ def test_struct_const_format():
 
     assert sc.format(left, right) == str(4)
 
-@pytest.mark.parametrize("case", get_len_case)
-def test_struct_const_repr(case):
-    subexpr, _ = case
+
+@pytest.fixture
+def sc_ind():
     this_pset = numpy_primitive_set(1)
     f = lambda x, y: 0
     this_pset = add_sc(this_pset, f)
-
+    import operator
+    this_pset.addPrimitive(operator.neg, 1, "Neg")
     class Ind(AExpressionTree):
         pset = this_pset
+    return Ind
 
+@pytest.mark.parametrize("case", get_len_case)
+def test_struct_const_repr(case, sc_ind):
+    subexpr, _ = case
     expr = "Add(x_0, SC({subexpr}, {subexpr}))".format(subexpr=subexpr)
-    ind = Ind.from_string(expr)
+    ind = sc_ind.from_string(expr)
 
     func = numpy_phenotype(ind)
     assert func(1) == 1
+
+def test_simplify_this_struct_const(sc_ind):
+    expr = "SC(0.0, Add(x_0, Neg(x_0)))"
+    ind = sc_ind.from_string(expr)
+    assert str(ind) == str(simplify_this(ind))
