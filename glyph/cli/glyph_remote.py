@@ -270,7 +270,7 @@ class RemoteAssessmentRunner:
         return json.dumps([self.make_str(t) for t in ind])
 
     def evaluate_single(self, individual, *consts):
-        logger = logging.getLogger()
+        logger = logging.getLogger(self.__class__.__name__)
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
 
