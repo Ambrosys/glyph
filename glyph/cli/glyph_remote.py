@@ -214,7 +214,6 @@ class MyQueue(Queue):
     def run(self, chunk_size=100):
         payloads = []
         keys = []
-        #cache = {}
 
         def process(keys, payloads):
             self.send(dict(action="EXPERIMENT", payload=payloads))
@@ -232,8 +231,9 @@ class MyQueue(Queue):
                     break
             else:
                 key, payload = key_payload
-                payloads.append(payload)
-                keys.append(key)
+                if key not in self.result_queue:
+                    payloads.append(payload)
+                    keys.append(key)
             if len(payloads) == min(self.expect, chunk_size):
                 process(keys, payloads)
                 payloads = []
@@ -261,7 +261,6 @@ class RemoteAssessmentRunner:
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         self.chunk_size = 30
-        #self.logger = logging.getLogger(self.__class__.__name__)
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -271,6 +270,7 @@ class RemoteAssessmentRunner:
         return json.dumps([self.make_str(t) for t in ind])
 
     def evaluate_single(self, individual, *consts):
+        logger = logging.getLogger()
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
 
@@ -278,14 +278,15 @@ class RemoteAssessmentRunner:
             payload = [s.replace(k, str(v)) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
+        logger.debug("Queueing key: {}".format(key))
         self.queue.put((key, payload))
         self.evaluations += 1
 
         result = None
         while result is None:
             sleep(0.1)
-            #self.logger.debug("Waiting for result for key: {}".format(key))
             result = self.result_queue.get(key)
+        logger.debug("Got result for key: {}".format(key))
         return result
 
     def measure(self, individual):
@@ -299,7 +300,7 @@ class RemoteAssessmentRunner:
             fitness = error,
         return fitness
 
-    def update_fitness(self, population, map=map):
+    def update_fitness(self, population):
         self.evaluations = 0
 
         invalid = [p for p in population if not p.fitness.valid]
