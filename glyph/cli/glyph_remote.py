@@ -109,7 +109,7 @@ def get_parser():
     ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
-    ass_group.add_argument('--max_iter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--max_fev_const_opt', type=int, default=100, help='Maximum number of function evaluations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
@@ -121,7 +121,7 @@ def get_parser():
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
-    break_condition.add_argument('--max_fev_total', type=int, default=np.infty, help='Maximum number of function evaluations (default: np.infty)')
+    break_condition.add_argument('--max_iter_total', type=int, default=np.infty, help='Maximum number of function evaluations (default: np.infty)')
 
     constraints = parser.add_argument_group('constraints')
     constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
