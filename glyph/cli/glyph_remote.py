@@ -121,7 +121,7 @@ def get_parser():
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
-    break_condition.add_argument('--max_iter_total', type=float, default=np.infty, help='Target error used in stopping criteria (default: np.infty)')
+    break_condition.add_argument('--max_fev_total', type=int, default=np.infty, help='Maximum number of function evaluations (default: np.infty)')
 
     constraints = parser.add_argument_group('constraints')
     constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
@@ -147,7 +147,7 @@ def connect(ip, port):
 
 
 def handle_const_opt_config(args):
-    options = {'maxiter': args.max_iter_const_opt}
+    options = {'maxfev': args.max_fev_const_opt}
     if args.const_opt_method == 'hill_climb':
         options['directions'] = args.directions
         options['precision'] = args.precision

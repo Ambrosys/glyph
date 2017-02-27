@@ -100,7 +100,7 @@ def silent_numpy(func):
     return closure
 
 
-def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, rng=np.random, **kwargs):
+def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, rng=np.random, **kwargs):
     """Stochastic hill climber for constant optimization.
     Try self.directions different solutions per iteration to select a new best individual.
 
@@ -108,7 +108,7 @@ def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, 
     :param x0: initial guess
     :param args: additional arguments to pass to fun
     :param precision: maximum precision of x0
-    :param maxiter: maximum number of iteration before stopping
+    :param maxfev: maximum number of function calls before stopping
     :param directions: number of directions to explore before doing a hill climb step
     :param target: stop if fun(x) <= target
     :param rng: (seeded) random number generator
@@ -129,7 +129,7 @@ def hill_climb(fun, x0, args, precision=5, maxiter=100, directions=5, target=0, 
     fx = f(x)
     it = 1
     if len(x0) > 0:
-        while fx >= target and it <= maxiter:
+        while fx >= target and it <= maxfev:
             memory = [(x, fx)]
             for j in range(directions):
                 it += 1
