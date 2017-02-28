@@ -26,7 +26,7 @@ needs to understand the communication protocol defined in
 .. figure:: ../_static/communication.png
    :alt:
 
-Currently we use `client server sockets <http://learning-0mq-with-pyzmq.readthedocs.io/en/latest/pyzmq/patterns/client_server.html/>`_ for glyph remote. **The user needs to implement the zmq.REP socket.**
+Currently we use `client server sockets <http://learning-0mq-with-pyzmq.readthedocs.io/en/latest/pyzmq/patterns/client_server.html>`_ for glyph remote. **The user needs to implement the zmq.REP socket.**
 
 Communication protocol
 ----------------------
@@ -48,7 +48,7 @@ The possible action values are:
 +===================+====================+============================+
 | *CONFIG*          | –                  | config settings            |
 +-------------------+--------------------+----------------------------+
-| *EXPERIMENT*      | list of expressions| list of fitness value(s)           |
+| *EXPERIMENT*      | list of expressions| list of fitness value(s)   |
 +-------------------+--------------------+----------------------------+
 | *SHUTDOWN*        | –                  | –                          |
 +-------------------+--------------------+----------------------------+

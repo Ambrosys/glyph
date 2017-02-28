@@ -40,7 +40,7 @@ Breeding
     :special-members: __init__
 
 Constraints
-++++++++
++++++++++++
 
     .. automodule:: glyph.gp.constraints
         :members:
