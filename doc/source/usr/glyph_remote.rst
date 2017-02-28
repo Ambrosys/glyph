@@ -88,9 +88,11 @@ For a full list of configuration options and their default values type
 ``glyph-remote --help``.
 
 All hyper-parameters and algorithms used have default values. You have
-three options to set parameters: \* use the command line interface \*
-read from file (using ``--cfile myfile.yaml``) \* request from event
-handler (using ``--remote``)
+three options to set parameters:
+
+* use the command line interface
+* read from file (using ``--cfile myfile.yaml``)
+* request from event handler (using ``--remote``)
 
 At cli, options are specified using ``--key value``. The configuration
 file has to be written in yaml, i.e.
