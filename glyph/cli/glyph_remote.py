@@ -7,7 +7,12 @@ import logging
 import random
 import argparse
 import copy
-from functools import partial
+import itertools
+from functools import partial, wraps
+from threading import Thread
+import concurrent.futures
+from queue import Queue
+from time import sleep
 
 import zmq
 import yaml
@@ -21,8 +26,17 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import BreakCondition
 from glyph.assessment import tuple_wrap, const_opt_scalar
+from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
+from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
+
+
+def partition(pred, iterable):
+    """Use a predicate to partition entries into false entries and true entries"""
+    # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+    t1, t2 = itertools.tee(iterable)
+    return itertools.filterfalse(pred, t1), filter(pred, t2)
 
 
 class RemoteApp(glyph.application.Application):
@@ -43,8 +57,8 @@ class RemoteApp(glyph.application.Application):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, max_steps=cp['args'].hill_steps, directions=cp['args'].directions,
-                                         consider_complexity=cp['args'].consider_complexity, precision=cp['args'].precision, caching=cp['args'].caching)
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
+                                                             options=cp['args'].options, caching=cp['args'].caching, simplify=cp['args'].simplify)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -91,18 +105,28 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-
+    #ass_group.add_argument('--send_all', action='store_true', default=False, help='Send all invalid individuals at once. (default: False)')
+    ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
-    ass_group.add_argument('--maxiter_const_opt', type=int, default=100, help='Maximum number of iterations for constant optimization (default: 100)')
+    ass_group.add_argument('--max_fev_const_opt', type=int, default=100, help='Maximum number of function evaluations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
     ass_group.add_argument('--const_opt_method', choices=['hill_climb', 'Nelder-Mead'], default='Nelder-Mead', help='Algorithm to optimize constants given a structure (default: Nelder-Mead)')
+    ass_group.add_argument('--structural_constants', action='store_true', default=False, help='Make use of structural constants. (default: False)')
+    ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
+    ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
+
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
     break_condition.add_argument('--target', type=float, default=0, help='Target error used in stopping criteria (default: 0)')
-    break_condition.add_argument('--max_iter_total', type=float, default=np.infty, help='Target error used in stopping criteria (default: np.infty)')
+    break_condition.add_argument('--max_iter_total', type=int, default=np.infty, help='Maximum number of function evaluations (default: np.infty)')
+
+    constraints = parser.add_argument_group('constraints')
+    constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
+    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: False)')
+    constraints.add_argument('--constraints_infty', type=bool, default=True, help='Discard individuals with infinities (default: True)')
     return parser
 
 
@@ -123,7 +147,7 @@ def connect(ip, port):
 
 
 def handle_const_opt_config(args):
-    options = {'maxiter': args.maxiter_const_opt}
+    options = {'maxfev': args.max_fev_const_opt}
     if args.const_opt_method == 'hill_climb':
         options['directions'] = args.directions
         options['precision'] = args.precision
@@ -134,15 +158,14 @@ def handle_const_opt_config(args):
     args.options = options
     return args
 
+
 def update_namespace(ns, up):
-    """Update the argparse.Namespace ns with a dictionairy up.
-    """
+    """Update the argparse.Namespace ns with a dictionairy up."""
     return argparse.Namespace(**{**vars(ns), **up})
 
 
 def handle_gpconfig(config, send, recv):
-    """Will try to load config from file or from remote and update the cli/default config accordingly.
-    """
+    """Will try to load config from file or from remote and update the cli/default config accordingly."""
     if config.cfile:
         with open(config.cfile, 'r') as cf:
             gpconfig = yaml.load(cf)
@@ -154,7 +177,7 @@ def handle_gpconfig(config, send, recv):
     return update_namespace(config, gpconfig)
 
 
-def build_pset_gp(primitives):
+def build_pset_gp(primitives, structural_constants=False, cmin=-1, cmax=1):
     """Build a primitive set used in remote evaluation. Locally, all primitives correspond to the id() function.
     """
     pset = deap.gp.PrimitiveSet('main', arity=0)
@@ -171,37 +194,105 @@ def build_pset_gp(primitives):
             pset.constants.add(fname)
     if len(pset.terminals) == 0:
         raise RuntimeError("Pset needs at least one terminal node. You may have forgotten to specify it.")
+
+    if structural_constants:
+        f = partial(sc_mmqout, cmin=cmin, cmax=cmax)
+        pset = add_sc(pset, f)
     return pset
 
 
+class MyQueue(Queue):
+    def __init__(self, send, recv, result_queue, expect):
+        self.recv = recv
+        self.send = send
+        self.result_queue = result_queue
+        self.expect = expect
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        super().__init__()
+
+    def run(self, chunk_size=100):
+        payloads = []
+        keys = []
+
+        def process(keys, payloads):
+            self.send(dict(action="EXPERIMENT", payload=payloads))
+            fitnesses = self.recv()["fitness"]
+            for key,fit in zip(keys, fitnesses):
+                self.logger.debug("Writing result for key: {}".format(key))
+                self.result_queue[key] = fit
+
+        while self.expect > 0:
+            key_payload = self.get()
+
+            if key_payload is None:
+                self.expect -= 1
+                if self.expect == 0:
+                    break
+            else:
+                key, payload = key_payload
+                if key not in self.result_queue:
+                    payloads.append(payload)
+                    keys.append(key)
+            if len(payloads) == min(self.expect, chunk_size):
+                process(keys, payloads)
+                payloads = []
+                keys = []
+        if payloads:
+            process(keys, payloads)
+
+
+def key_set(itr, key=hash):
+    keys = map(key, itr)
+    s = {k: v for k, v in zip(keys, itr)}
+    return list(s.values())
+
+
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True):
-        """Contains assessment logic. Uses zmq connection to request evaluation.
-        Constant optimization is done using a stochastic hill climber.
-        """
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True):
+        """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
         self.options = options
         self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
-        if caching:
-            self.evaluate = glyph.utils.Memoize(self.evaluate)
+        self.caching = caching
+        self.cache = {}
+        self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
+        self.result_queue = {}
+        self.chunk_size = 30
 
-    def evaluate(self, individual, *consts):
-        """Evaluate a single individual.
-        """
-        self.evaluations += 1
-        payload = [str(t) for t in individual]
+    def predicate(self, ind):
+        """Does this individual need to be evaluated?"""
+        return self.caching and self._hash(ind) in self.cache
+
+    def _hash(self, ind):
+        return json.dumps([self.make_str(t) for t in ind])
+
+    def evaluate_single(self, individual, *consts):
+        logger = logging.getLogger(self.__class__.__name__)
+        """Evaluate a single individual."""
+        payload = [self.make_str(t) for t in individual]
+
         for k, v in zip(individual.pset.constants, consts):
             payload = [s.replace(k, str(v)) for s in payload]
-        self.send(dict(action="EXPERIMENT", payload=payload))
-        error = self.recv()["fitness"]
-        return error
+
+        key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
+        logger.debug("Queueing key: {}".format(key))
+        self.queue.put((key, payload))
+        self.evaluations += 1
+
+        result = None
+        while result is None:
+            sleep(0.1)
+            result = self.result_queue.get(key)
+        logger.debug("Got result for key: {}".format(key))
+        return result
 
     def measure(self, individual):
-        """Construct fitness for given individual.
-        """
-        popt, error = const_opt_scalar(self.evaluate, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        """Construct fitness for given individual."""
+        popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
             fitness = error, sum(map(len, individual))
@@ -209,13 +300,46 @@ class RemoteAssessmentRunner:
             fitness = error,
         return fitness
 
-    def update_fitness(self, population, map=map):
+    def update_fitness(self, population):
         self.evaluations = 0
+
         invalid = [p for p in population if not p.fitness.valid]
-        fitnesses = map(self.measure, invalid)
-        for ind, fit in zip(invalid, fitnesses):
+
+        calculate, cached = map(list, partition(self.predicate, invalid))
+
+        cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
+        calculate_duplicate_free = key_set(calculate, key=self._hash)
+        # if we have duplicates in the calculate list, dont calculate these more than once.
+        dup_free_cache = {}
+        n = len(calculate_duplicate_free)
+        if n > 0:             # main work is done here
+            n_workers = min(n, self.chunk_size)
+
+            # start queue and the broker
+            self.queue = MyQueue(self.send, self.recv, self.result_queue, n)
+            thread = Thread(target=self.queue.run, args=(n_workers,))
+            thread.start()
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as exe:
+                for k, future in zip(calculate_duplicate_free, exe.map(self.measure, calculate_duplicate_free)):
+                    dup_free_cache[self._hash(k)] = future
+            thread.join()
+            del self.queue
+
+            calculate_fitness = [dup_free_cache[self._hash(k)] for k in calculate]
+        else:
+            calculate_fitness = []
+
+        # save to cache
+        for key, fit in zip(map(self._hash, calculate), calculate_fitness):
+            self.cache[key] = fit
+
+        # assign fitness to individuals
+        for ind, fit in zip(cached + calculate, cached_fitness + calculate_fitness):
             ind.fitness.values = fit
+
         return self.evaluations
+
 
     def __call__(self, population):
         return self.update_fitness(population)
@@ -227,6 +351,9 @@ class Individual(AExpressionTree):
 
 class NDTree(glyph.gp.individual.ANDimTree):
     base = Individual
+
+    def __hash__(self):
+        return hash(hash(x) for x in self)
 
 
 def make_remote_app():
@@ -247,7 +374,7 @@ def make_remote_app():
     else:
         args = handle_const_opt_config(handle_gpconfig(args, send, recv))
         try:
-            pset = build_pset_gp(args.primitives)
+            pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
         Individual.pset = pset
@@ -255,12 +382,17 @@ def make_remote_app():
         mutate = glyph.application.MutateFactory.create(args, Individual)
         select = glyph.application.SelectFactory.create(args)
         create_method = glyph.application.CreateFactory.create(args, Individual)
+
+        ns = NullSpace(zero=args.constraints_zero, constant=args.constraints_constant, infty=args.constraints_infty)
+        mate, mutate, Individual.create = apply_constraints([mate, mutate, Individual.create], constraints=build_constraints(ns))
+
         ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
         ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity, caching=args.caching)
+        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity,
+                                                   caching=args.caching, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
@@ -268,7 +400,6 @@ def make_remote_app():
 
 
 def main():
-
     app, args = make_remote_app()
     logger = logging.getLogger(__name__)
     print_params(logger.info, vars(args))

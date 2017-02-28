@@ -12,6 +12,55 @@ import functools
 import itertools
 import numpy as np
 
+import glyph.utils
+
+#def len_subtree(i):
+#    sl_left = ind.searchSubtree(i+1)
+#    len_left = sl_left.stop - sl_left.start
+#    sl_right = ind.searchSubtree(sl_left.stop)
+#    len_right = sl_right.stop - sl_right.start
+#    return len_left, len_right
+
+
+def sc_qout(x, y):
+    """SC is the quotient of the number of nodes of its left and right child-trees x and y"""
+    return x / y
+
+
+def sc_mmqout(x, y, cmin=-1, cmax=1):
+    """SC is the minimum-maximum quotient of the number of nodes of both
+    child-trees x and y mapped into the constant interval [cmin, cmax]"""
+    return cmin + min(x, y)/max(x, y) * (cmax - cmin)
+
+
+class StructConst(deap.gp.Primitive):
+    def __init__(self, func):
+        """
+        :param func: evaluate left and right subtree and assign a constant.
+        """
+        self.func = func
+        super().__init__("SC", [deap.gp.__type__]*2, deap.gp.__type__)
+
+    @staticmethod
+    def get_len(expr, tokens=("(,")):
+        regex = "|".join("\\{}".format(t) for t in tokens)
+        return len(re.split(regex, expr))
+
+    def format(self, *args):
+        left, right = args
+        return str(self.func(self.get_len(left), self.get_len(right)))
+
+
+def add_sc(pset, func):
+    """Adds a structural constant to a given primitive set.
+    :param func: `callable(x, y) -> float` where x and y are the expressions of the left and right subtree
+    :param pset: You may want to use `sympy_primitive_set` or `numpy_primitive_set` without symbolic constants.
+    :type pset: `deap.gp.PrimitiveSet`
+    """
+    sc = StructConst(func)
+    pset._add(sc)
+    pset.prims_count += 1
+    return pset
 
 def _build_args_string(pset, consts):
     args = ','.join(arg for arg in pset.args)
@@ -216,15 +265,15 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         return super(AExpressionTree, cls).from_string(string, cls.pset)
 
     @classmethod
+    def create(cls, gen_method=deap.gp.genHalfAndHalf, min=1, max=4):
+        return cls(gen_method(cls.pset, min_=min, max_=max))
+
+    @classmethod
     def create_population(cls, size, gen_method=deap.gp.genHalfAndHalf, min=1, max=4):
         """Create a list of individuals of class Individual."""
         if size < 0:
             raise RuntimeError('Cannot create population of size {}'.format(size))
-        toolbox = deap.base.Toolbox()
-        toolbox.register("expr", gen_method, pset=cls.pset, min_=min, max_=max)
-        toolbox.register("individual", deap.tools.initIterate, cls, toolbox.expr)
-        toolbox.register("population", deap.tools.initRepeat, list, toolbox.individual)
-        return toolbox.population(n=size)
+        return [cls.create(gen_method=gen_method, min=min, max=max) for _ in range(size)]
 
 
 def nd_phenotype(nd_tree, backend=sympy_phenotype):
@@ -350,6 +399,7 @@ def stringify_for_sympy(f):
     return string
 
 
+@glyph.utils.Memoize
 def simplify_this(expr):
     """
     :param expr:

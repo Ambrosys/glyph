@@ -118,4 +118,4 @@ class BreakCondition:
         self.max_iter = max_iter
 
     def __call__(self, app):
-        return soft_max_iter(app, max_iter=self.max_iter) or not self.sto(app) or soft_target(app, target=self.target, error_index=self.error_index)
+        return soft_max_iter(app, max_iter=self.max_iter) or self.sto(app) or soft_target(app, target=self.target, error_index=self.error_index)

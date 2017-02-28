@@ -109,3 +109,61 @@ def test_nd_tree_phenotype(case):
 
     out = f(*x)
     assert np.allclose(out, res)
+
+get_len_case = (
+    ("x_0", 1),
+    ("exp(x_0)", 2),
+    ("Add(x_0, x_0)", 3),
+    ("Add(x_0, Add(x_0, x_0))", 5),
+)
+
+@pytest.mark.parametrize("case", get_len_case)
+def test_get_len(case):
+    expr, x = case
+    assert StructConst.get_len(expr) == x
+
+def test_struct_const_format():
+    f = lambda x, y: x + y
+    sc = StructConst(f)
+
+    left = "Add(x0, x0)"
+    right = "y0"
+
+    assert sc.format(left, right) == str(4)
+
+
+@pytest.fixture
+def sc_ind():
+    this_pset = numpy_primitive_set(1)
+    f = lambda x, y: 0
+    this_pset = add_sc(this_pset, f)
+    import operator
+    this_pset.addPrimitive(operator.neg, 1, "Neg")
+    class Ind(AExpressionTree):
+        pset = this_pset
+    return Ind
+
+@pytest.mark.parametrize("case", get_len_case)
+def test_struct_const_repr(case, sc_ind):
+    subexpr, _ = case
+    expr = "Add(x_0, SC({subexpr}, {subexpr}))".format(subexpr=subexpr)
+    ind = sc_ind.from_string(expr)
+
+    func = numpy_phenotype(ind)
+    assert func(1) == 1
+
+def test_simplify_this_struct_const(sc_ind):
+    expr = "SC(0.0, Add(x_0, Neg(x_0)))"
+    ind = sc_ind.from_string(expr)
+    assert str(ind) == str(simplify_this(ind))
+
+
+#def test_sc_nd_terminals(sc_ind):
+#    class NDTree(ANDimTree):
+#        base = sc_ind
+#
+#    expr = "SC(x_0, x_0)"
+#
+#    ind = sc_ind.from_string(expr)
+#    nd_ind = NDTree([ind, ind])
+#    assert nd.terminals

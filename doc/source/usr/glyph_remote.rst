@@ -43,20 +43,20 @@ two members:
 
 The possible action values are:
 
-+-------------------+-----------------+----------------------------+
-| Action name       | Payload         | Expected return Value      |
-+===================+=================+============================+
-| *CONFIG*          | –               | config settings            |
-+-------------------+-----------------+----------------------------+
-| *EXPERIMENT*      | expression      | fitness value(s)           |
-+-------------------+-----------------+----------------------------+
-| *SHUTDOWN*        | –               | –                          |
-+-------------------+-----------------+----------------------------+
++-------------------+--------------------+----------------------------+
+| Action name       | Payload            | Expected return Value      |
++===================+====================+============================+
+| *CONFIG*          | –                  | config settings            |
++-------------------+--------------------+----------------------------+
+| *EXPERIMENT*      | list of expressions| list of fitness value(s)           |
++-------------------+--------------------+----------------------------+
+| *SHUTDOWN*        | –                  | –                          |
++-------------------+--------------------+----------------------------+
 
 The config action is performed prior to the evolutionary loop. Entering
 the loop, for every discovered solution an *experiment* action will be
-requested. You can configure optional caching for re-discovered
-solutions. The *shutdown* action will let the experiment program know
+requested. Since most experiments have an intermediate compiling step, expressions will come in chunks. You can configure optional caching for re-discovered solutions.
+The *shutdown* action will let the experiment program know
 that the gp loop is finished and you can safely stop the hardware.
 
 Config
@@ -67,13 +67,14 @@ See Configuration section.
 Experiment
 ~~~~~~~~~~
 
-The *experiment* request expects the following return format:
+The *experiment* request expects a fitness value for each expression:
 
 .. code:: json
 
     {
-        "fitness": "value0",
+        "fitness": ["value0", "value1", ...],
     }
+
 
 Shutdown
 ~~~~~~~~

@@ -39,6 +39,14 @@ Breeding
     :private-members:
     :special-members: __init__
 
+Constraints
+++++++++
+
+    .. automodule:: glyph.gp.constraints
+        :members:
+        :private-members:
+        :special-members: __init__
+
 Individual
 ++++++++++
 

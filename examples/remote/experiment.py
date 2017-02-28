@@ -18,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, pop_size=10, generations=5, consider_complexity=True)
+        return dict(primitives=self.primitives, pop_size=10, num_generations=1, consider_complexity=True, simplify=False)
 
     @property
     def address(self):
@@ -52,17 +52,20 @@ class EventLoop(object):
         else:
             raise ValueError("Unknown action")
 
-    def evaluate(self, individual):
-        func = [compile(t, self.pset) for t in individual]
-        fitness = self.experiment(func)
-        return dict(fitness=fitness)
+    def evaluate(self, pop):
+        fitnesses = []
+        logger.debug(len(pop))
+        for ind in pop:
+            func = [compile(t, self.pset) for t in ind]
+            fitnesses.append(self.experiment(func))
+        return dict(fitness=fitnesses)
 
 
 class Experiment(object):
     def __init__(self):
 
         def target(x):
-            return np.array([f(x) for f in [lambda x: x**2, lambda x: x]])
+            return np.array([f(x) for f in [lambda x: 1.2*x**2, lambda x: 0.3*x + 1.1]])
 
         self.x = np.linspace(-1, 1, 30)
         self.y = target(self.x)
@@ -81,9 +84,9 @@ class Experiment(object):
 if __name__ == "__main__":
 
     logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
-    primitives = dict(x=0, k=-1, add=2, multiply=2, subtract=2, negative=1)
+    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub":2 }
     experiment = Experiment()
 
     loop = EventLoop(experiment, primitives)

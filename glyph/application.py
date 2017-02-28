@@ -340,7 +340,7 @@ class MateFactory(AFactory):
         mate = MateFactory.get_from_mapping(args.mating)(**vars(args))
         static_limit_decorator = deap.gp.staticLimit(key=operator.attrgetter("height"),
                                                      max_value=args.mating_max_height)
-        static_limit_decorator(mate)
+        mate = static_limit_decorator(mate)
         return mate
 
     @staticmethod
