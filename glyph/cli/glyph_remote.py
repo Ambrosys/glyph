@@ -405,14 +405,13 @@ def make_remote_app():
                                                    consider_complexity=args.consider_complexity, caching=args.caching, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
-
+    print_params(logger.info, vars(args))
     return app, args
 
 
 def main():
     app, args = make_remote_app()
-    logger = logging.getLogger(__name__)
-    print_params(logger.info, vars(args))
+
     break_condition = BreakCondition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
     app.run(break_condition=break_condition)
 
