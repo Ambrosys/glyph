@@ -35,8 +35,6 @@ def test_nullspace(case):
     cls.pset = add_sc(cls.pset, sc_qout)
     ns = NullSpace(**settings)
     ind = cls.from_string(expr)
-    print(all(t.name in ind.pset.constants for t in ind.terminals))
-    print(ind.terminals[0].name)
     assert (ind in ns) == res
 
 
