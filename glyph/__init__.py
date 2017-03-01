@@ -6,4 +6,4 @@ from . import assessment
 from . import gp
 from . import utils
 
-__VERSION__ = "0.2.1"
+__VERSION__ = "0.3.0"
