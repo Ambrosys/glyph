@@ -128,19 +128,6 @@ def test_default_constants(case):
     np.testing.assert_allclose(actual=assessment.default_constants(ind), desired=np.ones(n_consts), rtol=0)
 
 
-def test_numpy_phenotype():
-    expr = "Add(Mul(Symc, x_1), Mul(Symc, x_0)))"
-    pset = gp.numpy_primitive_set(2, categories=('algebraic', 'trigonometric', 'exponential', 'symc'))
-    ind = type("ind", (gp.AExpressionTree, ), dict(pset=pset)).from_string(expr)
-    f = gp.numpy_phenotype(ind)
-    assert f(0, 0) == 0
-    assert f(1, 1) == 2
-    assert f(1, 2, 2, 1) == 5
-    assert f(1, 2, c_0=2, c_1=1) == 5
-    with pytest.raises(TypeError):
-        f(1, 1, 1, 1, 1)
-
-
 @pytest.mark.parametrize('case', filter(lambda x: x[0] is UnlimitedConstants, const_opt_agreement_cases))
 def test__get_index(case):
     individual_class, expr, _, _, _, n_consts = case

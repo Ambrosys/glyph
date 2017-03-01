@@ -58,7 +58,7 @@ class RemoteApp(glyph.application.Application):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity, method=cp['args'].const_opt_method,
                                                              options=cp['args'].options, caching=cp['args'].caching, simplify=cp['args'].simplify)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
@@ -266,7 +266,7 @@ class RemoteAssessmentRunner:
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         self.chunk_size = 30
-        self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
+        self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
 
         smart_options = options.pop('smart_options')
         if smart_options["use"]:
@@ -401,8 +401,8 @@ def make_remote_app():
         ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
-        assessment_runner = RemoteAssessmentRunner(send, recv, options=args.options, consider_complexity=args.consider_complexity,
-                                                   caching=args.caching, simplify=args.simplify)
+        assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
+                                                   consider_complexity=args.consider_complexity, caching=args.caching, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 

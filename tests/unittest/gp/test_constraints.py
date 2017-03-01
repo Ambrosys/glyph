@@ -2,26 +2,41 @@ from functools import partial
 
 import pytest
 
+from glyph.gp.individual import *
 from glyph.gp.constraints import *
 from glyph.gp.individual import ANDimTree, add_sc, sc_qout
 from glyph.gp.breeding import nd_mutation
 
+
+class Tree(AExpressionTree):
+    pset = numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
+    marker = "symc"
+
+
+class SympyTree(AExpressionTree):
+    pset = sympy_primitive_set(categories=['algebraic', 'exponential'], arguments=['x_0'], constants=['c_0'])
+    marker = "sympy"
+
 cases = (
-    ("Sub(x_0, x_0)", True, dict(zero=True, constant=True, infty=True)),
-    ("Sub(x_0, x_0)", False, dict(zero=False, constant=True, infty=True)),
-    ("Div(x_0, Sub(x_0, x_0))", True, dict(zero=False, constant=True, infty=True)),
-    ("Div(x_0, Sub(x_0, x_0))", False, dict(zero=False, constant=True, infty=False)),
-    ("-1.0", True, dict(zero=True, constant=True, infty=True)),
-    ("1.0", False, dict(zero=True, constant=False, infty=True)),
-    ("SC(x_0, x_0)", True, dict(zero=True, constant=True, infty=True)),
+    ("Sub(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
+    ("Sub(x_0, x_0)", False, dict(zero=False, constant=True, infty=True), Tree),
+    ("Div(x_0, Sub(x_0, x_0))", True, dict(zero=False, constant=True, infty=True), Tree),
+    ("Div(x_0, Sub(x_0, x_0))", False, dict(zero=False, constant=True, infty=False), Tree),
+    ("-1.0", True, dict(zero=True, constant=True, infty=True), Tree),
+    ("1.0", False, dict(zero=True, constant=False, infty=True), Tree),
+    ("SC(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
+    ("Add(Symc, Symc)", True, dict(zero=True, constant=True, infty=True), Tree),
+    ("Add(c_0, c_0)", True, dict(zero=True, constant=True, infty=True), SympyTree),
 )
 
 @pytest.mark.parametrize("case", cases)
-def test_nullspace(case, NumpyIndividual):
-    NumpyIndividual.pset = add_sc(NumpyIndividual.pset, sc_qout)
-    expr, res, settings = case
+def test_nullspace(case):
+    expr, res, settings, cls = case
+    cls.pset = add_sc(cls.pset, sc_qout)
     ns = NullSpace(**settings)
-    ind = NumpyIndividual.from_string(expr)
+    ind = cls.from_string(expr)
+    print(all(t.name in ind.pset.constants for t in ind.terminals))
+    print(ind.terminals[0].name)
     assert (ind in ns) == res
 
 

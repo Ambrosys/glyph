@@ -5,6 +5,7 @@
 """Provide Individual class for gp."""
 
 import re
+import copy
 import deap.gp
 import deap.base
 import sympy
@@ -198,7 +199,7 @@ def numpy_phenotype(individual):
     >>> pset = numpy_primitive_set(1)
     >>> class Individual(AExpressionTree)
     >>>    pset = pset
-    >>> ind = Individual.from_string("Add(x_0, Symc)")
+    >>> ind = Individual.from_string("Add(x_0, symc)")
     >>> f = numpy_phenotype(ind)
     >>> f(1, 1)
     2
@@ -371,7 +372,7 @@ def convert_inverse_prim(prim, args):
 
     We achieve this by overwriting the corresponding format method of the sub and div prim.
     """
-
+    prim = copy.copy(prim)
     prim.name = re.sub(r'([A-Z])', lambda pat: pat.group(1).lower(), prim.name)    # lower all capital letters
 
     converter = {

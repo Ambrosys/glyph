@@ -116,7 +116,6 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
 
     :return: `scipy.optimize.OptimizeResult`
     """
-
     res = scipy.optimize.OptimizeResult()
 
     def tweak(x):
@@ -173,12 +172,10 @@ class SmartConstantOptimizer:
     def __call__(self, fun, x0, args, **kwargs):
 
         maxfev = kwargs.get('maxfev', 1000*len(x0))
-
         kw = kwargs.copy()
         kw["maxfev"] = self.step_size
 
         res = self.method(fun, x0, args, **kw)
-
         fx_base = res.fun
         x0 = res.x
 

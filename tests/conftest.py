@@ -9,7 +9,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="function")
 def SympyIndividual():
-    return type('SympyIndividual', (gp.AExpressionTree, ), dict(pset=gp.sympy_primitive_set()))
+    return type('SympyIndividual', (gp.AExpressionTree, ), dict(pset=gp.sympy_primitive_set(constants=["c"])))
 
 
 @pytest.fixture(scope="function")

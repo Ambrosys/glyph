@@ -28,7 +28,11 @@ class NullSpace:    # todo documentation
             if isinstance(expr, Float):
                 return True
 
+            if all(t.name in element.pset.constants for t in element.terminals):
+                return True
+
         return False
+
 
 def build_constraints(null_space, n_trials=20):
     """Create constraints decorators based on rules.
@@ -58,6 +62,7 @@ def build_constraints(null_space, n_trials=20):
             return out
         return inner
     return [reject]
+
 
 def apply_constraints(funcs, constraints):
     """Decorate a list of genetic operators with constraints.
