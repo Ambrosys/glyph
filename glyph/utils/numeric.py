@@ -144,7 +144,7 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
     res["x"] = x
     res["fun"] = fx
     res["success"] = True
-    res["nit"] = it
+    res["nfev"] = it
 
     return res
 
@@ -170,31 +170,30 @@ class SmartConstantOptimizer:
         self.threshold = threshold
         self.memory = defaultdict(list)
 
-    def __call__(self, fun, x0, args, options={}, **kwargs):
+    def __call__(self, fun, x0, args, **kwargs):
 
-        maxfev = options.get('maxfev', 1000*len(x0))
+        maxfev = kwargs.get('maxfev', 1000*len(x0))
 
-        op = options.copy()
-        op["maxfev"] = self.step_size
+        kw = kwargs.copy()
+        kw["maxfev"] = self.step_size
 
-        res = self.method(fun, x0, args, **{**op, **kwargs})
+        res = self.method(fun, x0, args, **kw)
 
         fx_base = res.fun
         x0 = res.x
 
         fev = self.step_size
-        while fev >= maxfev:
+        while fev <= maxfev - self.step_size:
 
-            res = self.method(fun, x0, args, **{**op, **kwargs})
-            fev += rev.nfev
+            res = self.method(fun, x0, args, **kw)
+            fev += res.nfev
             fx = res.fun
             x0 = res.x
 
             eps = (fx - fx_base) / fev
-            memory[fev].append(eps)
-
-            if len(memory[fev]) > self.min_stat:
-                if eps < np.percentile(memory[fev], self.threshold):
+            self.memory[fev].append(eps)
+            if len(self.memory[fev]) > self.min_stat:
+                if eps < np.percentile(self.memory[fev], self.threshold):
                     break
 
         return res

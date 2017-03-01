@@ -18,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, pop_size=10, num_generations=1, consider_complexity=True, simplify=False)
+        return dict(primitives=self.primitives, pop_size=20, num_generations=20, consider_complexity=True, simplify=False)
 
     @property
     def address(self):
