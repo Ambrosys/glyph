@@ -3,6 +3,7 @@
 
 import itertools
 import functools
+from collections import defaultdict
 
 import numpy as np
 import scipy.integrate
@@ -146,3 +147,54 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
     res["nit"] = it
 
     return res
+
+
+class SmartConstantOptimizer:
+    """Decorate a minimize method used in `scipy.optimize.minimize` to cancel non promising constant optimizations.
+
+    The stopping criteria is based on the improvment rate :math:`\frac{\Delta f}[\Delta fev}`.
+
+    If the improvment rate is below the :math:`q_{threshold}` quantile for a given number of function
+    evaluations, optimization is stopped.
+    """
+    def __init__(self, method, step_size=10, min_stat=10, threshold=25):
+        """
+        :params method: see `scipy.optimize.minimize` method
+        :params step_size: number of function evaluations betweem iterations
+        :params min_stat: minmum sample size before stopping
+        :params threshold: quantile
+        """
+        self.method = method
+        self.step_size = step_size
+        self.min_stat = min_stat
+        self.threshold = threshold
+        self.memory = defaultdict(list)
+
+    def __call__(self, fun, x0, args, options={}, **kwargs):
+
+        maxfev = options.get('maxfev', 1000*len(x0))
+
+        op = options.copy()
+        op["maxfev"] = self.step_size
+
+        res = self.method(fun, x0, args, **{**op, **kwargs})
+
+        fx_base = res.fun
+        x0 = res.x
+
+        fev = self.step_size
+        while fev >= maxfev:
+
+            res = self.method(fun, x0, args, **{**op, **kwargs})
+            fev += rev.nfev
+            fx = res.fun
+            x0 = res.x
+
+            eps = (fx - fx_base) / fev
+            memory[fev].append(eps)
+
+            if len(memory[fev]) > self.min_stat:
+                if eps < np.percentile(memory[fev], self.threshold):
+                    break
+
+        return res

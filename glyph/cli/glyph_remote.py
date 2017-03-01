@@ -20,6 +20,7 @@ import deap.tools
 import deap.gp
 import toolz
 import numpy as np
+from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
@@ -116,6 +117,10 @@ def get_parser():
     ass_group.add_argument('--structural_constants', action='store_true', default=False, help='Make use of structural constants. (default: False)')
     ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
     ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
+    ass_group.add_argument('--smart', action="store_true", default=False, help='Use smart constant optimization.')
+    ass_group.add_argument('--smart_step_size', type=int, default=10, help='Number of fev in iterative function optimization. (default: 10)')
+    ass_group.add_argument('--smart_min_stat', type=int, default=10, help='Number of samples required prior to stopping (default: 10)')
+    ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
 
 
     break_condition = parser.add_argument_group('break condition')
@@ -147,7 +152,8 @@ def connect(ip, port):
 
 
 def handle_const_opt_config(args):
-    options = {'maxfev': args.max_fev_const_opt}
+    smart_options = {"use": args.smart, "kw": {"threshold": args.smart_threshold, "step_size": args.smart_step_size, "min_stat": args.smart_min_stat}}
+    options = {'maxfev': args.max_fev_const_opt, 'smart_options': smart_options}
     if args.const_opt_method == 'hill_climb':
         options['directions'] = args.directions
         options['precision'] = args.precision
@@ -249,18 +255,22 @@ def key_set(itr, key=hash):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={}, caching=True, simplify=True):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, simplify=True):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
         self.options = options
-        self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, 'Nelder-Mead')
         self.caching = caching
         self.cache = {}
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         self.chunk_size = 30
+        self.method = {'hill-climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
+
+        smart_options = options.pop('smart_options')
+        if smart_options["use"]:
+            self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **smart_options["kw"])
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -291,7 +301,7 @@ class RemoteAssessmentRunner:
 
     def measure(self, individual):
         """Construct fitness for given individual."""
-        popt, error = const_opt_scalar(self.evaluate_single, individual, method=glyph.utils.numeric.hill_climb, options=self.options)
+        popt, error = const_opt_scalar(self.evaluate_single, individual, method=self.method, options=self.options)
         self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
