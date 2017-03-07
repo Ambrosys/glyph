@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from glyph.utils.break_condition import *
