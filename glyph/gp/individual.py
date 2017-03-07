@@ -63,6 +63,7 @@ def add_sc(pset, func):
     pset.prims_count += 1
     return pset
 
+
 def _build_args_string(pset, consts):
     args = ','.join(arg for arg in pset.args)
     if consts:
