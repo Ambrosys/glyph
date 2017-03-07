@@ -18,4 +18,4 @@ install:
   - pip install -r requirements.txt
 
 test_script:
-  - py.test tests/unittest --runslow
+  - python -m pytest tests/unittest --runslow
