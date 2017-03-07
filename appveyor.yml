@@ -16,6 +16,7 @@ install:
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy"
   - activate test-environment
   - pip install -r requirements.txt
+  - pip install pytest
 
 test_script:
-  - python -m pytest tests/unittest --runslow
+  - py.test tests/unittest --runslow
