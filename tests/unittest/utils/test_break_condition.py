@@ -12,6 +12,8 @@ def test_SoftTimeOut(ttl):
     assert bool(ttl) != bool(sttl())
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_timeout_decorator():
     ttl = 2
 
@@ -26,6 +28,8 @@ def test_timeout_decorator():
     assert long_running_function(ttl - 1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
 def test_max_fitness_on_timeout():
     f = lambda: 1
     def g():
