@@ -21,6 +21,7 @@ import deap.gp
 import toolz
 import numpy as np
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
+from cache import DBCache
 
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
@@ -58,8 +59,10 @@ class RemoteApp(glyph.application.Application):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity, method=cp['args'].const_opt_method,
-                                                             options=cp['args'].options, caching=cp['args'].caching, simplify=cp['args'].simplify)
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
+                                                            method=cp['args'].const_opt_method, options=cp['args'].options,
+                                                            caching=cp['args'].caching, simplify=cp['args'].simplify,
+                                                            persistent_caching=cp['args'].persistent_caching)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -110,6 +113,7 @@ def get_parser():
     ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
+    ass_group.add_argument('--persistent_caching', default=None, help='Key for persistent data base cache for caching between experiments (default: None)')
     ass_group.add_argument('--max_fev_const_opt', type=int, default=100, help='Maximum number of function evaluations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
     ass_group.add_argument('--precision', type=int, default=3, help='Precision of constants (default: 3)')
@@ -238,6 +242,7 @@ class MyQueue(Queue):
             else:
                 key, payload = key_payload
                 if key not in self.result_queue:
+                    self.logger.debug("Queueing key: {}".format(key))
                     payloads.append(payload)
                     keys.append(key)
             if len(payloads) == min(self.expect, chunk_size):
@@ -255,14 +260,14 @@ def key_set(itr, key=hash):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, simplify=True):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=True):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
         self.options = options
         self.caching = caching
-        self.cache = {}
+        self.cache = {} if persistent_caching is None else DBCache("glyph-remote", persistent_caching)
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         self.chunk_size = 30
@@ -280,7 +285,7 @@ class RemoteAssessmentRunner:
         return json.dumps([self.make_str(t) for t in ind])
 
     def evaluate_single(self, individual, *consts):
-        logger = logging.getLogger(self.__class__.__name__)
+
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
 
@@ -288,7 +293,6 @@ class RemoteAssessmentRunner:
             payload = [s.replace(k, str(v)) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
-        logger.debug("Queueing key: {}".format(key))
         self.queue.put((key, payload))
         self.evaluations += 1
 
@@ -296,7 +300,6 @@ class RemoteAssessmentRunner:
         while result is None:
             sleep(0.1)
             result = self.result_queue.get(key)
-        logger.debug("Got result for key: {}".format(key))
         return result
 
     def measure(self, individual):
@@ -402,7 +405,7 @@ def make_remote_app():
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
-                                                   consider_complexity=args.consider_complexity, caching=args.caching, simplify=args.simplify)
+                                                   consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching, simplify=args.simplify)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
     print_params(logger.info, vars(args))
