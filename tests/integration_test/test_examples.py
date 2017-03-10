@@ -1,8 +1,9 @@
-import pytest
 import os
 import inspect
 import glob
 import subprocess
+
+import pytest
 
 slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need --runslow option to run")
 

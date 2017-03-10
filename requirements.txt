@@ -4,13 +4,16 @@
 #
 #    pip-compile --output-file requirements.txt requirements-to-freeze.txt
 #
+cache.py==0.1.2
 deap==1.0.2.post2
 decorator==4.0.10
 dill==0.2.5
+joblib==0.11              # via cache.py
 mpmath==0.19
 numpy==1.11.2
 pyyaml==3.12
 pyzmq==16.0.2
 scipy==0.18.1
+sqlitedict==1.5.0         # via cache.py
 sympy==1.0
 toolz==0.8.1

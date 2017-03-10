@@ -14,6 +14,14 @@ handlers:
         formatter: simple
         stream: ext://sys.stdout
 
+    info_file_handler:
+        class: logging.FileHandler
+        level: INFO
+        formatter: simple
+        filename: {workdir}/log.info
+        encoding: utf8
+        mode: w
+
     debug_file_handler:
         class: logging.FileHandler
         level: DEBUG
@@ -34,12 +42,10 @@ loggers:
     __main__:
         handlers: [console]
 
-    control.application:
-        handlers: [console]
 
     py.warnings:
         handlers: [debug_file_handler]
 
 root:
     level: DEBUG
-    handlers: [debug_file_handler, error_file_handler]
+    handlers: [console, info_file_handler, debug_file_handler, error_file_handler]
