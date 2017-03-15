@@ -1,8 +1,6 @@
 # Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
 # Licence: LGPL
 
-from sympy import Integer, Float
-
 from .individual import simplify_this, AExpressionTree
 
 
@@ -14,12 +12,8 @@ class NullSpace:    # todo documentation
 
     def __contains__(self, element):
         expr = simplify_this(element)
-
         if self.infty:
-            if not expr.is_finite:
-                return True
-
-            elif "zoo" in str(expr):
+            if "zoo" in str(expr):
                 return True
 
         if self.zero:
@@ -32,11 +26,10 @@ class NullSpace:    # todo documentation
 
             elif all(t.name in element.pset.constants for t in element.terminals):
                 return True
-
         return False
 
 
-def build_constraints(null_space, n_trials=20):
+def build_constraints(null_space, n_trials=30):
     """Create constraints decorators based on rules.
 
     :param null_space:
