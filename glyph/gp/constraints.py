@@ -1,7 +1,7 @@
 # Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
 # Licence: LGPL
 
-from sympy import Float
+from sympy import Integer, Float
 
 from .individual import simplify_this, AExpressionTree
 
@@ -14,21 +14,23 @@ class NullSpace:    # todo documentation
 
     def __contains__(self, element):
         expr = simplify_this(element)
-        sexpr = str(expr)
 
         if self.infty:
-            if "zoo" in str(sexpr):
+            if not expr.is_finite:
+                return True
+
+            elif "zoo" in str(expr):
                 return True
 
         if self.zero:
-            if sexpr == "0":
+            if expr.is_zero:
                 return  True
 
         if self.constant:
-            if isinstance(expr, Float):
+            if expr.is_constant():
                 return True
 
-            if all(t.name in element.pset.constants for t in element.terminals):
+            elif all(t.name in element.pset.constants for t in element.terminals):
                 return True
 
         return False

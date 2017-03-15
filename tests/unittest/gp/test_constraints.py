@@ -19,7 +19,7 @@ class SympyTree(AExpressionTree):
 
 cases = (
     ("Sub(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
-    ("Sub(x_0, x_0)", False, dict(zero=False, constant=True, infty=True), Tree),
+    ("Sub(x_0, x_0)", False, dict(zero=False, constant=False, infty=True), Tree),
     ("Div(x_0, Sub(x_0, x_0))", True, dict(zero=False, constant=True, infty=True), Tree),
     ("Div(x_0, Sub(x_0, x_0))", False, dict(zero=False, constant=True, infty=False), Tree),
     ("-1.0", True, dict(zero=True, constant=True, infty=True), Tree),
@@ -27,6 +27,7 @@ cases = (
     ("SC(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
     ("Add(Symc, Symc)", True, dict(zero=True, constant=True, infty=True), Tree),
     ("Add(c_0, c_0)", True, dict(zero=True, constant=True, infty=True), SympyTree),
+    ("Mul(x_0, Div(Mul(Div(x_0, x_0), Div(x_0, x_0)), Div(Add(x_0, x_0), Div(x_0, x_0))))", True, dict(zero=True, constant=True, infty=True), Tree)
 )
 
 @pytest.mark.parametrize("case", cases)
@@ -35,6 +36,7 @@ def test_nullspace(case):
     cls.pset = add_sc(cls.pset, sc_qout)
     ns = NullSpace(**settings)
     ind = cls.from_string(expr)
+    print(simplify_this(ind).is_constant())
     assert (ind in ns) == res
 
 
