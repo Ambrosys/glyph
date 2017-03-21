@@ -43,7 +43,7 @@ def meassure(ind):
 
 def update_fitness(population, map=map):
     invalid = [p for p in population if not p.fitness.valid]
-    fitnesses = map(meassure, invalid)
+    fitnesses = map(measure, invalid)
     for ind, fit in zip(invalid, fitnesses):
         ind.fitness.values = fit
     return population
