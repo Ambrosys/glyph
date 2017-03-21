@@ -6,7 +6,6 @@ import numpy as np
 
 import deap.gp
 import deap.tools
-import toolz
 
 
 class Individual(gp.AExpressionTree):
@@ -28,16 +27,44 @@ class Memoize:
             self.memo[args] = self.fn(*args)
         return self.memo[args]
 
+
+class ADF(deap.gp.Primitive):
+    def __init__(self, name, arity, variable_names=None):
+        self.name = name
+        self.arity = arity
+        self.args = [deap.gp.__type__] * arity
+        self.ret = deap.gp.__type__
+        self.variable_names = variable_names or ["x_{}".format(i) for i in range(arity)]
+        self._format()
+
+    def _format(self):
+        self.fmt = self.name
+        for i, v in enumerate(self.variable_names):
+            self.fmt = self.fmt.replace(v, "{{{0}}}".format(i))
+
+    def format(self, *args):
+        return self.fmt.format(*args)
+
+
+def pprint_individual(ind):
+    name = str(ind)
+    for c in getattr(ind, "popt", ()):
+        name = name.replace("Symc", str(c), 1)
+    return name
+
+
 @silent_numpy
 def error(ind, *args):
     g = lambda x: x**2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)
-    yhat = f(points)
+    yhat = f(points, *args)
+
     if np.isscalar(yhat):
         yhat = np.ones_like(y) * yhat
     return nrmse(y, yhat)
+
 
 @Memoize
 def measure(ind):
@@ -54,34 +81,23 @@ def update_fitness(population, map=map):
     return population
 
 
-MOTIFS = {}
+MOTIFS = set()
+
+
 def add_motif(ind, pset):
     name = repr(ind)
+    if name not in MOTIFS:
+        motif = ADF(pprint_individual(ind), len(pset.arguments))
+        pset._add(motif)
+        pset.context[motif.name] = motif
+        pset.prims_count += 1
+        MOTIFS.add(name)
 
-    if name not in MOTIFS and name not in MOTIFS.values():
-
-        func = gp.numpy_phenotype(ind)
-        popt = getattr(ind, "popt", ())
-        def closure(*args):
-            res = func(args, *popt)
-            try:
-                res = res.flatten()
-                if res.shape == (1,):
-                    return res[0]
-                return res
-            except:
-                return res
-
-        fname = "motif_{}".format(len(MOTIFS))
-        key = fname + "({})".format(','.join(str(a) for a in pset.args))
-
-        MOTIFS[key] = name
-        pset.addPrimitive(closure, name=fname, arity=len(pset.args))
     return pset
 
 
 def main():
-    pop_size = 200
+    pop_size = 20
 
     mate = deap.gp.cxOnePoint
     expr_mut = partial(deap.gp.genFull, min_=0, max_=2)
@@ -91,13 +107,13 @@ def main():
 
     pop = update_fitness(Individual.create_population(pop_size))
 
-    for gen in range(100):
+    for gen in range(20):
         pop = algorithm.evolve(pop)
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
-        print(best, best.fitness.values)
+        print(gp.individual.simplify_this(best), best.fitness.values)
         Individual.pset = add_motif(best, Individual.pset)
 
-
+    print(MOTIFS)
 if __name__ == "__main__":
     main()
