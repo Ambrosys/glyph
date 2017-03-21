@@ -2,7 +2,6 @@ from functools import partial, partialmethod
 
 from deap.tools import selNSGA2, selBest
 import numpy as np
-import toolz
 
 from glyph.gp.individual import AExpressionTree, ANDimTree, numpy_primitive_set, numpy_phenotype, nd_phenotype
 from glyph.gp.breeding import cxonepoint, nd_crossover, mutuniform, nd_mutation
@@ -14,11 +13,6 @@ pset = numpy_primitive_set(1, categories=('algebraic', 'symc'))
 MyTree = type("MyTree", (AExpressionTree,), dict(pset=pset))
 MyNDTree = type("MyNDTree", (ANDimTree,), dict(base=MyTree))
 MyNDTree.create_population = partialmethod(MyNDTree.create_population, ndim=2)
-
-mutate = partial(nd_mutation, mut1d=mutuniform(pset=pset))
-mate = partial(nd_crossover, cx1d=cxonepoint())
-
-algorithm = AgeFitness(mate, mutate, selNSGA2, MyNDTree.create_population)
 
 
 def target(x):
@@ -50,10 +44,18 @@ def update_fitness(population):
 
 def main():
     pop_size = 100
-    loop = toolz.iterate(toolz.compose(algorithm.evolve, update_fitness), MyNDTree.create_population(pop_size))
-    populations = list(toolz.take(10, loop))
-    best = selBest(populations[-1], 1)[0]
-    print(best)
+    mutate = partial(nd_mutation, mut1d=mutuniform(pset=pset))
+    mate = partial(nd_crossover, cx1d=cxonepoint())
+
+    algorithm = AgeFitness(mate, mutate, selNSGA2, MyNDTree.create_population)
+
+    pop = update_fitness(MyNDTree.create_population(pop_size))
+
+    for gen in range(20):
+        pop = algorithm.evolve(pop)
+        pop = update_fitness(pop)
+        best = selBest(pop, 1)[0]
+        print(best, best.fitness.values)
 
 
 if __name__ == "__main__":

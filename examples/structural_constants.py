@@ -5,10 +5,10 @@ import numpy as np
 
 import deap.gp
 import deap.tools
-import toolz
 
 pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential'])
 pset = gp.individual.add_sc(pset, gp.individual.sc_mmqout)
+
 
 class Individual(gp.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
@@ -60,10 +60,13 @@ def main():
 
     algorithm = gp.algorithms.AgeFitness(mate, mutate, deap.tools.selNSGA2, Individual.create_population)
 
-    loop = toolz.iterate(toolz.compose(update_fitness, algorithm.evolve), update_fitness(Individual.create_population(pop_size)))
-    populations = list(toolz.take(20, loop))
-    best = deap.tools.selBest(populations[-1], 1)[0]
-    print(best, best.fitness.values)
+    pop = update_fitness(Individual.create_population(pop_size))
+
+    for gen in range(20):
+        pop = algorithm.evolve(pop)
+        pop = update_fitness(pop)
+        best = deap.tools.selBest(pop, 1)[0]
+        print(gp.individual.simplify_this(best), best.fitness.values)
 
 if __name__ == "__main__":
     main()
