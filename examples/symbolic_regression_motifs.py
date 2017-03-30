@@ -48,7 +48,7 @@ class ADF(deap.gp.Primitive):
 
 def pprint_individual(ind):
     name = str(ind)
-    for c in getattr(ind, "popt", ()):
+    for c in ind.const_opt:
         name = name.replace("Symc", str(c), 1)
     return name
 
