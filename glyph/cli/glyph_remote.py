@@ -62,7 +62,7 @@ class RemoteApp(glyph.application.Application):
         gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
                                                             method=cp['args'].const_opt_method, options=cp['args'].options,
                                                             caching=cp['args'].caching, simplify=cp['args'].simplify,
-                                                            persistent_caching=cp['args'].persistent_caching)
+                                                            persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size)
         app = cls(cp['args'], cp['runner'], file_name)
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -125,6 +125,7 @@ def get_parser():
     ass_group.add_argument('--smart_step_size', type=int, default=10, help='Number of fev in iterative function optimization. (default: 10)')
     ass_group.add_argument('--smart_min_stat', type=int, default=10, help='Number of samples required prior to stopping (default: 10)')
     ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
+    ass_group.add_argument('--chunk_size', type=int, default=30, help='Number of individuals send per single request. (default: 30)')
 
 
     break_condition = parser.add_argument_group('break condition')
@@ -260,7 +261,7 @@ def key_set(itr, key=hash):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=True):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=True, chunk_size=30):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
@@ -270,7 +271,7 @@ class RemoteAssessmentRunner:
         self.cache = {} if persistent_caching is None else DBCache("glyph-remote", persistent_caching)
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
-        self.chunk_size = 30
+        self.chunk_size = min(chunk_size, 30)
         self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
 
         smart_options = options.pop('smart_options')
@@ -405,7 +406,8 @@ def make_remote_app():
         NDTree.create_population = ndcreate
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
-                                                   consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching, simplify=args.simplify)
+                                                   consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
+                                                   simplify=args.simplify, chunk_size=args.chunk_size)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
     print_params(logger.info, vars(args))
