@@ -256,6 +256,9 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+    @property
+    def const_opt(self):
+        return getattr(self, "popt", ())
 
     @property
     def terminals(self):

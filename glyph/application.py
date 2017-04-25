@@ -420,7 +420,7 @@ class CreateFactory(AFactory):
 
     def add_options(parser):
         parser.add_argument('--create_method', dest='create_method', type=str, default='halfandhalf',
-                            choices=list(SelectFactory._mapping.keys()),
+                            choices=list(CreateFactory._mapping.keys()),
                             help='the create method (default: halfandhalf)')
         parser.add_argument('--create_max_height', dest='create_max_height', default=4,
                             type=utils.argparse.positive_int,

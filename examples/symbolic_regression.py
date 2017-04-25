@@ -1,11 +1,11 @@
 from glyph import gp
+from glyph.assessment import const_opt_scalar
 from glyph.utils.numeric import silent_numpy, nrmse
 from functools import partial
 import numpy as np
 
 import deap.gp
 import deap.tools
-import toolz
 
 
 class Individual(gp.AExpressionTree):
@@ -28,22 +28,29 @@ class Memoize:
         return self.memo[args]
 
 
-@Memoize
 @silent_numpy
-def meassure(ind):
+def error(ind, *args):
     g = lambda x: x**2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)
-    yhat = f(points)
+    yhat = f(points, *args)
+
     if np.isscalar(yhat):
         yhat = np.ones_like(y) * yhat
-    return nrmse(y, yhat), len(ind)
+    return nrmse(y, yhat)
+
+
+@Memoize
+def measure(ind):
+    popt, err_opr = const_opt_scalar(error, ind)
+    ind.popt = popt
+    return err_opr, len(ind)
 
 
 def update_fitness(population, map=map):
     invalid = [p for p in population if not p.fitness.valid]
-    fitnesses = map(meassure, invalid)
+    fitnesses = map(measure, invalid)
     for ind, fit in zip(invalid, fitnesses):
         ind.fitness.values = fit
     return population
@@ -58,10 +65,14 @@ def main():
 
     algorithm = gp.algorithms.AgeFitness(mate, mutate, deap.tools.selNSGA2, Individual.create_population)
 
-    loop = toolz.iterate(toolz.compose(update_fitness, algorithm.evolve), update_fitness(Individual.create_population(pop_size)))
-    populations = list(toolz.take(10, loop))
-    best = deap.tools.selBest(populations[-1], 1)[0]
-    print(best)
+    pop = update_fitness(Individual.create_population(pop_size))
+
+    for gen in range(20):
+        pop = algorithm.evolve(pop)
+        pop = update_fitness(pop)
+        best = deap.tools.selBest(pop, 1)[0]
+        print(gp.individual.simplify_this(best), best.fitness.values)
+
 
 if __name__ == "__main__":
     main()
