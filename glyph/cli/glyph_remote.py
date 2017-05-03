@@ -370,7 +370,7 @@ class NDTree(glyph.gp.individual.ANDimTree):
         return hash(hash(x) for x in self)
 
 
-def make_remote_app():
+def make_remote_app(callbacks=()):
     parser = get_parser()
     args = parser.parse_args()
 
@@ -408,8 +408,8 @@ def make_remote_app():
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size)
-        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
-        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=())
+        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=callbacks)
+        app = RemoteApp(args, gp_runner, args.checkpoint_file)
     print_params(logger.info, vars(args))
     return app, args
 
