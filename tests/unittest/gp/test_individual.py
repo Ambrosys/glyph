@@ -162,7 +162,7 @@ def test_simplify_this_struct_const(sc_ind):
 
 child_tree_cases = (
     ("x_0", []),
-    ("Add(x_0, x_0", ["x_0", "x_0"]),
+    ("Add(x_0, x_0)", ["x_0", "x_0"]),
 )
 
 @pytest.mark.parametrize("case", child_tree_cases)
