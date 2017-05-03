@@ -1,11 +1,12 @@
+from functools import partial
+
+import numpy as np
+import deap.gp
+import deap.tools
+
 from glyph import gp
 from glyph.assessment import const_opt_scalar
 from glyph.utils.numeric import silent_numpy, nrmse
-from functools import partial
-import numpy as np
-
-import deap.gp
-import deap.tools
 
 
 class Individual(gp.AExpressionTree):
