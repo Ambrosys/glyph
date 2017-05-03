@@ -63,7 +63,7 @@ class RemoteApp(glyph.application.Application):
                                                             method=cp['args'].const_opt_method, options=cp['args'].options,
                                                             caching=cp['args'].caching, simplify=cp['args'].simplify,
                                                             persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size)
-        app = cls(cp['args'], cp['runner'], file_name)
+        app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
         random.setstate(cp['random_state'])
@@ -75,7 +75,7 @@ class RemoteApp(glyph.application.Application):
         runner = copy.deepcopy(self.gp_runner)
         del runner.assessment_runner
         glyph.application.safe(self.checkpoint_file, args=self.args, runner=runner,
-                               random_state=random.getstate(), pareto_fronts=self.pareto_fronts)
+                               random_state=random.getstate(), pareto_fronts=self.pareto_fronts, callbacks=self.callbacks)
         self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
 
@@ -409,7 +409,7 @@ def make_remote_app():
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
-        app = RemoteApp(args, gp_runner, args.checkpoint_file)
+        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=())
     print_params(logger.info, vars(args))
     return app, args
 
