@@ -414,3 +414,53 @@ def simplify_this(expr):
     :warning: does not respect closures
     """
     return sympy.simplify(stringify_for_sympy(expr))
+
+
+def child_trees(ind):
+    start = 1
+    while start < len(ind):
+        slice_ = ind.searchSubtree(start)
+        yield type(ind)(ind[slice_])
+        start += slice_.stop - 1
+
+
+@glyph.utils.Memoize
+def simplify_constant(ind):
+    """Trims subtrees of symbolic constants.
+
+    Recursively applying these rules:
+
+        S f(*[symc]*f.arity) = symc
+        S f(x,... symc) = f(x,... symc)
+        S symc = symc
+
+    For deeper trees, try to trim down lower levels first.
+    An individual cannot be trimmed down further if its a fixpoint of S.
+    """
+    symc = ind.pset.mapping[ind.pset.constants[0]]
+    if symc in ind:
+        root = ind.root
+
+        # the tree is just a function of constants
+        if len(ind) > 1 and  all(i == symc for i in ind[1:]):
+            return type(ind)([symc])
+
+        # root is just a constant or tree is a function of a variable and cannot be trimmed down.
+        elif len(ind) == 1 or len(ind) == root.arity + 1:
+            return ind
+
+        # try to simplify all children of root
+        else:
+            acc = [simplify_constant(child) for child in child_trees(ind)]
+            new_ind = type(ind)([root] + sum(acc, []))
+
+            # cannot be simplified
+            if ind == new_ind:
+                return ind
+
+            # can it be simplified further?
+            else:
+                return simplify_constant(new_ind)
+
+    else:
+        return ind
