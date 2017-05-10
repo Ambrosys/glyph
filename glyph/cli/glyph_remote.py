@@ -26,7 +26,7 @@ from cache import DBCache
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
-from glyph.utils.break_condition import BreakCondition
+from glyph.utils.break_condition import break_condition
 from glyph.assessment import tuple_wrap, const_opt_scalar
 from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
@@ -417,8 +417,8 @@ def make_remote_app(callbacks=()):
 def main():
     app, args = make_remote_app()
 
-    break_condition = BreakCondition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
-    app.run(break_condition=break_condition)
+    bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
+    app.run(break_condition=bc)
 
 if __name__ == "__main__":
     main()
