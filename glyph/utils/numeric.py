@@ -8,7 +8,6 @@ from collections import defaultdict
 import numpy as np
 import scipy.integrate
 import scipy.optimize
-import scipy.signal
 
 
 def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
@@ -194,3 +193,8 @@ class SmartConstantOptimizer:
                     break
 
         return res
+
+
+def expressional_complexity(ind):
+    """Sum of length of all subtrees of the individual."""
+    return sum(len(ind[ind.searchSubtree(i)]) for i in range(len(ind)))
