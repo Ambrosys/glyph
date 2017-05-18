@@ -26,7 +26,7 @@ from cache import DBCache
 from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
-from glyph.utils.break_condition import BreakCondition
+from glyph.utils.break_condition import break_condition
 from glyph.assessment import tuple_wrap, const_opt_scalar
 from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
@@ -63,7 +63,7 @@ class RemoteApp(glyph.application.Application):
                                                             method=cp['args'].const_opt_method, options=cp['args'].options,
                                                             caching=cp['args'].caching, simplify=cp['args'].simplify,
                                                             persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size)
-        app = cls(cp['args'], cp['runner'], file_name)
+        app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
         random.setstate(cp['random_state'])
@@ -75,7 +75,7 @@ class RemoteApp(glyph.application.Application):
         runner = copy.deepcopy(self.gp_runner)
         del runner.assessment_runner
         glyph.application.safe(self.checkpoint_file, args=self.args, runner=runner,
-                               random_state=random.getstate(), pareto_fronts=self.pareto_fronts)
+                               random_state=random.getstate(), pareto_fronts=self.pareto_fronts, callbacks=self.callbacks)
         self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
 
@@ -370,7 +370,7 @@ class NDTree(glyph.gp.individual.ANDimTree):
         return hash(hash(x) for x in self)
 
 
-def make_remote_app():
+def make_remote_app(callbacks=()):
     parser = get_parser()
     args = parser.parse_args()
 
@@ -408,7 +408,7 @@ def make_remote_app():
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size)
-        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
+        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=callbacks)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
     print_params(logger.info, vars(args))
     return app, args
@@ -417,8 +417,8 @@ def make_remote_app():
 def main():
     app, args = make_remote_app()
 
-    break_condition = BreakCondition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
-    app.run(break_condition=break_condition)
+    bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
+    app.run(break_condition=bc)
 
 if __name__ == "__main__":
     main()

@@ -1,12 +1,6 @@
-import re
-import ast
 from setuptools import setup, find_packages
 
-
-_version_re = re.compile(r'__VERSION__\s+=\s+(.*)')
-
-with open('glyph/__init__.py', 'rb') as f:
-    version = str(ast.literal_eval(_version_re.search(f.read().decode('utf-8')).group(1)))
+version = "0.3.0"
 
 
 def read(fname, split=True):

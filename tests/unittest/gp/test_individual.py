@@ -143,6 +143,7 @@ def sc_ind():
         pset = this_pset
     return Ind
 
+
 @pytest.mark.parametrize("case", get_len_case)
 def test_struct_const_repr(case, sc_ind):
     subexpr, _ = case
@@ -152,18 +153,37 @@ def test_struct_const_repr(case, sc_ind):
     func = numpy_phenotype(ind)
     assert func(1) == 1
 
+
 def test_simplify_this_struct_const(sc_ind):
     expr = "SC(0.0, Add(x_0, Neg(x_0)))"
     ind = sc_ind.from_string(expr)
     assert str(ind) == str(simplify_this(ind))
 
 
-#def test_sc_nd_terminals(sc_ind):
-#    class NDTree(ANDimTree):
-#        base = sc_ind
-#
-#    expr = "SC(x_0, x_0)"
-#
-#    ind = sc_ind.from_string(expr)
-#    nd_ind = NDTree([ind, ind])
-#    assert nd.terminals
+child_tree_cases = (
+    ("x_0", []),
+    ("Add(x_0, x_0)", ["x_0", "x_0"]),
+)
+
+@pytest.mark.parametrize("case", child_tree_cases)
+def test_child_trees(case):
+    expr, res = case
+    ind = Tree.from_string(expr)
+    assert list(child_trees(ind)) == [Tree.from_string(r) for r in res]
+
+
+simplify_consts_cases = (
+    ("Add(x_0, Add(Symc, Symc))", "Add(x_0, Symc)"),
+    ("Symc", "Symc"),
+    ("sin(cos(Symc)", "Symc"),
+    ("Div(x_0, cos(Symc))", "Div(x_0, Symc)"),
+    ("Div(x_0, Add(Symc, Symc))", "Div(x_0, Symc)"),
+    ("Add(x_0, Symc)", "Add(x_0, Symc)"),
+    ("Div(Symc, Add(x_0, Symc))", "Div(Symc, Add(x_0, Symc))"),
+)
+
+@pytest.mark.parametrize("case", simplify_consts_cases)
+def test_simplify_constant(case):
+    expr, res = case
+    ind = Tree.from_string(expr)
+    assert str(simplify_constant(ind)) == res

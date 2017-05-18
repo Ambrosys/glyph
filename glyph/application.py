@@ -34,7 +34,7 @@ class GPRunner(object):
     assessment runner.
     """
 
-    def __init__(self, IndividualClass, algorithm_factory, assessment_runner):
+    def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=()):
         """Init GPRunner.
 
         :param IndividualClass: Class inherited from gp.AExpressionTree.
@@ -48,6 +48,7 @@ class GPRunner(object):
         self.assessment_runner = assessment_runner
         self.halloffame = []
         self.logbook = ''
+        self.callbacks = callbacks
 
     def init(self, pop_size):
         """Initialize the gp run."""
@@ -67,6 +68,8 @@ class GPRunner(object):
             self.population = self.algorithm.evolve(self.population)
         self.step_count += 1
         self._update()
+        for cb in self.callbacks:
+            cb(self)
 
     def _update(self):
         """Evaluate invalid individuals and update statistics accordingly."""
@@ -76,6 +79,7 @@ class GPRunner(object):
             self.mstats = create_stats(len(self.population[0].fitness.values))
         record = self.mstats.compile(self.population)
         self.logbook.record(gen=self.step_count, evals=evals, **record)
+
 
 
 @contextmanager
@@ -96,7 +100,7 @@ def random_state(cls, rng=random):
     rng.setstate(getattr(cls, '_tmp_state', rng.getstate()))
 
 
-def default_gprunner(Individual, assessment_runner, **kwargs):
+def default_gprunner(Individual, assessment_runner, callbacks=(), **kwargs):
     """Create a default GPRunner instance.
 
     For config options see `MateFactory`, `MutateFactory`, `AlgorithmFactory`.
@@ -116,7 +120,23 @@ def default_gprunner(Individual, assessment_runner, **kwargs):
     create_method = CreateFactory.create(default_config, Individual)
     AlgorithmFactory.create(default_config, mate, mutate, select, create_method)  # A test run to check config params.
     algorithm_factory = toolz.partial(AlgorithmFactory.create, default_config, mate, mutate, select, create_method)
-    return GPRunner(Individual, algorithm_factory, assessment_runner)
+    return GPRunner(Individual, algorithm_factory, assessment_runner, callbacks=callbacks)
+
+
+def log(app):
+    app.logger.info(app.gp_runner.logbook.stream)
+
+
+def update_pareto_front(app):
+    app.pareto_fronts.append(app.gp_runner.halloffame[:])
+
+
+def make_checkpoint(app):
+    if app.valid_checkpointing and (app.gp_runner.step_count % app.args.checkpoint_frequency == 0):
+        app.checkpoint()
+
+
+DEFAULT_CALLBACKS = (log, update_pareto_front, make_checkpoint)
 
 
 class Application(object):
@@ -130,12 +150,13 @@ class Application(object):
     create_console_app().
     """
 
-    def __init__(self, config, gp_runner, checkpoint_file):
+    def __init__(self, config, gp_runner, checkpoint_file, callbacks=()):
         """
         :param config: Container holding all configs
         :type config: dict or argparse.Namespace
         :param gp_runner: Instance of `GPRunner`
         :param checkpoint_file: Path to checkpoint_file
+        :param callbacks:
         """
         self.args = to_argparse_namespace(config)
         self.gp_runner = gp_runner
@@ -143,6 +164,7 @@ class Application(object):
         self.pareto_fronts = []
         self.logger = logging.getLogger(__name__)
         self._initialized = False
+        self.callbacks = callbacks + DEFAULT_CALLBACKS
 
     @property
     def assessment_runner(self):
@@ -174,10 +196,8 @@ class Application(object):
 
     def _update(self):
         """Execute callbacks (logger, checkpointing, Halloffame"""
-        self.logger.info(self.gp_runner.logbook.stream)
-        self.pareto_fronts.append(self.gp_runner.halloffame[:])
-        if self.valid_checkpointing and (self.gp_runner.step_count % self.args.checkpoint_frequency == 0):
-            self.checkpoint()
+        for cb in self.callbacks:
+            cb(self)
 
     @property
     def valid_checkpointing(self):
@@ -186,7 +206,7 @@ class Application(object):
     def checkpoint(self):
         """Checkpoint current state of evolution."""
         safe(self.checkpoint_file, args=self.args, runner=self.gp_runner,
-             random_state=random.getstate(), pareto_fronts=self.pareto_fronts)
+             random_state=random.getstate(), pareto_fronts=self.pareto_fronts, callbacks=self.callbacks)
         self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
     @property
@@ -197,7 +217,7 @@ class Application(object):
     def from_checkpoint(cls, file_name):
         """Create application from checkpoint file."""
         cp = load(file_name)
-        app = cls(cp['args'], cp['runner'], file_name)
+        app = cls(cp['args'], cp['runner'], file_name, callbacks=cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
         random.setstate(cp['random_state'])
@@ -220,7 +240,7 @@ class Application(object):
                             help='do checkpointing every n generations (default: 1)')
 
 
-def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.ArgumentParser()):
+def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.ArgumentParser(), callbacks=()):
     """Factory function for a console application."""
     Application.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(required=False)
@@ -264,7 +284,7 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
         parallel_factory = toolz.partial(ParallelizationFactory.create, args)
         assessment_runner = AssessmentRunnerClass(parallel_factory)
         gp_runner = GPRunner(IndividualClass, algorithm_factory, assessment_runner)
-        app = Application(args, gp_runner, args.checkpoint_file)
+        app = Application(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
         return app, args
 
 

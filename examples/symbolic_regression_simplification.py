@@ -29,31 +29,6 @@ class Memoize:
         return self.memo[args]
 
 
-class ADF(deap.gp.Primitive):
-    def __init__(self, name, arity, variable_names=None):
-        self.name = name
-        self.arity = arity
-        self.args = [deap.gp.__type__] * arity
-        self.ret = deap.gp.__type__
-        self.variable_names = variable_names or ["x_{}".format(i) for i in range(arity)]
-        self._format()
-
-    def _format(self):
-        self.fmt = self.name
-        for i, v in enumerate(self.variable_names):
-            self.fmt = self.fmt.replace(v, "{{{0}}}".format(i))
-
-    def format(self, *args):
-        return self.fmt.format(*args)
-
-
-def pprint_individual(ind):
-    name = str(ind)
-    for c in ind.const_opt:
-        name = name.replace("Symc", str(c), 1)
-    return name
-
-
 @silent_numpy
 def error(ind, *args):
     g = lambda x: x**2 - 1.1
@@ -82,27 +57,13 @@ def update_fitness(population, map=map):
     return population
 
 
-MOTIFS = set()
-
-
-def add_motif(ind, pset):
-    name = repr(ind)
-    if name not in MOTIFS:
-        motif = ADF(pprint_individual(ind), len(pset.arguments))
-        pset._add(motif)
-        pset.context[motif.name] = motif
-        pset.prims_count += 1
-        MOTIFS.add(name)
-
-    return pset
-
-
 def main():
-    pop_size = 20
+    pop_size = 100
 
     mate = deap.gp.cxOnePoint
     expr_mut = partial(deap.gp.genFull, min_=0, max_=2)
     mutate = partial(deap.gp.mutUniform, expr=expr_mut, pset=Individual.pset)
+    simplify = gp.individual.simplify_constant
 
     algorithm = gp.algorithms.AgeFitness(mate, mutate, deap.tools.selNSGA2, Individual.create_population)
 
@@ -110,11 +71,12 @@ def main():
 
     for gen in range(20):
         pop = algorithm.evolve(pop)
+        pop = [Individual(simplify(ind)) for ind in pop]
+
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
         print(gp.individual.simplify_this(best), best.fitness.values)
-        Individual.pset = add_motif(best, Individual.pset)
 
-    print(MOTIFS)
+
 if __name__ == "__main__":
     main()

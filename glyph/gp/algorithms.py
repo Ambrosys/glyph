@@ -161,5 +161,5 @@ for alg in basic:
     setattr(current_module, ualg.__name__, ualg)  # we need to create it in this submodules scope as well
     uniques.append(ualg)
 
-all_algorithms = tuple(itertools.chain.from_iterable([basic, uniques]))
+all_algorithms = list(itertools.chain.from_iterable([basic, uniques]))
 __all__ = [obj.__name__ for obj in all_algorithms]
