@@ -123,20 +123,12 @@ def default_gprunner(Individual, assessment_runner, callbacks=(), **kwargs):
     return GPRunner(Individual, algorithm_factory, assessment_runner, callbacks=callbacks)
 
 
-def log(app):
-    app.logger.info(app.gp_runner.logbook.stream)
-
-
-def update_pareto_front(app):
-    app.pareto_fronts.append(app.gp_runner.halloffame[:])
-
-
 def make_checkpoint(app):
     if app.valid_checkpointing and (app.gp_runner.step_count % app.args.checkpoint_frequency == 0):
         app.checkpoint()
 
 
-DEFAULT_CALLBACKS = (log, update_pareto_front, make_checkpoint)
+DEFAULT_CALLBACKS = make_checkpoint,
 
 
 class Application(object):
@@ -195,7 +187,6 @@ class Application(object):
         return iterations
 
     def _update(self):
-        """Execute callbacks (logger, checkpointing, Halloffame"""
         for cb in self.callbacks:
             cb(self)
 
