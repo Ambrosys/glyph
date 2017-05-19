@@ -5,7 +5,7 @@ from glyph.utils.numeric import *
 
 ec_cases = (
     ("x_0", 1),
-    ("Add(exp(x_0), x_0", 8),
+    ("Add(exp(x_0), x_0)", 8),
 )
 
 
