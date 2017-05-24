@@ -8,7 +8,7 @@ from glyph.utils.argparse import *
 def test_positive_int():
     assert 10 == positive_int("10")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(argparse.ArgumentTypeError):
         positive_int("0.5")
 
     with pytest.raises(argparse.ArgumentTypeError):
@@ -21,7 +21,7 @@ def test_non_negative_int():
     with pytest.raises(argparse.ArgumentTypeError):
         non_negative_int("-1")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(argparse.ArgumentTypeError):
         positive_int("0.5")
 
 
@@ -31,5 +31,5 @@ def test_unit_interval():
     with pytest.raises(argparse.ArgumentTypeError):
         unit_interval("-0.1")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(argparse.ArgumentTypeError):
         unit_interval("0..5")

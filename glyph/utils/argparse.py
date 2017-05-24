@@ -32,7 +32,7 @@ def non_negative_int(string):
 def unit_interval(string):
     """Check whether string is a float in the interval [0.0, 1.0]."""
     try:
-        value = float(string, base=10)
+        value = float(string)
     except ValueError:
         raise argparse.ArgumentTypeError("invalid float value: '{}'".format(string))
     if value < 0.0 or value > 1.0:
