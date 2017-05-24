@@ -35,7 +35,7 @@ def unit_interval(string):
         value = float(string, base=10)
     except ValueError:
         raise argparse.ArgumentTypeError("invalid float value: '{}'".format(string))
-    if value < 0.0 and value > 1.0:
+    if value < 0.0 or value > 1.0:
         raise argparse.ArgumentTypeError("float value hast to be in unit interval [0,1]: '{}'".format(string))
     return value
 
