@@ -28,7 +28,7 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.assessment import tuple_wrap, const_opt_scalar
-from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
+from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
@@ -273,6 +273,7 @@ class RemoteAssessmentRunner:
         self.result_queue = {}
         self.chunk_size = min(chunk_size, 30)
         self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
+        self.evaluations = 0
 
         smart_options = options.pop('smart_options')
         if smart_options["use"]:
@@ -290,8 +291,7 @@ class RemoteAssessmentRunner:
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
 
-        for k, v in zip(individual.pset.constants, consts):
-            payload = [s.replace(k, str(v)) for s in payload]
+        payload = [pretty_print(s, individual.pset.constants, consts) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
         self.queue.put((key, payload))
