@@ -121,7 +121,7 @@ def get_parser():
     ass_group.add_argument('--structural_constants', action='store_true', default=False, help='Make use of structural constants. (default: False)')
     ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
     ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
-    ass_group.add_argument('--smart', action="store_true", default=False, help='Use smart constant optimization.')
+    ass_group.add_argument('--smart', action="store_true", default=False, help='Use smart constant optimization. (default: False)')
     ass_group.add_argument('--smart_step_size', type=int, default=10, help='Number of fev in iterative function optimization. (default: 10)')
     ass_group.add_argument('--smart_min_stat', type=int, default=10, help='Number of samples required prior to stopping (default: 10)')
     ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
@@ -135,7 +135,7 @@ def get_parser():
 
     constraints = parser.add_argument_group('constraints')
     constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
-    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: False)')
+    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: True)')
     constraints.add_argument('--constraints_infty', type=bool, default=True, help='Discard individuals with infinities (default: True)')
     return parser
 
