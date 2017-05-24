@@ -275,9 +275,9 @@ class RemoteAssessmentRunner:
         self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
         self.evaluations = 0
 
-        smart_options = options.pop('smart_options')
-        if smart_options["use"]:
-            self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **smart_options["kw"])
+        self.smart_options = options.get('smart_options')
+        if self.smart_options["use"]:
+            self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
