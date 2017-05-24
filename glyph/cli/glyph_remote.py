@@ -28,7 +28,7 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.assessment import tuple_wrap, const_opt_scalar
-from glyph.gp.individual import simplify_this, add_sc, sc_mmqout
+from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
@@ -121,7 +121,7 @@ def get_parser():
     ass_group.add_argument('--structural_constants', action='store_true', default=False, help='Make use of structural constants. (default: False)')
     ass_group.add_argument('--sc_min', type=float, default=-1, help='Minimum value of sc for scaling. (default: -1)')
     ass_group.add_argument('--sc_max', type=float, default=1, help='Maximum value of sc for scaling. (default: 1)')
-    ass_group.add_argument('--smart', action="store_true", default=False, help='Use smart constant optimization.')
+    ass_group.add_argument('--smart', action="store_true", default=False, help='Use smart constant optimization. (default: False)')
     ass_group.add_argument('--smart_step_size', type=int, default=10, help='Number of fev in iterative function optimization. (default: 10)')
     ass_group.add_argument('--smart_min_stat', type=int, default=10, help='Number of samples required prior to stopping (default: 10)')
     ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
@@ -135,7 +135,7 @@ def get_parser():
 
     constraints = parser.add_argument_group('constraints')
     constraints.add_argument('--constraints_zero', type=bool, default=True, help='Discard zero individuals (default: True)')
-    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: False)')
+    constraints.add_argument('--constraints_constant', type=bool, default=True, help='Discard constant individuals (default: True)')
     constraints.add_argument('--constraints_infty', type=bool, default=True, help='Discard individuals with infinities (default: True)')
     return parser
 
@@ -273,6 +273,7 @@ class RemoteAssessmentRunner:
         self.result_queue = {}
         self.chunk_size = min(chunk_size, 30)
         self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
+        self.evaluations = 0
 
         smart_options = options.pop('smart_options')
         if smart_options["use"]:
@@ -290,8 +291,7 @@ class RemoteAssessmentRunner:
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
 
-        for k, v in zip(individual.pset.constants, consts):
-            payload = [s.replace(k, str(v)) for s in payload]
+        payload = [pretty_print(s, individual.pset.constants, consts) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
         self.queue.put((key, payload))

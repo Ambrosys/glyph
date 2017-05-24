@@ -187,3 +187,19 @@ def test_simplify_constant(case):
     expr, res = case
     ind = Tree.from_string(expr)
     assert str(simplify_constant(ind)) == res
+
+
+
+pprint_cases = (
+    ("c", "1", ["c"], [1], 0),
+    ("c1", "1", ["c1"], [1], 0),
+    ("subtract(c, c)", "subtract(1, 1)", ["c"], [1], 0),
+    ("add(c, c)", "add(1, c)", ["c"], [1], 1),
+    ("add(c, c)", "add(1, 2)", ["c", "c"], [1, 2], 1),
+)
+
+@pytest.mark.parametrize("case", pprint_cases)
+def test_pretty_print(case):
+    expr, res, constants, values, count = case
+    print(values)
+    assert res == pretty_print(expr, constants, values, count=count)

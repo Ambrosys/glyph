@@ -464,3 +464,15 @@ def simplify_constant(ind):
 
     else:
         return ind
+
+
+def pretty_print(expr, constants, consts_values, count=0):
+    """Replace symbolic constants in the str representation of an individual
+    by their numeric values.
+
+    This checks for either c followed by ")" or ",", or for just the constant itself.
+    """
+    for k, v in zip(constants, consts_values):
+        pattern = r"{c}(?=[,)])|^{c}$".format(c=str(k))
+        expr = re.sub(pattern, str(v), expr, count=count)
+    return expr
