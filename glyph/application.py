@@ -24,6 +24,18 @@ from . import utils
 from .assessment import SingleProcessFactoy
 
 
+def update_halloffame(app):
+    app.halloffame.update(app.population)
+
+
+def print_to_logbook(app):
+    if not app.mstats:
+        app.mstats = create_stats(len(app.population[0].fitness.values))
+    record = app.mstats.compile(app.population)
+    app.logbook.record(gen=app.step_count, evals=app._evals, **record)
+
+
+
 class GPRunner(object):
     """Runner for gp problem sets.
 
@@ -48,7 +60,7 @@ class GPRunner(object):
         self.assessment_runner = assessment_runner
         self.halloffame = []
         self.logbook = ''
-        self.callbacks = callbacks
+        self.callbacks = callbacks + (update_halloffame, print_to_logbook)
 
     def init(self, pop_size):
         """Initialize the gp run."""
@@ -68,18 +80,11 @@ class GPRunner(object):
             self.population = self.algorithm.evolve(self.population)
         self.step_count += 1
         self._update()
-        for cb in self.callbacks:
-            cb(self)
 
     def _update(self):
-        """Evaluate invalid individuals and update statistics accordingly."""
-        evals = self.assessment_runner(self.population)
-        self.halloffame.update(self.population)
-        if not self.mstats:
-            self.mstats = create_stats(len(self.population[0].fitness.values))
-        record = self.mstats.compile(self.population)
-        self.logbook.record(gen=self.step_count, evals=evals, **record)
-
+        self._evals = self.assessment_runner(self.population)
+        for cb in self.callbacks:
+            cb(self)
 
 
 @contextmanager
