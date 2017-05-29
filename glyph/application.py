@@ -28,12 +28,11 @@ def update_halloffame(app):
     app.halloffame.update(app.population)
 
 
-def print_to_logbook(app):
+def update_logbook_record(app):
     if not app.mstats:
         app.mstats = create_stats(len(app.population[0].fitness.values))
     record = app.mstats.compile(app.population)
     app.logbook.record(gen=app.step_count, evals=app._evals, **record)
-
 
 
 class GPRunner(object):
@@ -60,7 +59,9 @@ class GPRunner(object):
         self.assessment_runner = assessment_runner
         self.halloffame = []
         self.logbook = ''
-        self.callbacks = callbacks + (update_halloffame, print_to_logbook)
+        self.mstats = None
+        self.step_count = 0
+        self.callbacks = callbacks + (update_halloffame, update_logbook_record)
 
     def init(self, pop_size):
         """Initialize the gp run."""
@@ -133,7 +134,11 @@ def make_checkpoint(app):
         app.checkpoint()
 
 
-DEFAULT_CALLBACKS = make_checkpoint,
+def log(app):
+    app.logger.info(app.gp_runner.logbook.stream)
+
+
+DEFAULT_CALLBACKS = make_checkpoint, log
 
 
 class Application(object):
