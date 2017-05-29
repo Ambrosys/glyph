@@ -196,6 +196,9 @@ pprint_cases = (
     ("subtract(c, c)", "subtract(1, 1)", ["c"], [1], 0),
     ("add(c, c)", "add(1, c)", ["c"], [1], 1),
     ("add(c, c)", "add(1, 2)", ["c", "c"], [1, 2], 1),
+    ("c+x", "1+x", ["c"], [1], 0),
+    ("c + x", "1 + x", ["c"], [1], 0),
+    ("c * x", "1 * x", ["c"], [1], 0),
 )
 
 @pytest.mark.parametrize("case", pprint_cases)
