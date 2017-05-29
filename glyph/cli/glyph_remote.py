@@ -66,6 +66,9 @@ class RemoteApp(glyph.application.Application):
         app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
+        args = cp['args']
+        pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
+        Individual.pset = pset
         random.setstate(cp['random_state'])
         return app
 
@@ -109,8 +112,7 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    #ass_group.add_argument('--send_all', action='store_true', default=False, help='Send all invalid individuals at once. (default: False)')
-    ass_group.add_argument('--simplify', type=bool, default=True, help='Simplify expression before sending them. (default: True)')
+    ass_group.add_argument('--simplify', type=bool, default=False, help='Simplify expression before sending them. (default: False)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
     ass_group.add_argument('--persistent_caching', default=None, help='Key for persistent data base cache for caching between experiments (default: None)')
@@ -261,7 +263,7 @@ def key_set(itr, key=hash):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=True, chunk_size=30):
+    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=False, chunk_size=30):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
@@ -289,9 +291,7 @@ class RemoteAssessmentRunner:
     def evaluate_single(self, individual, *consts):
 
         """Evaluate a single individual."""
-        payload = [self.make_str(t) for t in individual]
-
-        payload = [pretty_print(s, individual.pset.constants, consts) for s in payload]
+        payload = [pretty_print(s, individual.pset.constants, consts) for s in [self.make_str(t) for t in individual]]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
         self.queue.put((key, payload))

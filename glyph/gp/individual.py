@@ -470,9 +470,16 @@ def pretty_print(expr, constants, consts_values, count=0):
     """Replace symbolic constants in the str representation of an individual
     by their numeric values.
 
-    This checks for either c followed by ")" or ",", or for just the constant itself.
+    This checks for
+        - c followed by ")" or ","
+        - c followed by infix operators
+        - c
     """
     for k, v in zip(constants, consts_values):
-        pattern = r"{c}(?=[,)])|^{c}$".format(c=str(k))
+        c = str(k)
+        p1 = r"{c}(?=[,)])".format(c=c)
+        p2 = r"^{c}$".format(c=c)
+        p3 = r"(?<=[*+-/]){c}|(?<=[*+-/] ){c}|c(?=\s?[*+-/])".format(c=c)
+        pattern = r"|".join((p1, p2, p3))
         expr = re.sub(pattern, str(v), expr, count=count)
     return expr

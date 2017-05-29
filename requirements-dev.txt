@@ -2,6 +2,7 @@
 pytest
 pytest-cov
 pytest-xdist
+pytest-timeout
 scikit-learn
 sphinx
 recommonmark
