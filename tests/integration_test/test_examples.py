@@ -52,7 +52,7 @@ def test_glyph_remote():
         exp.wait()
 
         exp = subprocess.Popen("python {}".format(example), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        gp = subprocess.Popen("glyph-remote --resume --remote", shell=True)
+        gp = subprocess.Popen("glyph-remote --resume checkpoint.pickle --remote", shell=True)
 
         gp.wait()  # gp sends shutdown to exp process
         exp.wait()
