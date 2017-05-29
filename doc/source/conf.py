@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
-import glyph
+from setup import version
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -23,8 +23,7 @@ import datetime
 copyright = '{}, Markus Abel, Julien Gout, Markus Quade, <a href="http://www.ambrosys.de">Ambrosys GmbH</a>'.format(datetime.datetime.now().year)
 author = 'Markus Abel, Julien Gout, Markus Quade'
 
-version = glyph.__VERSION__
-release = glyph.__VERSION__
+version = release = version
 
 language = None
 exclude_patterns = ['_build']
