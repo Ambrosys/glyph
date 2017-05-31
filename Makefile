@@ -19,7 +19,7 @@ freeze:
 	pip install pip-tools
 	pip-compile --output-file requirements.txt requirements-to-freeze.txt
 
-doc: dev
+doc:
 	make -C doc clean
 	make -C doc html
 
