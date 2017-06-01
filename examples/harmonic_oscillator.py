@@ -49,7 +49,7 @@ class AssessmentRunner(assessment.AAssessmentRunner):
 
     def trajectory(self, individual, *f_args):
         dy = self.dynsys(gp.sympy_phenotype(individual))
-        return utils.numeric.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
+        return control_problem.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
 
 
 def main():

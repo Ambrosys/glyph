@@ -59,7 +59,7 @@ class AssessmentRunner(assessment.AAssessmentRunner):
 
     def trajectory(self, individual, *f_args):
         dy = control_problem.lorenz_in_2(gp.sympy_phenotype(individual), **self.params)
-        return utils.numeric.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
+        return control_problem.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
 
 
 def main():

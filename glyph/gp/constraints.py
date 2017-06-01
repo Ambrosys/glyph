@@ -12,6 +12,12 @@ class NullSpace:    # todo documentation
 
     def __contains__(self, element):
         expr = simplify_this(element)
+        if self.constant:
+            if expr.is_constant():
+                return True
+            elif all(t.name in element.pset.constants for t in element.terminals):
+                return True
+
         if self.infty:
             if "zoo" in str(expr):
                 return True
@@ -20,12 +26,6 @@ class NullSpace:    # todo documentation
             if expr.is_zero:
                 return  True
 
-        if self.constant:
-            if expr.is_constant():
-                return True
-
-            elif all(t.name in element.pset.constants for t in element.terminals):
-                return True
         return False
 
 

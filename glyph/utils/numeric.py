@@ -1,64 +1,11 @@
 # Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
 # Licence: LGPL
 
-import itertools
 import functools
 from collections import defaultdict
 
 import numpy as np
-import scipy.integrate
 import scipy.optimize
-
-
-def integrate(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
-    """
-    Convenience function for odeint().
-
-    Uselful if you do not want to step through the integration, but rather get
-    the full result in one call.
-
-    :param dy: `callable(x, y, *args)`
-    :param yinit: sequence of initial values.
-    :param x: sequence of x values.
-    :param f_args: (optional) extra arguments to pass to function.
-    :returns: y(x)
-    """
-    res = odeint(dy, yinit, x, f_args=f_args, integrator=integrator, **integrator_args)
-    y = np.vstack(res).T
-    if y.shape[1] != x.shape[0]:
-        y = np.empty((y.shape[0], x.shape[0]))
-        y[:] = np.NAN
-    if y.shape[0] == 1:
-        return y[0, :]
-    return y
-
-
-def odeint(dy, yinit, x, f_args=(), integrator='dopri5', **integrator_args):
-    """
-    Integrate the initial value problem (dy, yinit).
-
-    A wrapper around scipy.integrate.ode.
-
-    :param dy: `callable(x, y, *args)`
-    :param yinit: sequence of initial values.
-    :param x: sequence of x values.
-    :param f_args: (optional) extra arguments to pass to function.
-    :yields: y(x_i)
-    """
-    @functools.wraps(dy)
-    def f(x, y):
-        return dy(x, y, *f_args)
-    ode = scipy.integrate.ode(f)
-    ode.set_integrator(integrator, **integrator_args)
-    # ode.set_f_params(*f_args)
-    # Seems to be buggy! (see https://github.com/scipy/scipy/issues/1976#issuecomment-17026489)
-    ode.set_initial_value(yinit, x[0])
-    yield ode.y
-    for value in itertools.islice(x, 1, None):
-        ode.integrate(value)
-        if not ode.successful():
-            raise StopIteration
-        yield ode.y
 
 
 def rms(y):

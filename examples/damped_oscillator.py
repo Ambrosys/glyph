@@ -70,7 +70,7 @@ class AssessmentRunner(assessment.AAssessmentRunner):
 
     def trajectory(self, individual, *f_args):
         dy = control_problem.anharmonic_oscillator(gp.sympy_phenotype(individual), **self.params)
-        return utils.numeric.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
+        return control_problem.integrate(dy, yinit=self.yinit, x=self.x, f_args=f_args)
 
 
 def main():
