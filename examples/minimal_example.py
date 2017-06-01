@@ -34,7 +34,7 @@ dynsys = partial(control_problem.anharmonic_oscillator, omega=1.0, c=3.0 / 8.0, 
 # Define target of control.
 target = np.sin(x)
 # Define measure.
-trajectory = compose(partial(utils.numeric.integrate, yinit=[1.0, 0.0], x=x), dynsys, phenotype)
+trajectory = compose(partial(control_problem.integrate, yinit=[1.0, 0.0], x=x), dynsys, phenotype)
 rmse = partial(utils.numeric.rmse, target)
 dynsys_measure = assessment.measure(rmse, pre=compose(lambda arr: arr[0], trajectory))
 complete_measure = assessment.measure(dynsys_measure, len, post=assessment.replace_nan)
