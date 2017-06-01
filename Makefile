@@ -5,7 +5,7 @@ init:
 	pip install -e .
 
 test:
-	py.test tests/unittest --runslow --cov=glyph --cov-config tox.ini
+	py.test tests --cov=glyph --cov-config tox.ini
 
 integration:
 	py.test tests --runslow -n8 --cov=glyph --cov-config tox.ini
