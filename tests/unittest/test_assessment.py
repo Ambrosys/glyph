@@ -5,6 +5,7 @@ import operator
 
 import pytest
 import numpy as np
+import scipy.integrate
 import dill
 
 from glyph import gp
@@ -41,14 +42,15 @@ class Any(int):
         return 0
 
 
+def tupleize(x):
+    try:
+        iter(x)
+    except:
+        x = x,
+    return x
+
 def assert_all_close(a, b, r_tol=1e-6):
     """Custom all_close to account for comparisons to Any()"""
-    def tupleize(x):
-        try:
-            iter(x)
-        except:
-            x = x,
-        return x
     a = tupleize(a)
     b = tupleize(b)
     assert all([abs(p+operator.neg(q)) <= r_tol for p, q in zip(a, b)])
@@ -101,6 +103,25 @@ def test_const_opt_scalar(case):
 
     popt, _ = assessment.const_opt_scalar(error, ind)
     assert_all_close(desired, popt)
+
+
+def test_const_opt_scalar_functional():
+
+    def integral(ind, *const):
+        f = gp.sympy_phenotype(ind)
+
+        def f_square(x, *const):
+            return f(x, *const)**2
+
+        s, *_ = scipy.integrate.quad(f_square, 0, 1, args=tupleize(const))
+        return s
+
+    expr = "Mul(c, x_0)"
+    ind = SingleConstIndividual.from_string(expr)
+
+    popt, _ = assessment.const_opt_scalar(integral, ind)
+    assert_all_close(popt, [0])
+
 
 def test_hill_climb():
     rng = np.random.RandomState(seed=1742)
