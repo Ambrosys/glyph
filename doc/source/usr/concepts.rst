@@ -149,4 +149,4 @@ The module provides several facory classes which can dynamically expand an exist
 
 For more involved applications you can inherit from the Application class. (see :download:`/../../glyph/cli/glyph_remote.py`).
 
-We recommence having a look at the :download:`/../../examples/minimal_example.py` as well as the :download:`/../../examples/lorenz.py` example to see these concepts in action.
+We recommence having a look at the :download:`/../../examples/control/minimal_example.py` as well as the :download:`/../../examples/control/lorenz.py` example to see these concepts in action.

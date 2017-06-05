@@ -11,7 +11,7 @@ import pytest
 slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need --runslow option to run")
 
 THIS_FILES_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-EXAMPLE_FOLDER_PATTERN = THIS_FILES_DIR + "/../../examples/*.py"
+EXAMPLE_FOLDER_PATTERN = THIS_FILES_DIR + "/../../examples/*/*.py"
 
 
 @contextlib.contextmanager
@@ -33,7 +33,7 @@ def tempdir():
         yield dirpath
 
 
-@pytest.mark.parametrize("file", glob.glob(EXAMPLE_FOLDER_PATTERN))
+@pytest.mark.parametrize("file", filter(lambda x: "control" not in x, glob.glob(EXAMPLE_FOLDER_PATTERN)))
 @slow
 def test_example(file):
     with tempdir() as dirpath:

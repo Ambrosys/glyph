@@ -6,6 +6,7 @@ import deap.tools
 
 from glyph import gp
 from glyph.assessment import const_opt_scalar
+from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
 
@@ -13,20 +14,6 @@ class Individual(gp.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
 
     pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
-
-
-class Memoize:
-    """Memoize(fn) - an instance which acts like fn but memoizes its arguments
-       Will only work on functions with non-mutable arguments
-    """
-    def __init__(self, fn):
-        self.fn = fn
-        self.memo = {}
-
-    def __call__(self, *args):
-        if args not in self.memo:
-            self.memo[args] = self.fn(*args)
-        return self.memo[args]
 
 
 @silent_numpy
