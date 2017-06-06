@@ -479,7 +479,7 @@ def pretty_print(expr, constants, consts_values, count=0):
         c = str(k)
         p1 = r"{c}(?=[,)])".format(c=c)
         p2 = r"^{c}$".format(c=c)
-        p3 = r"(?<=[*+-/]){c}|(?<=[*+-/] ){c}|c(?=\s?[*+-/])".format(c=c)
+        p3 = r"(?<=[*+-/]){c}|(?<=[*+-/] ){c}|{c}(?=\s?[*+-/])".format(c=c)
         pattern = r"|".join((p1, p2, p3))
         expr = re.sub(pattern, str(v), expr, count=count)
     return expr

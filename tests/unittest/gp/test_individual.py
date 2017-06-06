@@ -198,11 +198,18 @@ pprint_cases = (
     ("add(c, c)", "add(1, 2)", ["c", "c"], [1, 2], 1),
     ("c+x", "1+x", ["c"], [1], 0),
     ("c + x", "1 + x", ["c"], [1], 0),
-    ("c * x", "1 * x", ["c"], [1], 0),
+    ("a * x", "1 * x", ["a"], [1], 0),
 )
 
 @pytest.mark.parametrize("case", pprint_cases)
 def test_pretty_print(case):
     expr, res, constants, values, count = case
-    print(values)
     assert res == pretty_print(expr, constants, values, count=count)
+
+
+def test_pprint_simplify():
+    expr = "Add(x_0, Symc)"
+    ind = Tree.from_string(expr)
+    simple_expr = str(simplify_this(ind))
+    res = pretty_print(simple_expr, ind.pset.constants, [1])
+    assert res == "1 + x_0"
