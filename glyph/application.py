@@ -45,7 +45,7 @@ class GPRunner(object):
     assessment runner.
     """
 
-    def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=()):
+    def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=(update_halloffame, update_logbook_record)):
         """Init GPRunner.
 
         :param IndividualClass: Class inherited from gp.AExpressionTree.
@@ -61,7 +61,7 @@ class GPRunner(object):
         self.logbook = ''
         self.mstats = None
         self.step_count = 0
-        self.callbacks = callbacks + (update_halloffame, update_logbook_record)
+        self.callbacks = callbacks
 
     def init(self, pop_size):
         """Initialize the gp run."""
@@ -152,7 +152,7 @@ class Application(object):
     create_console_app().
     """
 
-    def __init__(self, config, gp_runner, checkpoint_file, callbacks=()):
+    def __init__(self, config, gp_runner, checkpoint_file, callbacks=DEFAULT_CALLBACKS):
         """
         :param config: Container holding all configs
         :type config: dict or argparse.Namespace
@@ -166,7 +166,7 @@ class Application(object):
         self.pareto_fronts = []
         self.logger = logging.getLogger(__name__)
         self._initialized = False
-        self.callbacks = callbacks + DEFAULT_CALLBACKS
+        self.callbacks = callbacks
 
     @property
     def assessment_runner(self):
