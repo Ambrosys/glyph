@@ -152,7 +152,7 @@ class Application(object):
     create_console_app().
     """
 
-    def __init__(self, config, gp_runner, checkpoint_file, callbacks=DEFAULT_CALLBACKS):
+    def __init__(self, config, gp_runner, checkpoint_file=None, callbacks=DEFAULT_CALLBACKS):
         """
         :param config: Container holding all configs
         :type config: dict or argparse.Namespace
