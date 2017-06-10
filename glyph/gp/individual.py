@@ -413,7 +413,8 @@ def simplify_this(expr):
 
     :warning: does not respect closures
     """
-    return sympy.simplify(stringify_for_sympy(expr))
+    with glyph.utils.random_state(simplify_this):  # to avoid strange side effects of sympy testcases and random
+        return sympy.simplify(stringify_for_sympy(expr))
 
 
 def child_trees(ind):

@@ -11,7 +11,6 @@ import random
 import logging
 import argparse
 import operator
-from contextlib import contextmanager
 
 import dill
 import numpy as np
@@ -35,6 +34,8 @@ def update_logbook_record(app):
     app.logbook.record(gen=app.step_count, evals=app._evals, **record)
 
 
+DEFAULT_CALLBACKS_GP_RUNNER = (update_halloffame, update_logbook_record)
+
 class GPRunner(object):
     """Runner for gp problem sets.
 
@@ -45,7 +46,7 @@ class GPRunner(object):
     assessment runner.
     """
 
-    def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=(update_halloffame, update_logbook_record)):
+    def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=DEFAULT_CALLBACKS_GP_RUNNER):
         """Init GPRunner.
 
         :param IndividualClass: Class inherited from gp.AExpressionTree.
@@ -69,7 +70,7 @@ class GPRunner(object):
         self.logbook = deap.tools.Logbook()
         self.mstats = None
         self.step_count = 0
-        with random_state(self):
+        with utils.random_state(self):
             self.population = self.IndividualClass.create_population(pop_size)
 
         self.algorithm = self.algorithm_factory()
@@ -77,7 +78,7 @@ class GPRunner(object):
 
     def step(self):
         """Step through the evolution process."""
-        with random_state(self):
+        with utils.random_state(self):
             self.population = self.algorithm.evolve(self.population)
         self.step_count += 1
         self._update()
@@ -86,24 +87,6 @@ class GPRunner(object):
         self._evals = self.assessment_runner(self.population)
         for cb in self.callbacks:
             cb(self)
-
-
-@contextmanager
-def random_state(cls, rng=random):
-    """Do work inside this contextmanager with a random state defined by cls.
-
-    Looks for _prev_state to seed the rng.
-    On exit, it will write the current state of the rng as _tmp_state
-    to the cls.
-
-    :params cls: Any object.
-    :params rng: Instance of a random number generator.
-    """
-    cls._tmp_state = rng.getstate()
-    rng.setstate(getattr(cls, '_prev_state', rng.getstate()))
-    yield
-    cls._prev_state = rng.getstate()
-    rng.setstate(getattr(cls, '_tmp_state', rng.getstate()))
 
 
 def default_gprunner(Individual, assessment_runner, callbacks=(), **kwargs):
