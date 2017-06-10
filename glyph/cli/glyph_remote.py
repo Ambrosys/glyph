@@ -370,8 +370,8 @@ class NDTree(glyph.gp.individual.ANDimTree):
         return hash(hash(x) for x in self)
 
 
-def make_remote_app(callbacks=()):
-    parser = get_parser()
+def make_remote_app(callbacks=(), parser=None):
+    parser = parser or get_parser()
     args = parser.parse_args()
 
     send, recv = connect(args.ip, args.port)
