@@ -89,10 +89,24 @@ def test_simplify_this(case):
     assert str(simplify_this(ind)) == desired
 
 
+def test_simplify_this_random_state():
+    individual_class, expr, desired = simplify_cases[0]
+    ind = individual_class.from_string(expr)
+
+    import random
+    random.seed(42)
+    s = random.getstate()
+
+    simplify_this(ind)
+
+    assert random.getstate() == s
+
+
 nd_tree_case = (
     (["Add(x_0, x_0)", "Mul(c_0, x_0)"], [1], [2, 1]),
     (["Add(x_0, x_0)", "Mul(c_0, x_0)"], [1, 2], [2, 2]),
 )
+
 
 @pytest.mark.parametrize("case", nd_tree_case)
 def test_nd_from_string(case):
@@ -100,6 +114,7 @@ def test_nd_from_string(case):
     ind = NDTree.from_string(strs)
 
     assert str(ind) == str(strs)
+
 
 @pytest.mark.parametrize("case", nd_tree_case)
 def test_nd_tree_phenotype(case):
@@ -109,6 +124,7 @@ def test_nd_tree_phenotype(case):
 
     out = f(*x)
     assert np.allclose(out, res)
+
 
 get_len_case = (
     ("x_0", 1),
@@ -121,6 +137,7 @@ get_len_case = (
 def test_get_len(case):
     expr, x = case
     assert StructConst.get_len(expr) == x
+
 
 def test_struct_const_format():
     f = lambda x, y: x + y
