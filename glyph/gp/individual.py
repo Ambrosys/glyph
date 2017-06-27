@@ -149,6 +149,7 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
 
     def close_function(func, value):
         @functools.wraps(func)
+        @glyph.utils.numeric.silent_numpy
         def closure(*args):
             res = func(*args)
             if isinstance(res, np.ndarray):
