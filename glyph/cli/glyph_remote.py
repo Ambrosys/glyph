@@ -27,7 +27,7 @@ from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
-from glyph.assessment import tuple_wrap, const_opt_scalar
+from glyph.assessment import const_opt_scalar, const_opt_leastsq
 from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
@@ -62,7 +62,8 @@ class RemoteApp(glyph.application.Application):
         gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
                                                             method=cp['args'].const_opt_method, options=cp['args'].options,
                                                             caching=cp['args'].caching, simplify=cp['args'].simplify,
-                                                            persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size)
+                                                            persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size,
+                                                            multi_objective=cp['args'].multi_objective)
         app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -128,6 +129,7 @@ def get_parser():
     ass_group.add_argument('--smart_min_stat', type=int, default=10, help='Number of samples required prior to stopping (default: 10)')
     ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
     ass_group.add_argument('--chunk_size', type=int, default=30, help='Number of individuals send per single request. (default: 30)')
+    ass_group.add_argument('--multi_objective', action="store_true", default=False, help='Returned fitness is multi-objective (default: False)')
 
 
     break_condition = parser.add_argument_group('break condition')
@@ -170,6 +172,14 @@ def handle_const_opt_config(args):
         options['fatol'] = args.target
     args.options = options
     return args
+
+
+def const_opt_options_transform(options):
+    leastsq_options = {}
+    leastsq_options["xtol"] = options['xatol']
+    leastsq_options["ftol"] = options['fatol']
+    leastsq_options["maxfev"] = options['maxfev']
+    return leastsq_options
 
 
 def update_namespace(ns, up):
@@ -263,11 +273,12 @@ def key_set(itr, key=hash):
 
 
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=False, chunk_size=30):
+    def __init__(self, send, recv, consider_complexity=True, multi_objective=False, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=False, chunk_size=30):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
+        self.multi_objective = multi_objective
         self.options = options
         self.caching = caching
         self.cache = {} if persistent_caching is None else DBCache("glyph-remote", persistent_caching)
@@ -280,6 +291,12 @@ class RemoteAssessmentRunner:
         self.smart_options = options.get('smart_options')
         if self.smart_options["use"]:
             self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
+
+        if self.multi_objective:
+            self.const_optimizer = partial(const_opt_leastsq, **const_opt_options_transform(self.options))
+        else:
+            self.const_optimizer = partial(const_opt_scalar, method=self.method, options=self.options)
+
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -305,13 +322,16 @@ class RemoteAssessmentRunner:
 
     def measure(self, individual):
         """Construct fitness for given individual."""
-        popt, error = const_opt_scalar(self.evaluate_single, individual, method=self.method, options=self.options)
+        popt, error = self.const_optimizer(self.evaluate_single, individual)
+        if not self.multi_objective:
+            error = error,
+
         self.queue.put(None)
         individual.popt = popt
         if self.consider_complexity:
-            fitness = error, sum(map(len, individual))
+            fitness = *error, sum(map(len, individual))
         else:
-            fitness = error,
+            fitness = error
         return fitness
 
     def update_fitness(self, population):
@@ -407,7 +427,7 @@ def make_remote_app(callbacks=(), parser=None):
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
-                                                   simplify=args.simplify, chunk_size=args.chunk_size)
+                                                   simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=glyph.application.DEFAULT_CALLBACKS_GP_RUNNER+callbacks)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
