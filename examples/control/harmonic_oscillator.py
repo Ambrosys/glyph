@@ -14,7 +14,10 @@ import numpy as np
 import sympy
 import sympy.utilities
 
-from examples import control_problem
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+import control_problem
 
 
 # Setup of the control problem and gp algorithm.
