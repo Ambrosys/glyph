@@ -63,7 +63,7 @@ class RemoteApp(glyph.application.Application):
                                                             method=cp['args'].const_opt_method, options=cp['args'].options,
                                                             caching=cp['args'].caching, simplify=cp['args'].simplify,
                                                             persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size,
-                                                            multi_objective=cp['args'].multi_objective)
+                                                            multi_objective=cp['args'].multi_objective, send_symbolic=cp['args'].send_symbolic)
         app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -130,6 +130,7 @@ def get_parser():
     ass_group.add_argument('--smart_threshold', type=int, default=25, help='Quantile of improvement rate. Abort constant optimization if below (default: 25)')
     ass_group.add_argument('--chunk_size', type=int, default=30, help='Number of individuals send per single request. (default: 30)')
     ass_group.add_argument('--multi_objective', action="store_true", default=False, help='Returned fitness is multi-objective (default: False)')
+    ass_group.add_argument('--send_symbolic', action="store_true", default=False, help='Send the expression with symbolic constants (default: False)')
 
 
     break_condition = parser.add_argument_group('break condition')
@@ -272,30 +273,41 @@ def key_set(itr, key=hash):
     return list(s.values())
 
 
+def _no_const_opt(func, ind):
+    return None, func(ind)
+
+
 class RemoteAssessmentRunner:
-    def __init__(self, send, recv, consider_complexity=True, multi_objective=False, method='Nelder-Mead', options={'smart_options': {'use': False}}, caching=True, persistent_caching=None, simplify=False, chunk_size=30):
+    def __init__(self, send, recv, consider_complexity=True, multi_objective=False, method='Nelder-Mead', options={'smart_options': {'use': False}},
+                 caching=True, persistent_caching=None, simplify=False, chunk_size=30, send_symbolic=False):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
         self.consider_complexity = consider_complexity
         self.multi_objective = multi_objective
-        self.options = options
         self.caching = caching
         self.cache = {} if persistent_caching is None else DBCache("glyph-remote", persistent_caching)
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
-        self.chunk_size = min(chunk_size, 30)
-        self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
+        self.send_symbolic = send_symbolic
         self.evaluations = 0
+        self.chunk_size = min(chunk_size, 30)
 
-        self.smart_options = options.get('smart_options')
-        if self.smart_options["use"]:
-            self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
+        if not self.send_symbolic:
+            self.options = options
+            self.method = {'hill_climb': glyph.utils.numeric.hill_climb}.get(method, nelder_mead)
 
-        if self.multi_objective:
-            self.const_optimizer = partial(const_opt_leastsq, **const_opt_options_transform(self.options))
+            self.smart_options = options.get('smart_options')
+            if self.smart_options["use"]:
+                self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
+
+            if self.multi_objective:
+                self.const_optimizer = partial(const_opt_leastsq, **const_opt_options_transform(self.options))
+            else:
+                self.const_optimizer = partial(const_opt_scalar, method=self.method, options=self.options)
+
         else:
-            self.const_optimizer = partial(const_opt_scalar, method=self.method, options=self.options)
+            self.const_optimizer = _no_const_opt
 
 
     def predicate(self, ind):
@@ -308,7 +320,9 @@ class RemoteAssessmentRunner:
     def evaluate_single(self, individual, *consts):
 
         """Evaluate a single individual."""
-        payload = [pretty_print(s, individual.pset.constants, consts) for s in [self.make_str(t) for t in individual]]
+        payload = [self.make_str(t) for t in individual]
+        if not self.send_symbolic:
+            payload = [pretty_print(s, individual.pset.constants, consts) for s in payload]
 
         key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
         self.queue.put((key, payload))
@@ -427,7 +441,7 @@ def make_remote_app(callbacks=(), parser=None):
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
-                                                   simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective)
+                                                   simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=glyph.application.DEFAULT_CALLBACKS_GP_RUNNER+callbacks)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
