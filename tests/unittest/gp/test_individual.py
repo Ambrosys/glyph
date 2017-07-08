@@ -2,6 +2,7 @@ import inspect
 
 import dill
 import pytest
+import sympy
 
 from glyph.gp.individual import *
 
@@ -230,3 +231,21 @@ def test_pprint_simplify():
     simple_expr = str(simplify_this(ind))
     res = pretty_print(simple_expr, ind.pset.constants, [1])
     assert res == "1 + x_0"
+
+
+constant_normal_form_cases =(
+    ("f(a+b)", "c"),
+    ("2*a", "c"),
+    ("2*b + c + d", "c"),
+    ("f(y_0)", "f(y_0)"),
+    ("y_0 + f(y_0 + 3*b)", "y_0 + f(c + y_0)"),
+    ("c**3", "c"),
+    ("sin(c)", "c"),
+    ("y_0**2", "y_0**2")
+)
+
+@pytest.mark.parametrize("case", constant_normal_form_cases)
+def test__constant_normal_form(case):
+    from glyph.gp.individual import _constant_normal_form
+    expr, res = case
+    assert res == repr(_constant_normal_form(sympy.sympify(expr), variables=[sympy.Symbol("y_0")]))

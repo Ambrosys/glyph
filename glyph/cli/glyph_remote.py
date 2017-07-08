@@ -20,6 +20,7 @@ import deap.tools
 import deap.gp
 import toolz
 import numpy as np
+import sympy
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 from cache import DBCache
 
@@ -28,7 +29,7 @@ from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.assessment import const_opt_scalar, const_opt_leastsq
-from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print
+from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print, _constant_normal_form
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
 import glyph.utils
@@ -58,16 +59,16 @@ class RemoteApp(glyph.application.Application):
     def from_checkpoint(cls, file_name, send, recv):
         """Create application from checkpoint file."""
         cp = glyph.application.load(file_name)
+        args = cp['args']
         gp_runner = cp['runner']
-        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=cp['args'].consider_complexity,
-                                                            method=cp['args'].const_opt_method, options=cp['args'].options,
-                                                            caching=cp['args'].caching, simplify=cp['args'].simplify,
-                                                            persistent_caching=cp['args'].persistent_caching, chunk_size=cp['args'].chunk_size,
-                                                            multi_objective=cp['args'].multi_objective, send_symbolic=cp['args'].send_symbolic)
-        app = cls(cp['args'], cp['runner'], file_name, cp['callbacks'])
+        gp_runner.assessment_runner = RemoteAssessmentRunner(send, recv, consider_complexity=args.consider_complexity,
+                                                            method=args.const_opt_method, options=args.options,
+                                                            caching=args.caching, simplify=args.simplify,
+                                                            persistent_caching=args.persistent_caching, chunk_size=args.chunk_size,
+                                                            multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
+        app = cls(args, cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
-        args = cp['args']
         pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
         Individual.pset = pset
         random.setstate(cp['random_state'])
@@ -113,7 +114,7 @@ def get_parser():
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group('assessment')
-    ass_group.add_argument('--simplify', type=bool, default=False, help='Simplify expression before sending them. (default: False)')
+    ass_group.add_argument('--simplify', action="store_true", default=False, help='Simplify expression before sending them. (default: False)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
     ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
     ass_group.add_argument('--persistent_caching', default=None, help='Key for persistent data base cache for caching between experiments (default: None)')
@@ -131,7 +132,6 @@ def get_parser():
     ass_group.add_argument('--chunk_size', type=int, default=30, help='Number of individuals send per single request. (default: 30)')
     ass_group.add_argument('--multi_objective', action="store_true", default=False, help='Returned fitness is multi-objective (default: False)')
     ass_group.add_argument('--send_symbolic', action="store_true", default=False, help='Send the expression with symbolic constants (default: False)')
-
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
@@ -323,8 +323,12 @@ class RemoteAssessmentRunner:
         payload = [self.make_str(t) for t in individual]
         if not self.send_symbolic:
             payload = [pretty_print(s, individual.pset.constants, consts) for s in payload]
+            key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
+        else:
+            variables = [sympy.Symbol(s) for s in Individual.pset.arguments]
+            normal_form = [_constant_normal_form(sympy.sympify(p), variables=variables) for p in payload]
+            key = sum(map(hash, normal_form))
 
-        key = sum(map(hash, payload))   # constants may have been simplified, not in payload anymore.
         self.queue.put((key, payload))
         self.evaluations += 1
 
