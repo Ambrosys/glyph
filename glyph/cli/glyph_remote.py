@@ -446,7 +446,7 @@ def make_remote_app(callbacks=(), parser=None):
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
-        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=glyph.application.DEFAULT_CALLBACKS_GP_RUNNER+callbacks)
+        gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner, callbacks=glyph.application.DEFAULT_CALLBACKS+callbacks)
         app = RemoteApp(args, gp_runner, args.checkpoint_file)
 
     bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
