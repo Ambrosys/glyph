@@ -92,12 +92,19 @@ class DeapEaSimple(object):
         self.crossover_prob = 0.5
         self.mutation_prob = 0.2
         self.tournament_size = 2
+        self._initialized = False
+
+    def _init(self, population):
+        self.parents_size = len(population)
+        self.offspring_size = len(population)
+        self._initialized = True
 
     def evolve(self, population):
         if not _all_valid(population):
             raise RuntimeError('Cannot evolve on invalid fitness values in population.')
-        offspring_size = len(population)
-        parents = deap.tools.selTournament(population, offspring_size, self.tournament_size)
+        if not self._initialized:
+            self._init(population)
+        parents = deap.tools.selTournament(population, self.offspring_size, self.tournament_size)
         offspring = deap.algorithms.varAnd(parents, self, self.crossover_prob, self.mutation_prob)  # Breeding.
         return population[:] + offspring
 
