@@ -429,7 +429,7 @@ def make_remote_app(callbacks=(), parser=None):
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
-        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
+        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=glyph.application.DEFAULT_CALLBACKS + callbacks)
 
     bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
     print_params(logger.info, vars(args))
