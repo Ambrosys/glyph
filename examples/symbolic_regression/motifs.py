@@ -96,7 +96,7 @@ def main():
 
     pop = update_fitness(Individual.create_population(pop_size))
 
-    for gen in range(20):
+    for gen in range(10):
         pop = algorithm.evolve(pop)
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
