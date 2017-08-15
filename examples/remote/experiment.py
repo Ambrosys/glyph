@@ -1,3 +1,7 @@
+import argparse
+import collections
+import json
+
 import zmq
 import json
 import logging
@@ -9,16 +13,12 @@ from build_pset import build_pset
 
 
 class EventLoop(object):
-    def __init__(self, experiment, primitives, socket=None, port=5555):
+    def __init__(self, experiment, config, socket=None, port=5555):
         self.socket = socket or zmq.Context().socket(zmq.REP)
         self.port = port
         self.experiment = experiment
-        self.primitives = primitives
-        self.pset = build_pset(primitives)
-
-    @property
-    def config(self):
-        return dict(primitives=self.primitives, simplify=False)# , pop_size=20, num_generations=20, consider_complexity=True, simplify=False)
+        self.config = config
+        self.pset = build_pset(config["primitives"])
 
     @property
     def address(self):
@@ -62,18 +62,18 @@ class EventLoop(object):
 
 
 class Experiment(object):
-    def __init__(self):
+    def __init__(self, arity):
 
         def target(x):
-            return np.array([f(x) for f in [lambda x: 1.2*x**2, lambda x: 0.3*x + 1.1]])
+            return np.array([f(x) for f in [lambda x: 1.2*x[:, 0]**2, lambda x: 0.3*x[:, 0] + 1.1]])
 
-        self.x = np.linspace(-1, 1, 30)
+        self.x = np.random.random(size=(200, arity))
         self.y = target(self.x)
 
         self.metric = lambda y, yhat: np.sum((y - yhat)**2)
 
     def __call__(self, funcs):
-        yhat = [f(self.x) for f in funcs]
+        yhat = [f(*self.x.T) for f in funcs]
         for i in range(len(yhat)):
             if np.isscalar(yhat[i]):
                 yhat[i] = np.ones_like(self.y[i]) * yhat[i]
@@ -83,11 +83,25 @@ class Experiment(object):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", default=None)
+
+    args = parser.parse_args()
+    if args.file:
+        with open(args.file, "r") as f:
+            cfile = json.load(f)
+    else:
+        cfile = {}
+
+    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub": 2}
+    defaults = {"primitives": primitives}
+
+    config = collections.ChainMap(cfile, defaults)
+
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
 
-    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub":2 }
-    experiment = Experiment()
+    experiment = Experiment(len([v for v in config["primitives"].values() if v == 0]))
 
-    loop = EventLoop(experiment, primitives)
+    loop = EventLoop(experiment, dict(config))
     loop.run()

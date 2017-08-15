@@ -318,18 +318,14 @@ class AlgorithmFactory(AFactory):
     @staticmethod
     def add_options(parser):
         """Add available parser options."""
-        parser.add_argument('--algorithm', dest='algorithm', type=str, default='nsga2',
-                            choices=list(AlgorithmFactory._mapping.keys()),
+        parser.add_argument('--algorithm', type=str, default='nsga2', choices=list(AlgorithmFactory._mapping.keys()),
                             help='the gp algorithm (default: nsga2)')
-        parser.add_argument('--cxpb', dest='crossover_prob', metavar='p', type=utils.argparse.unit_interval,
-                            default=0.5,
-                            help='crossover probability for mating (default: 0.5)')
-        parser.add_argument('--mutpb', dest='mutation_prob', metavar='p', type=utils.argparse.unit_interval,
-                            default=0.2,
-                            help='mutation probability (default: 0.2)')
-        parser.add_argument('--tournament-size', dest='tournament_size', metavar='n', type=utils.argparse.unit_interval,
-                            default=2,
-                            help='tournament size for tournament selection (default: 2)')
+        parser.add_argument('--crossover_prob', metavar='p', type=utils.argparse.unit_interval,
+                            default=0.5, help='crossover probability for mating (default: 0.5)')
+        parser.add_argument('--mutation_prob', metavar='p', type=utils.argparse.unit_interval,
+                            default=0.2, help='mutation probability (default: 0.2)')
+        parser.add_argument('--tournament_size', dest='tournament_size', metavar='n', type=utils.argparse.unit_interval,
+                            default=2, help='tournament size for tournament selection (default: 2)')
 
 
 class MateFactory(AFactory):
