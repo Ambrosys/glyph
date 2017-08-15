@@ -101,7 +101,7 @@ def test_const_opt_scalar(case):
         residuals = m(individual, *consts)
         return rms(residuals)
 
-    popt, _ = assessment.const_opt_scalar(error, ind)
+    popt, _ = assessment.const_opt_scalar(error, ind, method="Powell")
     assert_all_close(desired, popt)
 
 

@@ -126,10 +126,8 @@ def default_constants(ind):
     return values
 
 
-def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_constants=default_constants, **kwargs):
-    """Apply constant optimization on a scalar measure.
-
-    Uses scipy.optimize.minimize
+def const_opt(measure, individual, lsq=False, default_constants=default_constants, **kwargs):
+    """Apply constant optimization
 
     :param measure: `callable(individual, *f_args) -> scalar`.
     :param individual: an individual tha is passed on to measure.
@@ -140,6 +138,8 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
               measure_opt: the measure evaluated at popt.
     """
 
+    opt = scipy.optimize.minimize if not lsq else scipy.optimize.least_squares
+
     @functools.wraps(measure)
     def closure(consts):
         return measure(individual, *consts)
@@ -149,7 +149,7 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method, **kwargs)
+        res = opt(fun=closure, x0=p0, **kwargs)
         popt = res.x if res.x.shape else np.array([res.x])
         measure_opt = res.fun
         if not res.success:
@@ -158,64 +158,11 @@ def const_opt_scalar(measure, individual, bounds=None, method='Powell', default_
         measure_opt = closure(popt)
     return popt, measure_opt
 
-
-def _const_opt_lsq(measure, individual, bounds=None, method='Powell', default_constants=default_constants, **kwargs):
-    """const_opt_leastsq seems not threadsafe"""
-    class _h(float):
-        pass
-
-    @functools.wraps(measure)
-    def closure(consts):
-        vec = measure(individual, *consts)
-        res = _h(np.sum(vec))
-        res.vec = vec
-        return res
-
-    p0 = default_constants(individual)
-    popt = p0
-    measure_opt = None
-    terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.minimize(fun=closure, x0=p0, bounds=bounds, method=method, **kwargs)
-        popt = res.x if res.x.shape else np.array([res.x])
-        measure_opt = res.fun
-        if not res.success:
-            warnings.warn(res.message, UserWarning)
-    if measure_opt is None:
-        measure_opt = closure(popt)
-    return popt, measure_opt.vec
-
+# old aliases
+const_opt_scalar = const_opt
 
 def const_opt_leastsq(measure, individual, default_constants=default_constants, **kwargs):
-    """Apply constant optimization on a vector valued measure.
-
-    Uses scipy.optimize.leastsq
-
-    :param measure: `callable(individual, *f_args) -> numeric sequence`.
-    :param individual: an individual tha is passed on to measure.
-
-    :returns: (popt, measure_opt), popt: the optimal values for the constants;
-              measure_opt: the measure evaluated at popt.
-    """
-
-    @functools.wraps(measure)
-    def closure(consts):
-        return measure(individual, *consts)
-
-    p0 = default_constants(individual)
-    popt = p0
-    measure_opt = None
-    terminals = [t.name for t in individual.terminals]
-    if any(constant in terminals for constant in individual.pset.constants):
-        res = scipy.optimize.leastsq(func=closure, x0=p0, full_output=True, **kwargs)
-        popt, infodict, msg, ierr = res[0], res[2], res[-2], res[-1]
-        measure_opt = infodict['fvec']
-        if ierr < 0 or ierr > 4:
-            warnings.warn(msg, UserWarning)
-    if measure_opt is None:
-        measure_opt = closure(popt)
-
-    return popt, measure_opt
+    return const_opt(measure, individual, lsq=True, default_constants=default_constants, **kwargs)
 
 
 def replace_nan(x, rep=np.infty):

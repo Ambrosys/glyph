@@ -28,7 +28,7 @@ from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
-from glyph.assessment import const_opt_scalar, _const_opt_lsq
+from glyph.assessment import const_opt
 from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print, _constant_normal_form
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
@@ -179,7 +179,7 @@ def const_opt_options_transform(options):
     leastsq_options = {}
     leastsq_options["xtol"] = options['xatol']
     leastsq_options["ftol"] = options['fatol']
-    leastsq_options["maxfev"] = options['maxfev']
+    leastsq_options["max_nfev"] = options['maxfev']
     return leastsq_options
 
 
@@ -302,9 +302,9 @@ class RemoteAssessmentRunner:
                 self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
 
             if self.multi_objective:
-                self.const_optimizer = partial(_const_opt_lsq, method=self.method, options=self.options)
+                self.const_optimizer = partial(const_opt, lsq=True, **const_opt_options_transform(self.options))
             else:
-                self.const_optimizer = partial(const_opt_scalar, method=self.method, options=self.options)
+                self.const_optimizer = partial(const_opt, method=self.method, options=self.options)
 
         else:
             self.const_optimizer = _no_const_opt
