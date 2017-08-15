@@ -65,7 +65,8 @@ class RemoteApp(glyph.application.Application):
                                                             method=args.const_opt_method, options=args.options,
                                                             caching=args.caching, simplify=args.simplify,
                                                             persistent_caching=args.persistent_caching, chunk_size=args.chunk_size,
-                                                            multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
+                                                            multi_objective=args.multi_objective, send_symbolic=args.send_symbolic,
+                                                            reevaluate=args.re_evaluate)
         app = cls(args, cp['runner'], file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
@@ -116,7 +117,7 @@ def get_parser():
     ass_group = parser.add_argument_group('assessment')
     ass_group.add_argument('--simplify', action="store_true", default=False, help='Simplify expression before sending them. (default: False)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
-    ass_group.add_argument('--caching', type=bool, default=True, help='Cache evaluation (default: True)')
+    ass_group.add_argument('--no_   caching', dest="caching", action="store_false", default=True, help='Cache evaluation (default: False)')
     ass_group.add_argument('--persistent_caching', default=None, help='Key for persistent data base cache for caching between experiments (default: None)')
     ass_group.add_argument('--max_fev_const_opt', type=int, default=100, help='Maximum number of function evaluations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
@@ -132,6 +133,7 @@ def get_parser():
     ass_group.add_argument('--chunk_size', type=int, default=30, help='Number of individuals send per single request. (default: 30)')
     ass_group.add_argument('--multi_objective', action="store_true", default=False, help='Returned fitness is multi-objective (default: False)')
     ass_group.add_argument('--send_symbolic', action="store_true", default=False, help='Send the expression with symbolic constants (default: False)')
+    ass_group.add_argument('--re_evaluate', action="store_true", default=False, help='Re-evaluate old individuals (default: False)')
 
     break_condition = parser.add_argument_group('break condition')
     break_condition.add_argument('--ttl', type=int, default=-1, help='Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)')
@@ -279,7 +281,7 @@ def _no_const_opt(func, ind):
 
 class RemoteAssessmentRunner:
     def __init__(self, send, recv, consider_complexity=True, multi_objective=False, method='Nelder-Mead', options={'smart_options': {'use': False}},
-                 caching=True, persistent_caching=None, simplify=False, chunk_size=30, send_symbolic=False):
+                 caching=True, persistent_caching=None, simplify=False, chunk_size=30, send_symbolic=False, reevaluate=False):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.send = send
         self.recv = recv
@@ -290,6 +292,7 @@ class RemoteAssessmentRunner:
         self.make_str = (lambda i: str(simplify_this(i))) if simplify else str
         self.result_queue = {}
         self.send_symbolic = send_symbolic
+        self.reevaluate = reevaluate
         self.evaluations = 0
         self.chunk_size = min(chunk_size, 30)
 
@@ -353,15 +356,18 @@ class RemoteAssessmentRunner:
     def update_fitness(self, population):
         self.evaluations = 0
 
+        if self.reevaluate:
+            for p in population:
+                del p.fitness.values
+
         invalid = [p for p in population if not p.fitness.valid]
-
         calculate, cached = map(list, partition(self.predicate, invalid))
-
         cached_fitness = [self.cache[self._hash(ind)] for ind in cached]
         calculate_duplicate_free = key_set(calculate, key=self._hash)
         # if we have duplicates in the calculate list, dont calculate these more than once.
         dup_free_cache = {}
         n = len(calculate_duplicate_free)
+
         if n > 0:             # main work is done here
             n_workers = min(n, self.chunk_size)
 
@@ -388,6 +394,9 @@ class RemoteAssessmentRunner:
         for ind, fit in zip(cached + calculate, cached_fitness + calculate_fitness):
             ind.fitness.values = fit
 
+        if self.reevaluate or not self.caching:
+            self.result_queue = {}
+
         return self.evaluations
 
     def __call__(self, population):
@@ -408,7 +417,6 @@ class NDTree(glyph.gp.individual.ANDimTree):
 def make_remote_app(callbacks=(), parser=None):
     parser = parser or get_parser()
     args = parser.parse_args()
-
     send, recv = connect(args.ip, args.port)
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
     if not os.path.exists(workdir):
@@ -442,7 +450,8 @@ def make_remote_app(callbacks=(), parser=None):
         algorithm_factory = partial(glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate)
         assessment_runner = RemoteAssessmentRunner(send, recv, method=args.const_opt_method, options=args.options,
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
-                                                   simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
+                                                   simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective, send_symbolic=args.send_symbolic,
+                                                   reevaluate=args.re_evaluate)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
         callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks
