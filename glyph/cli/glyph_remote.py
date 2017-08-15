@@ -28,7 +28,7 @@ from glyph.gp import AExpressionTree
 from glyph.utils.logging import print_params
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
-from glyph.assessment import const_opt_scalar, const_opt_leastsq
+from glyph.assessment import const_opt_scalar, _const_opt_lsq
 from glyph.gp.individual import simplify_this, add_sc, sc_mmqout, pretty_print, _constant_normal_form
 from glyph.gp.constraints import build_constraints, apply_constraints, NullSpace
 import glyph.application
@@ -169,7 +169,7 @@ def handle_const_opt_config(args):
         options['precision'] = args.precision
         options['target'] = args.target
     else:
-        options['xatol'] = 10**(-args.precision)
+        options['xatol'] = 10.0**(-args.precision)
         options['fatol'] = args.target
     args.options = options
     return args
@@ -302,13 +302,12 @@ class RemoteAssessmentRunner:
                 self.method = glyph.utils.numeric.SmartConstantOptimizer(glyph.utils.numeric.hill_climb, **self.smart_options["kw"])
 
             if self.multi_objective:
-                self.const_optimizer = partial(const_opt_leastsq, **const_opt_options_transform(self.options))
+                self.const_optimizer = partial(_const_opt_lsq, method=self.method, options=self.options)
             else:
                 self.const_optimizer = partial(const_opt_scalar, method=self.method, options=self.options)
 
         else:
             self.const_optimizer = _no_const_opt
-
 
     def predicate(self, ind):
         """Does this individual need to be evaluated?"""
@@ -318,7 +317,6 @@ class RemoteAssessmentRunner:
         return json.dumps([self.make_str(t) for t in ind])
 
     def evaluate_single(self, individual, *consts):
-
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
         if not self.send_symbolic:
@@ -391,7 +389,6 @@ class RemoteAssessmentRunner:
             ind.fitness.values = fit
 
         return self.evaluations
-
 
     def __call__(self, population):
         return self.update_fitness(population)
