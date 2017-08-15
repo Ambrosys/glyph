@@ -49,6 +49,9 @@ class EventLoop(object):
             return self.shutdown()
         elif action == "EXPERIMENT":
             return self.evaluate(request['payload'])
+        elif action == "METADATA":
+            logger.info(request['payload'])
+            return ""
         else:
             raise ValueError("Unknown action")
 

@@ -88,7 +88,7 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
     parser.add_argument('--ip', type=str, default="localhost", help='IP of the client (default: localhost)')
-
+    parser.add_argument('--send_meta_data', action="store_true", default=False, help='Send metadata after each generation')
     config = parser.add_argument_group('config')
     group = config.add_mutually_exclusive_group()
     group.add_argument('--remote', action='store_true', dest='remote', default=False, help='Request GP configs from experiment handler.')
@@ -444,11 +444,25 @@ def make_remote_app(callbacks=(), parser=None):
                                                    consider_complexity=args.consider_complexity, caching=args.caching, persistent_caching=args.persistent_caching,
                                                    simplify=args.simplify, chunk_size=args.chunk_size, multi_objective=args.multi_objective, send_symbolic=args.send_symbolic)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
-        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=glyph.application.DEFAULT_CALLBACKS+callbacks)
+
+        callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks
+        if args.send_meta_data:
+            callbacks += send_meta_data,
+
+        app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 
     bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
     print_params(logger.info, vars(args))
     return app, bc, args
+
+
+def send_meta_data(app):
+    send = app.gp_runner.assessment_runner.send
+    recv = app.gp_runner.assessment_runner.recv
+
+    metadata = dict(generation=app.gp_runner.step_count)
+    send(dict(action="METADATA", payload=metadata))
+    recv()
 
 
 def main():
