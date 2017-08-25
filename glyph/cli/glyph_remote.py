@@ -241,25 +241,29 @@ class MyQueue(Queue):
         payloads = []
         keys = []
 
-        def process(keys, payloads):
-            self.send(dict(action="EXPERIMENT", payload=payloads))
+        def process(keys, payload_meta):
+            payload, meta = zip(*payload_meta)
+            if any(meta):
+                self.send(dict(action="EXPERIMENT", payload=payload, meta=meta))
+            else:
+                self.send(dict(action="EXPERIMENT", payload=payload))
             fitnesses = self.recv()["fitness"]
-            for key,fit in zip(keys, fitnesses):
+            for key, fit in zip(keys, fitnesses):
                 self.logger.debug("Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
         while self.expect > 0:
-            key_payload = self.get()
+            key_payload_meta = self.get()
 
-            if key_payload is None:
+            if key_payload_meta is None:
                 self.expect -= 1
                 if self.expect == 0:
                     break
             else:
-                key, payload = key_payload
+                key, payload_meta = key_payload_meta
                 if key not in self.result_queue:
                     self.logger.debug("Queueing key: {}".format(key))
-                    payloads.append(payload)
+                    payloads.append(payload_meta)
                     keys.append(key)
             if len(payloads) == min(self.expect, chunk_size):
                 process(keys, payloads)
@@ -319,7 +323,7 @@ class RemoteAssessmentRunner:
     def _hash(self, ind):
         return json.dumps([self.make_str(t) for t in ind])
 
-    def evaluate_single(self, individual, *consts):
+    def evaluate_single(self, individual, *consts, meta=None):
         """Evaluate a single individual."""
         payload = [self.make_str(t) for t in individual]
         if not self.send_symbolic:
@@ -330,7 +334,7 @@ class RemoteAssessmentRunner:
             normal_form = [_constant_normal_form(sympy.sympify(p), variables=variables) for p in payload]
             key = sum(map(hash, normal_form))
 
-        self.queue.put((key, payload))
+        self.queue.put((key, (payload, meta)))
         self.evaluations += 1
 
         result = None
@@ -339,9 +343,9 @@ class RemoteAssessmentRunner:
             result = self.result_queue.get(key)
         return result
 
-    def measure(self, individual):
+    def measure(self, individual, meta=None):
         """Construct fitness for given individual."""
-        popt, error = self.const_optimizer(self.evaluate_single, individual)
+        popt, error = self.const_optimizer(self.evaluate_single, individual, f_kwargs=dict(meta=meta))
         if not self.multi_objective:
             error = error,
 
@@ -353,8 +357,9 @@ class RemoteAssessmentRunner:
             fitness = error
         return fitness
 
-    def update_fitness(self, population):
+    def update_fitness(self, population, meta=None):
         self.evaluations = 0
+        meta = meta or {}
 
         if self.reevaluate:
             for p in population:
@@ -399,8 +404,9 @@ class RemoteAssessmentRunner:
 
         return self.evaluations
 
-    def __call__(self, population):
-        return self.update_fitness(population)
+    def __call__(self, population, meta=None):
+        meta = meta or {}
+        return self.update_fitness(population, meta=meta)
 
 
 class Individual(AExpressionTree):

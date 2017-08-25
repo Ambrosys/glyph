@@ -126,7 +126,7 @@ def default_constants(ind):
     return values
 
 
-def const_opt(measure, individual, lsq=False, default_constants=default_constants, **kwargs):
+def const_opt(measure, individual, lsq=False, default_constants=default_constants, f_kwargs=None, **kwargs):
     """Apply constant optimization
 
     :param measure: `callable(individual, *f_args) -> scalar`.
@@ -139,10 +139,10 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
     """
 
     opt = scipy.optimize.minimize if not lsq else scipy.optimize.least_squares
-
+    f_kwargs = f_kwargs or {}
     @functools.wraps(measure)
     def closure(consts):
-        return measure(individual, *consts)
+        return measure(individual, *consts, **f_kwargs)
 
     p0 = default_constants(individual)
     popt = p0
@@ -161,8 +161,8 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
 # old aliases
 const_opt_scalar = const_opt
 
-def const_opt_leastsq(measure, individual, default_constants=default_constants, **kwargs):
-    return const_opt(measure, individual, lsq=True, default_constants=default_constants, **kwargs)
+def const_opt_leastsq(measure, individual, default_constants=default_constants, f_kwargs=None, **kwargs):
+    return const_opt(measure, individual, lsq=True, default_constants=default_constants, f_kwargs=f_kwargs, **kwargs)
 
 
 def replace_nan(x, rep=np.infty):
