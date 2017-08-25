@@ -382,7 +382,7 @@ class RemoteAssessmentRunner:
             thread.start()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as exe:
-                for k, future in zip(calculate_duplicate_free, exe.map(self.measure, calculate_duplicate_free)):
+                for k, future in zip(calculate_duplicate_free, exe.map(partial(self.measure, meta=meta), calculate_duplicate_free)):
                     dup_free_cache[self._hash(k)] = future
             thread.join()
             del self.queue

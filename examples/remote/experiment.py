@@ -19,6 +19,7 @@ class EventLoop(object):
         self.experiment = experiment
         self.config = config
         self.pset = build_pset(config["primitives"])
+        self.logger = logging.getLogger(__name__)
 
     @property
     def address(self):
@@ -34,9 +35,9 @@ class EventLoop(object):
         self.start()
         while True:
             request = json.loads(self.socket.recv().decode('ascii'))
-            logger.info(request)
+            self.logger.info(request)
             result = self.work(request)
-            logger.info(result)
+            self.logger.info(result)
             if result is None:
                 break
             self.socket.send(json.dumps(result).encode('ascii'))
@@ -57,7 +58,7 @@ class EventLoop(object):
 
     def evaluate(self, pop):
         fitnesses = []
-        logger.debug(len(pop))
+        self.logger.debug(len(pop))
         for ind in pop:
             func = [compile(t, self.pset) for t in ind]
             fitnesses.append(self.experiment(func))
@@ -101,9 +102,7 @@ if __name__ == "__main__":
 
     config = collections.ChainMap(cfile, defaults)
 
-    logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
-
     experiment = Experiment(len([v for v in config["primitives"].values() if v == 0]))
 
     loop = EventLoop(experiment, dict(config))
