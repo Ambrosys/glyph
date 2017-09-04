@@ -67,7 +67,7 @@ class RemoteApp(glyph.application.Application):
                                                             persistent_caching=args.persistent_caching, chunk_size=args.chunk_size,
                                                             multi_objective=args.multi_objective, send_symbolic=args.send_symbolic,
                                                             reevaluate=args.re_evaluate)
-        app = cls(args, cp['runner'], file_name, cp['callbacks'])
+        app = cls(args, gp_runner, file_name, cp['callbacks'])
         app.pareto_fronts = cp['pareto_fronts']
         app._initialized = True
         pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
