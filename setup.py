@@ -86,4 +86,7 @@ if __name__ == '__main__':
                 'glyph-remote = glyph.cli.glyph_remote:main'
             ]
         },
+        cmdclass={
+        'publish': PublishCommand,
+        },
     )
