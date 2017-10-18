@@ -86,7 +86,7 @@ class RemoteApp(glyph.application.Application):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="glyph-remote")
     parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
     parser.add_argument('--ip', type=str, default="localhost", help='IP of the client (default: localhost)')
     parser.add_argument('--send_meta_data', action="store_true", default=False, help='Send metadata after each generation')
