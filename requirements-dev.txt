@@ -14,3 +14,4 @@ twine
 sphinx-readable-theme
 docutils <0.13.1
 networkx
+codecov
