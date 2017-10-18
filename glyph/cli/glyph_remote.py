@@ -86,7 +86,7 @@ class RemoteApp(glyph.application.Application):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="glyph-remote")
     parser.add_argument('--port', type=int, default=5555, help='Port for the zeromq communication (default: 5555)')
     parser.add_argument('--ip', type=str, default="localhost", help='IP of the client (default: localhost)')
     parser.add_argument('--send_meta_data', action="store_true", default=False, help='Send metadata after each generation')
@@ -117,7 +117,7 @@ def get_parser():
     ass_group = parser.add_argument_group('assessment')
     ass_group.add_argument('--simplify', action="store_true", default=False, help='Simplify expression before sending them. (default: False)')
     ass_group.add_argument('--consider_complexity', type=bool, default=True, help='Consider the complexity of solutions for MOO (default: True)')
-    ass_group.add_argument('--no_   caching', dest="caching", action="store_false", default=True, help='Cache evaluation (default: False)')
+    ass_group.add_argument('--no_caching', dest="caching", action="store_false", default=True, help='Cache evaluation (default: False)')
     ass_group.add_argument('--persistent_caching', default=None, help='Key for persistent data base cache for caching between experiments (default: None)')
     ass_group.add_argument('--max_fev_const_opt', type=int, default=100, help='Maximum number of function evaluations for constant optimization (default: 100)')
     ass_group.add_argument('--directions', type=int, default=5, help='Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)')
@@ -391,9 +391,10 @@ class RemoteAssessmentRunner:
         else:
             calculate_fitness = []
 
-        # save to cache
-        for key, fit in zip(map(self._hash, calculate), calculate_fitness):
-            self.cache[key] = fit
+        if self.caching:
+            # save to cache
+            for key, fit in zip(map(self._hash, calculate), calculate_fitness):
+                self.cache[key] = fit
 
         # assign fitness to individuals
         for ind, fit in zip(cached + calculate, cached_fitness + calculate_fitness):
@@ -419,8 +420,10 @@ class NDTree(glyph.gp.individual.ANDimTree):
     def __hash__(self):
         return hash(hash(x) for x in self)
 
+def make_callback(factories, args):
+    return tuple(factory(args) for factory in factories)
 
-def make_remote_app(callbacks=(), parser=None):
+def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args = parser.parse_args()
     send, recv = connect(args.ip, args.port)
@@ -460,7 +463,7 @@ def make_remote_app(callbacks=(), parser=None):
                                                    reevaluate=args.re_evaluate)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
-        callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks
+        callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
         if args.send_meta_data:
             callbacks += send_meta_data,
 

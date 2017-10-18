@@ -4,7 +4,7 @@ from autograd import grad
 
 import matplotlib.pyplot as plt
 
-import glyph
+import glyph.gp
 glyph.gp.individual.np = np
 
 from glyph.gp.individual import numpy_phenotype, numpy_primitive_set, AExpressionTree
