@@ -423,7 +423,7 @@ class NDTree(glyph.gp.individual.ANDimTree):
 def make_callback(factories, args):
     return (factory(args) for factory in factories)
 
-def make_remote_app(callbacks=(), call_back_factories=(), parser=None):
+def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args = parser.parse_args()
     send, recv = connect(args.ip, args.port)
@@ -463,7 +463,7 @@ def make_remote_app(callbacks=(), call_back_factories=(), parser=None):
                                                    reevaluate=args.re_evaluate)
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
-        callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(call_back_factories, args)
+        callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
         if args.send_meta_data:
             callbacks += send_meta_data,
 
