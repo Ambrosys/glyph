@@ -1,8 +1,9 @@
 import os
 import sys
+import datetime
 sys.path.insert(0, os.path.abspath('../../'))
-from setup import about
-version = about["__version__"]
+
+from glyph import __version__
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -10,7 +11,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    'sphinx.ext.pngmath',
+    'sphinx.ext.imgmath',
 ]
 templates_path = ['_templates']
 autodoc_default_flags = ['members']
@@ -20,11 +21,10 @@ source_suffix = ['.rst']
 
 master_doc = 'index'
 project = 'glyph'
-import datetime
 copyright = '{}, Markus Abel, Julien Gout, Markus Quade, <a href="http://www.ambrosys.de">Ambrosys GmbH</a>'.format(datetime.datetime.now().year)
 author = 'Markus Abel, Julien Gout, Markus Quade'
 
-version = release = version
+version = release = __version__
 
 language = None
 exclude_patterns = ['_build']
