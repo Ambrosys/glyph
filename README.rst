@@ -66,7 +66,7 @@ guide <https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING>`__.
    :target: https://ci.appveyor.com/project/Ohjeah/glyph
 .. |PyPI version| image:: https://img.shields.io/pypi/v/pyglyph.svg
    :target: https://pypi.python.org/pypi/pyglyph/
-.. |codecov| image:: https://img.shields.io/codecov/c/github/Ambrosys/glyph.svg
+.. |codecov| image:: https://img.shields.io/codecov/c/github/Ambrosys/glyph.svg?branch=master
    :target: https://codecov.io/gh/Ambrosys/glyph
 .. |PythonVersion| image:: https://img.shields.io/pypi/pyversions/pyglyph.svg
    :target: https://img.shields.io/pypi/pyversions/pyglyph.svg
