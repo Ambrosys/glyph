@@ -1,3 +1,5 @@
 include *.rst
 include *.txt
 include LICENCE
+include versioneer.py
+include glyph/_version.py

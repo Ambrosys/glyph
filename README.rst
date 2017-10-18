@@ -64,9 +64,9 @@ guide <https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING>`__.
    :target: https://travis-ci.org/Ambrosys/glyph
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/rbl2b44yfnfk4owi/branch/master?svg=true
    :target: https://ci.appveyor.com/project/Ohjeah/glyph
-.. |PyPI version| image:: https://badge.fury.io/py/pyglyph.svg
-   :target: https://badge.fury.io/py/pyglyph
-.. |codecov| image:: https://codecov.io/gh/Ambrosys/glyph/branch/master/graph/badge.svg
+.. |PyPI version| image:: https://img.shields.io/pypi/v/pyglyph.svg
+   :target: https://pypi.python.org/pypi/pyglyph/
+.. |codecov| image:: https://img.shields.io/codecov/c/github/Ambrosys/glyph.svg?branch=master
    :target: https://codecov.io/gh/Ambrosys/glyph
 .. |PythonVersion| image:: https://img.shields.io/pypi/pyversions/pyglyph.svg
    :target: https://img.shields.io/pypi/pyversions/pyglyph.svg

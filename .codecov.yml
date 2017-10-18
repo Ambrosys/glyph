@@ -1,0 +1,7 @@
+codecov:
+  branch: master
+
+coverage:
+  ignore:
+    - "tests/*"
+    - "glyph/_version.py"

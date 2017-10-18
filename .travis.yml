@@ -2,10 +2,13 @@ language: python
 python:
   - "3.5"
   - "3.6"
-install: make dev
-script: make test
+install:
+  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
+script:
+  - py.test tests --cov=glyph --cov-config setup.cfg
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - codecov
 notifications:
   slack:
      rooms:

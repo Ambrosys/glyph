@@ -5,10 +5,10 @@ init:
 	pip install -e .
 
 test:
-	py.test tests --cov=glyph --cov-config tox.ini
+	py.test tests --cov=glyph --cov-config setup.cfg
 
 integration:
-	py.test tests --runslow -n8 --cov=glyph --cov-config tox.ini
+	py.test tests --runslow -n8 --cov=glyph --cov-config setup.cfg
 
 dev:
 	pip install -r requirements.txt
