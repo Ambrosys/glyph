@@ -421,7 +421,7 @@ class NDTree(glyph.gp.individual.ANDimTree):
         return hash(hash(x) for x in self)
 
 def make_callback(factories, args):
-    return (factory(args) for factory in factories)
+    return tuple(factory(args) for factory in factories)
 
 def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
