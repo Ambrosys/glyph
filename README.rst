@@ -74,7 +74,6 @@ guide <https://github.com/ambrosys/glyph/blob/master/.github/CONTRIBUTING>`__.
    :target: https://img.shields.io/pypi/l/pyglyph.svg
 .. |DOI| image:: https://zenodo.org/badge/75950324.svg
    :target: https://zenodo.org/badge/latestdoi/75950324
-
 .. |RTD| image:: https://readthedocs.org/projects/glyph/badge/?version=latest
    :target: http://glyph.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
