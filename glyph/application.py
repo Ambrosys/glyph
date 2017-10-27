@@ -89,7 +89,7 @@ class GPRunner(object):
             cb(self)
 
 
-def default_gprunner(Individual, assessment_runner, callbacks=(), **kwargs):
+def default_gprunner(Individual, assessment_runner, callbacks=DEFAULT_CALLBACKS_GP_RUNNER, **kwargs):
     """Create a default GPRunner instance.
 
     For config options see `MateFactory`, `MutateFactory`, `AlgorithmFactory`.
@@ -224,7 +224,7 @@ class Application(object):
                             help='do checkpointing every n generations (default: 1)')
 
 
-def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.ArgumentParser(), callbacks=()):
+def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.ArgumentParser(), callbacks=DEFAULT_CALLBACKS):
     """Factory function for a console application."""
     Application.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(required=False)
