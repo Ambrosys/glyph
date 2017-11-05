@@ -9,9 +9,11 @@ script:
   - py.test tests --cov=glyph --cov-config setup.cfg
 after_success:
   - codecov
-notifications:
-  slack:
-     rooms:
-       - ambrosys:$SLACK_TOKEN
-     on_success: always
-  email: false
+deploy:
+  provider: pypi
+  user: ohjeah
+  password: $PYPI_PW
+  on:
+    tags: true
+    python: "3.6"
+    all_branches: true
