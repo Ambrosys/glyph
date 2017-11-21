@@ -22,10 +22,5 @@ doc:
 	make -C doc clean
 	make -C doc html
 
-pypi:
-	rm -rf dist/*
-	python setup.py sdist bdist_wheel
-	twine upload dist/*
-
 environment:
 	python doc/make_envyml.py
