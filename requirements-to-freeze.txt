@@ -1,7 +1,5 @@
 deap
-decorator
 dill
-mpmath
 numpy
 pyyaml
 scipy
