@@ -37,7 +37,7 @@ This will be used for zeroMQ in MATLAB.
 3.	Install `Maven <https://maven.apache.org/>`_.
   a.	Add the bin directory of the created directory apache-maven-3.5.0 to the PATH environment variable (same steps as the setting the :code:`JAVA_HOME` variable, but this is a user variable instead of a system variable)
   b.	Confirm installation with :code:`mvn -v` in a command window
-4.	Download `jeroMQ <https://github.com/zeromq/jeromq>`_.
+4.	Download the latest stable release of `jeroMQ <https://github.com/zeromq/jeromq/releases>`_.
   a.	Unpack the zip file
   b.	In a command window, navigate to the resulting jeroMQ folder
   c.	Run the command :code:`mvn package`
