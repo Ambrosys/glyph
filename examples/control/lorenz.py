@@ -25,7 +25,7 @@ class Individual(gp.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
 
     pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential', 'neg'],
-                                  arguments=['y_0', 'y_1', 'y_2'], constants=[])
+                                  arguments=['y_0', 'y_1', 'y_2'], constants=['c'])
 
     def __str__(self):
         """Human readable representation of the individual."""

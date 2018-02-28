@@ -18,7 +18,7 @@ PYTHON = ">=3.5"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(here, "requirements-to-freeze.txt"), "r") as f:
+with open(os.path.join(here, "requirements.txt"), "r") as f:
     REQUIRED = f.readlines()
 
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:

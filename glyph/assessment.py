@@ -149,11 +149,14 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
     measure_opt = None
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
-        res = opt(fun=closure, x0=p0, **kwargs)
-        popt = res.x if res.x.shape else np.array([res.x])
-        measure_opt = res.fun
-        if not res.success:
-            warnings.warn(res.message, UserWarning)
+        try:
+            res = opt(fun=closure, x0=p0, **kwargs)
+            popt = res.x if res.x.shape else np.array([res.x])
+            measure_opt = res.fun
+            if not res.success:
+                warnings.warn(res.message, UserWarning)
+        except ValueError:
+            return p0, closure(p0)
     if measure_opt is None:
         measure_opt = closure(popt)
     return popt, measure_opt

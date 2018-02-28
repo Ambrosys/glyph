@@ -1,9 +1,0 @@
-deap
-dill
-numpy
-pyyaml
-scipy
-sympy
-toolz
-pyzmq
-cache.py==0.1.3
