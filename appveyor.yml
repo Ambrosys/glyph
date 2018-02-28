@@ -19,4 +19,4 @@ install:
   - pip install .
 
 test_script:
-  - py.test tests/unittest --runslow
+  - py.test tests/unittest

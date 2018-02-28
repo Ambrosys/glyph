@@ -26,6 +26,7 @@ def test_hash(IndividualClass):
     pop = [ind, ind]
     assert len(set(pop)) == 1
 
+
 @pytest.mark.parametrize("cls", [Tree, SympyTree, NDTree])
 def test_pickle(cls):
     defaults = inspect.getargspec(cls.create_population).defaults#
@@ -33,6 +34,7 @@ def test_pickle(cls):
     argcount = len(inspect.getargspec(cls.create_population).args)
     ind = cls.create_population(*[1]*(argcount-defaults-1))[0]
     assert dill.loads(dill.dumps(ind)) == ind
+
 
 def test_reproducibility(IndividualClass):
     import random
