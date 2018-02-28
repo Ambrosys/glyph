@@ -9,7 +9,6 @@ from glyph.gp.individual import numpy_phenotype
 from glyph.gp.breeding import mutuniform, cxonepoint
 from glyph.assessment import replace_nan
 
-slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need --runslow option to run")
 
 # TODO(jg): Use a set of fixed individuals as test population -- not create_population(), since it produces a random populations.
 
@@ -95,7 +94,6 @@ def test_paretobest_are_preserved(AlgorithmClass, IndividualClass):
     assert set(fitness_values(pareto_front)) & set(fitness_values(reference_pareto_front)) != {}
 
 
-@slow
 @pytest.mark.skip
 @pytest.mark.parametrize("select", [deap.tools.selNSGA2, deap.tools.selSPEA2, deap.tools.selBest])
 def test_selection_bug_nan_fitness(select, IndividualClass):
@@ -116,7 +114,6 @@ def get_best(pop):
     return deap.tools.selBest(pop, 1)[0]
 
 # maybe this is not a unit test anymore
-@slow
 def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
     from sklearn.datasets import load_boston
     pop_size = 50
@@ -150,7 +147,6 @@ def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
         best = new_best
 
 
-@slow
 def test_reproducibility(AlgorithmClass, IndividualClass):
     import random
 

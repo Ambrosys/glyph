@@ -15,7 +15,7 @@ from glyph.utils.numeric import rms, hill_climb
 
 class SingleConstIndividual(gp.AExpressionTree):
     """An individual class."""
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'], arguments=['x_0'], constants=['c'])
+    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg', 'sqrt'], arguments=['x_0'], constants=['c'])
     marker = "sympy"
 
 
@@ -68,6 +68,8 @@ const_opt_agreement_cases = [
     (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, np.linspace(0, 100, 100), 1.5, 1),
     (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, np.linspace(0, 100, 100), (1.0, 2.0), 2),
     (UnlimitedConstants, 'x_0', lambda x: x, np.linspace(0, 100, 100), (), 0),
+
+    (SingleConstIndividual, 'sqrt(Neg(c))', lambda x: x, np.linspace(0, 100, 100), Any(), 1) #raises exception
 ]
 
 

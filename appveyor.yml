@@ -15,8 +15,8 @@ install:
   - conda info -a
   - "conda create -q -n test-environment python=%PYTHON_VERSION% numpy scipy pytest scikit-learn"
   - activate test-environment
-  - pip install -r requirements-to-freeze.txt
+  - pip install -r requirements.txt
   - pip install .
 
 test_script:
-  - py.test tests/unittest --runslow
+  - py.test tests/unittest

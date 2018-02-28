@@ -3,10 +3,9 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
 script:
-  - py.test tests --cov=glyph
+  - py.test tests --cov=glyph --cov-config=setup.cfg
 after_success:
   - codecov
 deploy:

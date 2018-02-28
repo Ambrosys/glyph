@@ -24,7 +24,7 @@ import control_problem
 class Individual(gp.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
 
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
+    pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential', 'neg'],
                                   arguments=['y_0', 'y_1', 'y_2'], constants=['c'])
 
     def __str__(self):
@@ -86,6 +86,7 @@ def main():
         return
     # Plot n best results.
     import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
     import seaborn
     n = 2
     seaborn.set_palette('husl', n + 2)
