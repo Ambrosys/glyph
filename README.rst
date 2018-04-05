@@ -11,7 +11,7 @@ It comes with batteries included:
 
 - predefined primitive sets
 - n-dimensional expression tree class
-- symbolic and structural constants
+- symbolic and structure-based constants
 - interfacing constant optimization to scipy.optimize
 - easy integration with joblib or dask.distributed
 - symbolic constraints
