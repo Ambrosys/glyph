@@ -1,7 +1,7 @@
 -e .
 pytest
 pytest-cov
-pytest-timeout
+pytest-timeout<1.3
 scikit-learn
 sphinx
 recommonmark
