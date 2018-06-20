@@ -5,7 +5,7 @@ python:
 install:
   - pip install -r requirements-dev.txt
 script:
-  - py.test tests --cov=glyph --cov-config=setup.cfg
+  - python -m pytest tests --cov=glyph --cov-config=setup.cfg
 after_success:
   - codecov
 deploy:

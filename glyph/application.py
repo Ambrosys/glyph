@@ -20,7 +20,7 @@ import deap.tools
 
 from . import gp
 from . import utils
-from .assessment import SingleProcessFactoy
+from .assessment import SingleProcessFactory
 
 
 def update_halloffame(app):
@@ -35,6 +35,7 @@ def update_logbook_record(app):
 
 
 DEFAULT_CALLBACKS_GP_RUNNER = (update_halloffame, update_logbook_record)
+
 
 class GPRunner(object):
     """Runner for gp problem sets.
@@ -435,7 +436,7 @@ class ParallelizationFactory(AFactory):
 
     @staticmethod
     def _create(args):
-        return SingleProcessFactoy
+        return SingleProcessFactory
 
     @staticmethod
     def add_options(parser):
