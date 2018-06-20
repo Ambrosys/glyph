@@ -11,7 +11,8 @@ import warnings
 
 from glyph.gp.individual import _get_index
 
-class SingleProcessFactoy:
+
+class SingleProcessFactory:
     map = map
 
     def __call__(self):
@@ -31,7 +32,7 @@ class AAssessmentRunner(object):
     the results of measure(), when collected from remote processes.
     """
 
-    def __init__(self, parallel_factory=SingleProcessFactoy()):
+    def __init__(self, parallel_factory=SingleProcessFactory()):
         """Store an instance of parallel_factory.
 
         :param parallel_factory: callable() -> obj, obj has to implement some
@@ -140,6 +141,7 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
 
     opt = scipy.optimize.minimize if not lsq else scipy.optimize.least_squares
     f_kwargs = f_kwargs or {}
+
     @functools.wraps(measure)
     def closure(consts):
         return measure(individual, *consts, **f_kwargs)
@@ -161,8 +163,9 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
         measure_opt = closure(popt)
     return popt, measure_opt
 
-# old aliases
-const_opt_scalar = const_opt
+
+const_opt_scalar = const_opt  # old aliases
+
 
 def const_opt_leastsq(measure, individual, default_constants=default_constants, f_kwargs=None, **kwargs):
     return const_opt(measure, individual, lsq=True, default_constants=default_constants, f_kwargs=f_kwargs, **kwargs)
