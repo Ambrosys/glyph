@@ -2,7 +2,7 @@
 
 ## Reporting bugs
 
-* Before submitting a new bug report, check the FAQs, the [google group](https://groups.google.com/forum/#!forum/pyglyph) and the [open issues](https://github.com/Ambrosys/glyph/issues?q=is%3Aopen+is%3Aissue).
+* Before submitting a new bug report, check the FAQs, and the [open issues](https://github.com/Ambrosys/glyph/issues?q=is%3Aopen+is%3Aissue).
 * **Use a clear and descriptive title** for the issue to identify the problem.
 * Provide a **minimal example** to reproduce the bug.
 

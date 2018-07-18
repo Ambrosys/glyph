@@ -1,9 +1,6 @@
-import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 import versioneer
 
@@ -21,9 +18,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "requirements.txt"), "r") as f:
     REQUIRED = f.readlines()
 
-with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as f:
-    LONG_DESCRIPTION = "\n" + f.read()
-
+with open(os.path.join(here, "README.md"), "r") as f:
+    LONG_DESCRIPTION = f.read()
 
 if __name__ == "__main__":
     setup(
@@ -33,6 +29,7 @@ if __name__ == "__main__":
         author_email=EMAIL,
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
+        long_description_content_type="text/markdown",
         license=LICENCE,
         keywords=KEYWORDS,
         url=URL,
