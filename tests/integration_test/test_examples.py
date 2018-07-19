@@ -13,6 +13,7 @@ slow = pytest.mark.skipif(not pytest.config.getoption("--runslow"), reason="need
 
 THIS_FILES_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
+
 @contextlib.contextmanager
 def cd(newdir, cleanup=lambda: True):
     prevdir = os.getcwd()
@@ -22,6 +23,7 @@ def cd(newdir, cleanup=lambda: True):
     finally:
         os.chdir(prevdir)
         cleanup()
+
 
 @contextlib.contextmanager
 def tempdir():
@@ -50,7 +52,7 @@ def test_symbolic_regression_example(file):
 
 @pytest.mark.timeout(300)
 def test_glyph_remote():
-    with tempdir() as dirpath:
+    with tempdir():
         example = os.path.abspath(os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py"))
         exp = subprocess.Popen("python {}".format(example), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         gp = subprocess.Popen("glyph-remote --remote --ndim 2 -n 2 -p 4 --max_iter_total 1 --max_fev_const_opt 1", shell=True)
