@@ -14,8 +14,12 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
+
 import deap.gp
 import deap.tools
+import deap.tools
+import glyph.application
+import glyph.utils
 import numpy as np
 import sympy
 import yaml
@@ -25,6 +29,7 @@ from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 import glyph.application
 import glyph.utils
+from glyph.observer import LogbookObserver
 from glyph.assessment import const_opt
 from glyph.gp import AExpressionTree
 from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
@@ -294,6 +299,13 @@ def get_parser():
         default=True,
         help="Discard individuals with infinities (default: True)",
     )
+
+    observer = parser.add_argument_group("observer")
+    observer.add_argument(
+        "--animate",
+        action="store_true",
+        help="Animate the progress of evolutionary optimization. (default: False)"
+    )
     return parser
 
 
@@ -483,7 +495,9 @@ class RemoteAssessmentRunner:
                 )
 
             if self.multi_objective:
-                self.const_optimizer = partial(const_opt, lsq=True, **const_opt_options_transform(self.options))
+                self.const_optimizer = partial(
+                    const_opt, lsq=True, **const_opt_options_transform(self.options)
+                )
             else:
                 self.const_optimizer = partial(const_opt, method=self.method, options=self.options)
 
@@ -660,8 +674,12 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
         callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
+
         if args.send_meta_data:
             callbacks += (send_meta_data,)
+
+        if args.animate:
+            callbacks += (LogbookObserver(),)
 
         app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 

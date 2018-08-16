@@ -81,7 +81,7 @@ def main2():
     for gen in range(10):
         runner.step()
         print(runner.logbook.stream)
-    for individual in runner.halloffame:
+    for individual in runner.pareto_front:
         print(individual)
 
 
