@@ -6,7 +6,7 @@ init:
 
 test:
 	pytest glyph --doctest-modules
-	pytest tests/unittest --cov=glyph --cov-config setup.cfg
+	pytest tests --cov=glyph --cov-config setup.cfg
 
 integration:
 	pytest tests/integration_test --runslow -n8 --cov=glyph --cov-config setup.cfg
