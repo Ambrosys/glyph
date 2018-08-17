@@ -1,22 +1,22 @@
 from functools import partial, partialmethod
 
-from deap.tools import selNSGA2, selBest
 import numpy as np
+from deap.tools import selBest, selNSGA2
 
-from glyph.gp.individual import AExpressionTree, ANDimTree, numpy_primitive_set, numpy_phenotype, nd_phenotype
-from glyph.gp.breeding import cxonepoint, nd_crossover, mutuniform, nd_mutation
 from glyph.gp.algorithms import AgeFitness
+from glyph.gp.breeding import cxonepoint, mutuniform, nd_crossover, nd_mutation
+from glyph.gp.individual import Individual, NDIndividual, nd_phenotype, numpy_phenotype, numpy_primitive_set
 from glyph.utils.numeric import rmse
 
-
 pset = numpy_primitive_set(1, categories=('algebraic', 'symc'))
-MyTree = type("MyTree", (AExpressionTree,), dict(pset=pset))
-MyNDTree = type("MyNDTree", (ANDimTree,), dict(base=MyTree))
+MyTree = Individual(pset=pset, name="MyTree")
+MyNDTree = NDIndividual(base=MyTree, name="MyNDTree")
 MyNDTree.create_population = partialmethod(MyNDTree.create_population, ndim=2)
 
 
 def target(x):
-    return np.array([f(x) for f in [lambda x: x**2, lambda x: x]])
+    return np.array([f(x) for f in [lambda x: x ** 2, lambda x: x]])
+
 
 x = np.linspace(-1, 1, 30)
 y = target(x)
@@ -30,6 +30,7 @@ def evaluate_(individual, x, y):
             yhat[i] = np.ones_like(y[i]) * yhat[i]
     yhat = np.array(yhat)
     return rmse(yhat, y),
+
 
 evaluate = partial(evaluate_, x=x, y=y)
 

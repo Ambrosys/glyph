@@ -1,24 +1,21 @@
 from functools import partial
 
-import numpy as np
 import deap.gp
 import deap.tools
+import numpy as np
 
 from glyph import gp
 from glyph.assessment import const_opt_scalar
 from glyph.utils import Memoize
-from glyph.utils.numeric import silent_numpy, nrmse
+from glyph.utils.numeric import nrmse, silent_numpy
 
-
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+Individual = gp.Individual(pset=pset)
 
 
 @silent_numpy
 def error(ind, *args):
-    g = lambda x: x**2 - 1.1
+    g = lambda x: x ** 2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)

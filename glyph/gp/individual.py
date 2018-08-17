@@ -4,16 +4,20 @@
 
 """Provide Individual class for gp."""
 
-import re
+import abc
 import copy
-import deap.gp
-import deap.base
-import sympy
 import functools
 import itertools
+import re
+import sys
+
+import deap.base
+import deap.gp
 import numpy as np
+import sympy
 
 import glyph.utils
+
 
 #def len_subtree(i):
 #    sl_left = ind.searchSubtree(i+1)
@@ -221,6 +225,27 @@ def numpy_phenotype(individual):
     return func
 
 
+class Individual(type):
+    """Metaclass to set the primitive set in ExpressionTree types."""
+
+    def __new__(mcs, pset, name="MyIndividual", **kwargs):
+        """Construct a new expression tree type.
+
+        Args:
+            pset: :class:`deap.gp.PrimitiveSet`
+            name: name of the expression tree class
+            kwargs: additional attributes
+
+        Returns: expression tree class
+        """
+        cls = super().__new__(mcs, name, (AExpressionTree,), dict(pset=pset, **kwargs))
+        setattr(sys.modules[__name__], name, cls)
+        return cls
+
+    def __init__(cls, pset, name="MyIndividual", **kwargs):  # noqa
+        super().__init__(name, (AExpressionTree,), dict(pset=pset, **kwargs))
+
+
 class AExpressionTree(deap.gp.PrimitiveTree):
     """Abstract base class for the genotype.
 
@@ -228,12 +253,9 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     tree can be build, as well as a phenotype method.
     """
 
-    pset = None
     hasher = str
 
     def __init__(self, content):
-        if self.pset is None:
-            raise TypeError("Cannot instantiate abstract {} with abstract attribute pset.".format(self.__class__))
         super(AExpressionTree, self).__init__(content)
         self.fitness = Measure()
 
@@ -266,6 +288,11 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         """Return terminals that occur in the expression tree."""
         return [primitive for primitive in self if primitive.arity == 0]
 
+    @property
+    @abc.abstractmethod
+    def pset(self):
+        pass
+
     @classmethod
     def from_string(cls, string):
         return super(AExpressionTree, cls).from_string(string, cls.pset)
@@ -293,6 +320,25 @@ def nd_phenotype(nd_tree, backend=sympy_phenotype):
     return lambda *x: [f(*x) for f in funcs]
 
 
+class NDIndividual(type):
+    def __new__(mcs, base, name="MyNDIndividual", **kwargs):
+        """Construct a new n-dimensional expression tree type.
+
+        Args:
+            base (Individual): one dimensional base class
+            name: name of the n-dimensional expression tree class
+            **kwargs: addtional attributes
+
+        Returns: n-dimensional expression tree class
+        """
+        cls = super().__new__(mcs, name, (ANDimTree,), dict(base=base, **kwargs))
+        setattr(sys.modules[__name__], name, cls)
+        return cls
+
+    def __init__(cls, base, name="MyNDIndividual", **kwargs):  # noqa
+        super().__init__(name, (ANDimTree,), dict(base=base, **kwargs))
+
+
 class ANDimTree(list):
     """
     A naive tree class representing a vector-valued expression. Each dimension is encoded as a expression tree.
@@ -303,6 +349,7 @@ class ANDimTree(list):
         self.fitness = Measure()
 
     @property
+    @abc.abstractmethod
     def base(self):
         pass
 

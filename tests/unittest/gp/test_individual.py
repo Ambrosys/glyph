@@ -1,24 +1,25 @@
 import inspect
+import operator
 
 import dill
 import pytest
-import sympy
 
 from glyph.gp.individual import *
 
 
-class Tree(AExpressionTree):
-    pset = numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
-    marker = "symc"
+Tree = Individual(name="Tree",
+                  pset=numpy_primitive_set(1,
+                                           categories=('algebraic', 'trigonometric', 'symc')),
+                  marker="symc")
+
+SympyTree = Individual(name="SympyTree",
+                       pset=sympy_primitive_set(categories=['algebraic', 'exponential'],
+                                                arguments=['x_0'],
+                                                constants=['c_0']),
+                       marker=sympy)
 
 
-class SympyTree(AExpressionTree):
-    pset = sympy_primitive_set(categories=['algebraic', 'exponential'], arguments=['x_0'], constants=['c_0'])
-    marker = "sympy"
-
-
-class NDTree(ANDimTree):
-    base = SympyTree
+NDTree = NDIndividual(base=SympyTree)
 
 
 def test_hash(IndividualClass):
@@ -29,7 +30,7 @@ def test_hash(IndividualClass):
 
 @pytest.mark.parametrize("cls", [Tree, SympyTree, NDTree])
 def test_pickle(cls):
-    defaults = inspect.getargspec(cls.create_population).defaults#
+    defaults = inspect.getargspec(cls.create_population).defaults
     defaults = len(defaults) if defaults else 0
     argcount = len(inspect.getargspec(cls.create_population).args)
     ind = cls.create_population(*[1]*(argcount-defaults-1))[0]
@@ -59,6 +60,7 @@ phenotype_cases = [
     (SympyTree, "Add(c_0, x_0)"),
     (SympyTree, "Add(x_0, c_0)"),
 ]
+
 
 @pytest.mark.parametrize('case', phenotype_cases)
 def test_phenotype(case):
@@ -136,6 +138,7 @@ get_len_case = (
     ("Add(x_0, Add(x_0, x_0))", 5),
 )
 
+
 @pytest.mark.parametrize("case", get_len_case)
 def test_get_len(case):
     expr, x = case
@@ -154,14 +157,12 @@ def test_struct_const_format():
 
 @pytest.fixture
 def sc_ind():
-    this_pset = numpy_primitive_set(1)
+    pset = numpy_primitive_set(1)
     f = lambda x, y: 0
-    this_pset = add_sc(this_pset, f)
-    import operator
-    this_pset.addPrimitive(operator.neg, 1, "Neg")
-    class Ind(AExpressionTree):
-        pset = this_pset
-    return Ind
+    pset = add_sc(pset, f)
+    pset.addPrimitive(operator.neg, 1, "Neg")
+
+    return Individual(pset=pset)
 
 
 @pytest.mark.parametrize("case", get_len_case)
@@ -185,6 +186,7 @@ child_tree_cases = (
     ("Add(x_0, x_0)", ["x_0", "x_0"]),
 )
 
+
 @pytest.mark.parametrize("case", child_tree_cases)
 def test_child_trees(case):
     expr, res = case
@@ -201,6 +203,7 @@ simplify_consts_cases = (
     ("Add(x_0, Symc)", "Add(x_0, Symc)"),
     ("Div(Symc, Add(x_0, Symc))", "Div(Symc, Add(x_0, Symc))"),
 )
+
 
 @pytest.mark.parametrize("case", simplify_consts_cases)
 def test_simplify_constant(case):
@@ -220,6 +223,7 @@ pprint_cases = (
     ("c + x", "1 + x", ["c"], [1], 0),
     ("a * x", "1 * x", ["a"], [1], 0),
 )
+
 
 @pytest.mark.parametrize("case", pprint_cases)
 def test_pretty_print(case):
@@ -245,6 +249,7 @@ constant_normal_form_cases =(
     ("sin(c)", "c"),
     ("y_0**2", "y_0**2")
 )
+
 
 @pytest.mark.parametrize("case", constant_normal_form_cases)
 def test__constant_normal_form(case):
