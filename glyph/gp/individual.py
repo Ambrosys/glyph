@@ -203,9 +203,8 @@ def numpy_phenotype(individual):
 
     :Example:
     >>> pset = numpy_primitive_set(1)
-    >>> class Individual(AExpressionTree)
-    >>>    pset = pset
-    >>> ind = Individual.from_string("Add(x_0, symc)")
+    >>> MyIndividual = Individual(pset=pset)
+    >>> ind = MyIndividual.from_string("Add(x_0, Symc)")
     >>> f = numpy_phenotype(ind)
     >>> f(1, 1)
     2
