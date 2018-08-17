@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def get_limits(x, factor=1.1):
@@ -11,7 +11,7 @@ def get_limits(x, factor=1.1):
     return avg - l/2 * factor, avg + l/2 * factor
 
 
-class LogbookObserver(object):  # pragma: no cover
+class ProgressObserver(object):  # pragma: no cover
     """Animates the progress of the evolutionary optimization.
 
     Note:

@@ -1,16 +1,16 @@
 import warnings
 from functools import partial
 
-import numpy as np
 import deap.gp
 import deap.tools
+import numpy as np
 
 from glyph import gp
-from glyph.assessment import const_opt_scalar
 from glyph.application import create_stats
+from glyph.assessment import const_opt_scalar
+from glyph.observer import ProgressObserver
 from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
-from glyph.observer import LogbookObserver
 
 
 class Individual(gp.AExpressionTree):
@@ -56,7 +56,7 @@ class Mock():
 def main():
     pop_size = 20
 
-    observer = LogbookObserver()
+    observer = ProgressObserver()
     mate = deap.gp.cxOnePoint
     expr_mut = partial(deap.gp.genFull, min_=0, max_=2)
     mutate = partial(deap.gp.mutUniform, expr=expr_mut, pset=Individual.pset)

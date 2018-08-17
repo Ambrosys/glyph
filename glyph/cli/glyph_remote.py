@@ -14,12 +14,8 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
-
 import deap.gp
 import deap.tools
-import deap.tools
-import glyph.application
-import glyph.utils
 import numpy as np
 import sympy
 import yaml
@@ -29,11 +25,11 @@ from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 import glyph.application
 import glyph.utils
-from glyph.observer import LogbookObserver
 from glyph.assessment import const_opt
 from glyph.gp import AExpressionTree
 from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
+from glyph.observer import ProgressObserver
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
@@ -627,6 +623,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     glyph.utils.logging.load_config(
         config_file=args.logging_config, default_level=log_level, placeholders=dict(workdir=workdir)
     )
+    logger = logging.getLogger(__name__)
 
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))
@@ -679,7 +676,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             callbacks += (send_meta_data,)
 
         if args.animate:
-            callbacks += (LogbookObserver(),)
+            callbacks += (ProgressObserver(),)
 
         app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 
