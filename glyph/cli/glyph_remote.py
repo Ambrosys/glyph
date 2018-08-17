@@ -29,6 +29,7 @@ from glyph.assessment import const_opt
 from glyph.gp import AExpressionTree
 from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
+from glyph.observer import ProgressObserver
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
@@ -294,6 +295,13 @@ def get_parser():
         default=True,
         help="Discard individuals with infinities (default: True)",
     )
+
+    observer = parser.add_argument_group("observer")
+    observer.add_argument(
+        "--animate",
+        action="store_true",
+        help="Animate the progress of evolutionary optimization. (default: False)"
+    )
     return parser
 
 
@@ -483,7 +491,9 @@ class RemoteAssessmentRunner:
                 )
 
             if self.multi_objective:
-                self.const_optimizer = partial(const_opt, lsq=True, **const_opt_options_transform(self.options))
+                self.const_optimizer = partial(
+                    const_opt, lsq=True, **const_opt_options_transform(self.options)
+                )
             else:
                 self.const_optimizer = partial(const_opt, method=self.method, options=self.options)
 
@@ -613,6 +623,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     glyph.utils.logging.load_config(
         config_file=args.logging_config, default_level=log_level, placeholders=dict(workdir=workdir)
     )
+    logger = logging.getLogger(__name__)
 
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))
@@ -660,8 +671,12 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
         callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
+
         if args.send_meta_data:
             callbacks += (send_meta_data,)
+
+        if args.animate:
+            callbacks += (ProgressObserver(),)
 
         app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 

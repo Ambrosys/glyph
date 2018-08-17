@@ -23,18 +23,18 @@ from . import utils
 from .assessment import SingleProcessFactory
 
 
-def update_halloffame(app):
-    app.halloffame.update(app.population)
+def update_pareto_front(runner):
+    runner.pareto_front.update(runner.population)
 
 
-def update_logbook_record(app):
-    if not app.mstats:
-        app.mstats = create_stats(len(app.population[0].fitness.values))
-    record = app.mstats.compile(app.population)
-    app.logbook.record(gen=app.step_count, evals=app._evals, **record)
+def update_logbook_record(runner):
+    if not runner.mstats:
+        runner.mstats = create_stats(len(runner.population[0].fitness.values))
+    record = runner.mstats.compile(runner.population)
+    runner.logbook.record(gen=runner.step_count, evals=runner._evals, **record)
 
 
-DEFAULT_CALLBACKS_GP_RUNNER = (update_halloffame, update_logbook_record)
+DEFAULT_CALLBACKS_GP_RUNNER = (update_pareto_front, update_logbook_record)
 
 
 class GPRunner(object):
@@ -59,7 +59,7 @@ class GPRunner(object):
         self.IndividualClass = IndividualClass
         self.algorithm_factory = algorithm_factory
         self.assessment_runner = assessment_runner
-        self.halloffame = []
+        self.pareto_front = []
         self.logbook = ''
         self.mstats = None
         self.step_count = 0
@@ -67,7 +67,7 @@ class GPRunner(object):
 
     def init(self, pop_size):
         """Initialize the gp run."""
-        self.halloffame = deap.tools.ParetoFront()
+        self.pareto_front = deap.tools.ParetoFront()
         self.logbook = deap.tools.Logbook()
         self.mstats = None
         self.step_count = 0
@@ -155,6 +155,10 @@ class Application(object):
     @property
     def assessment_runner(self):
         return self.gp_runner.assessment_runner
+
+    @property
+    def logbook(self):
+        return self.gp_runner.logbook
 
     def run(self, break_condition=None):
         """Run gp app.
