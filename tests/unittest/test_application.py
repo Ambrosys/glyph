@@ -31,5 +31,5 @@ def test_gp_runner_reproducibility(SympyIndividual):
     fit_vals_1 = [ind.fitness.values for ind in gp_runner_1.population]
     fit_vals_2 = [ind.fitness.values for ind in gp_runner_2.population]
     assert fit_vals_1 == fit_vals_2
-    assert gp_runner_1.halloffame[:] == gp_runner_2.halloffame[:]
+    assert gp_runner_1.pareto_front[:] == gp_runner_2.pareto_front[:]
     assert gp_runner_1.logbook == gp_runner_2.logbook
