@@ -79,7 +79,7 @@ The *experiment* request expects a fitness value for each expression:
 Shutdown
 ~~~~~~~~
 
-YOu can properly shut down the experiment hardware.
+You can properly shut down the experiment hardware.
 
 Configuration
 -------------

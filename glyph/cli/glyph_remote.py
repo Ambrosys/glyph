@@ -14,28 +14,39 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
+import numpy as np
+
 import deap.gp
 import deap.tools
-import numpy as np
+import enum
+import glyph.application
+import glyph.gp.individual
+import glyph.utils
 import sympy
 import yaml
 import zmq
 from cache import DBCache
-from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
-
-import glyph.application
-import glyph.utils
-import glyph.gp.individual
 from glyph.assessment import const_opt
-from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
-from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
+from glyph.gp.constraints import (NullSpace, apply_constraints,
+                                  build_constraints)
+from glyph.gp.individual import (_constant_normal_form, add_sc, pretty_print,
+                                 sc_mmqout, simplify_this)
 from glyph.observer import ProgressObserver
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
-
+from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 logger = logging.getLogger(__name__)
+
+
+class ExperimentProtocol(enum.EnumMeta):
+    """Communication Protocol with remote experiments."""
+
+    EXPERIMENT = "EXPERIMENT"
+    SHUTDOWN = "SHUTDOWN"
+    METADATA = "METADATA"
+    CONFIG = "CONFIG"
 
 
 def partition(pred, iterable):
@@ -55,7 +66,7 @@ class RemoteApp(glyph.application.Application):
         except KeyboardInterrupt:
             self.checkpoint()
         finally:
-            self.assessment_runner.send(dict(action="SHUTDOWN"))
+            self.assessment_runner.send(dict(action=ExperimentProtocol.SHUTDOWN))
             zmq.Context.instance().destroy()
 
     @classmethod
@@ -361,7 +372,7 @@ def handle_gpconfig(config, send, recv):
         with open(config.cfile, "r") as cf:
             gpconfig = yaml.load(cf)
     elif config.remote:
-        send(dict(action="CONFIG"))
+        send(dict(action=ExperimentProtocol.CONFIG))
         gpconfig = recv()
     else:
         gpconfig = {}
@@ -408,9 +419,9 @@ class EvalQueue(Queue):
         def process(keys, payload_meta):
             payload, meta = zip(*payload_meta)
             if any(meta):
-                self.send(dict(action="EXPERIMENT", payload=payload, meta=meta))
+                self.send(dict(action=ExperimentProtocol.EXPERIMENT, payload=payload, meta=meta))
             else:
-                self.send(dict(action="EXPERIMENT", payload=payload))
+                self.send(dict(action=ExperimentProtocol.EXPERIMENT, payload=payload))
             fitnesses = self.recv()["fitness"]
             for key, fit in zip(keys, fitnesses):
                 logger.debug("Writing result for key: {}".format(key))
@@ -689,7 +700,7 @@ def send_meta_data(app):
     recv = app.gp_runner.assessment_runner.recv
 
     metadata = dict(generation=app.gp_runner.step_count)
-    send(dict(action="METADATA", payload=metadata))
+    send(dict(action=ExperimentProtocol.METADATA, payload=metadata))
     recv()
 
 
