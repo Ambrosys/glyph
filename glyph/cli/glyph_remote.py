@@ -392,13 +392,12 @@ def build_pset_gp(primitives, structural_constants=False, cmin=-1, cmax=1):
     return pset
 
 
-class MyQueue(Queue):
+class EvalQueue(Queue):
     def __init__(self, send, recv, result_queue, expect):
         self.recv = recv
         self.send = send
         self.result_queue = result_queue
         self.expect = expect
-        self.logger = logging.getLogger(self.__class__.__name__)
 
         super().__init__()
 
@@ -414,7 +413,7 @@ class MyQueue(Queue):
                 self.send(dict(action="EXPERIMENT", payload=payload))
             fitnesses = self.recv()["fitness"]
             for key, fit in zip(keys, fitnesses):
-                self.logger.debug("Writing result for key: {}".format(key))
+                logger.debug("Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
         while self.expect > 0:
@@ -427,7 +426,7 @@ class MyQueue(Queue):
             else:
                 key, payload_meta = key_payload_meta
                 if key not in self.result_queue:
-                    self.logger.debug("Queueing key: {}".format(key))
+                    logger.debug("Queueing key: {}".format(key))
                     payloads.append(payload_meta)
                     keys.append(key)
             if len(payloads) == min(self.expect, chunk_size):
@@ -561,7 +560,7 @@ class RemoteAssessmentRunner:
             n_workers = min(n, self.chunk_size)
 
             # start queue and the broker
-            self.queue = MyQueue(self.send, self.recv, self.result_queue, n)
+            self.queue = EvalQueue(self.send, self.recv, self.result_queue, n)
             thread = Thread(target=self.queue.run, args=(n_workers,))
             thread.start()
 
