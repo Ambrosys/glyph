@@ -1,15 +1,14 @@
-from functools import partial, wraps
 import warnings
-import numpy as np
+from functools import partial, wraps
+
 import deap.gp
 import deap.tools
-import sympy
+import numpy as np
 import scipy.optimize
 
 from glyph import gp
 from glyph.utils import Memoize
-from glyph.assessment import const_opt_scalar
-from glyph.utils.numeric import silent_numpy, nrmse
+from glyph.utils.numeric import nrmse, silent_numpy
 
 
 class Terminal(deap.gp.Terminal):
@@ -19,6 +18,7 @@ class Terminal(deap.gp.Terminal):
 
     def format(self, *args):
         return "w.dot(x) + b"
+
 
 pset = gp.numpy_primitive_set(arity=0, categories=['algebraic'])
 pset.terminals[object].append(Terminal())
@@ -49,7 +49,6 @@ class Individual(gp.AExpressionTree):
 
 
 def const_opt(f, individual):
-
     arity = individual.arity
 
     @wraps(f)
@@ -60,10 +59,8 @@ def const_opt(f, individual):
             new_consts.append(node[-1])
         return f(individual, *new_consts)
 
-    p0 = np.ones((arity+1) * individual.n_args)
-    popt = p0
-    measure_opt = None
-    res = scipy.optimize.minimize(fun=closure, x0=p0,  method='Nelder-Mead', tol=1e-3)
+    p0 = np.ones((arity + 1) * individual.n_args)
+    res = scipy.optimize.minimize(fun=closure, x0=p0, method='Nelder-Mead', tol=1e-3)
     popt = res.x if res.x.shape else np.array([res.x])
     measure_opt = res.fun
     if not res.success:
@@ -73,14 +70,13 @@ def const_opt(f, individual):
     return popt, measure_opt
 
 
-
 @silent_numpy
 def error(ind, *args):
-    g = lambda x: x**2 - 1.1
+    g = lambda x: x ** 2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True).reshape(ind.arity, -1)
     y = g(points)
     f = phenotype(ind)
-    args[0].dot(points) + args[1] # ??? without this there will be segmentation fault
+    args[0].dot(points) + args[1]  # ??? without this there will be segmentation fault
     yhat = f(points, *args).reshape(y.shape)
 
     return nrmse(y, yhat)

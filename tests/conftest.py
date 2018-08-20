@@ -1,5 +1,4 @@
 import pytest
-
 import glyph.gp as gp
 
 
@@ -9,13 +8,13 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="function")
 def SympyIndividual():
-    return type('SympyIndividual', (gp.AExpressionTree, ), dict(pset=gp.sympy_primitive_set(constants=["c"])))
+    return gp.Individual(pset=gp.sympy_primitive_set(constants=["c"]), name="SympyIndividual")
 
 
 @pytest.fixture(scope="function")
 def NumpyIndividual():
     # 13 for the boston data set
-    return type('NumpyIndividual', (gp.AExpressionTree, ), dict(pset=gp.numpy_primitive_set(arity=13)))
+    return gp.Individual(gp.numpy_primitive_set(arity=13), "NumpyIndividual")
 
 
 @pytest.fixture(scope="function", params=[SympyIndividual, NumpyIndividual])

@@ -100,12 +100,6 @@ def soft_target(app, target=0, error_index=0):
 def break_condition(target=0, error_index=0, ttl=0, max_iter=np.infty):
     """Combined breaking condition based on time to live, minimum target and maximum number of iterations.
 
-     :Example:
-     >>> app = glyph.application.Application(...)
-     >>> bc = break_condition(...)
-     >>> app.run(break_condition=bc)
-
-
     :param target: value of desired error metric
     :param error_index: index in fitness tuple
     :param ttl: time to live in seconds

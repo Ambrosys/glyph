@@ -1,22 +1,16 @@
 from functools import partial
-import numpy as np
 
 import deap.gp
 import deap.tools
+import numpy as np
 
 from glyph import gp
 from glyph.utils import Memoize
-from glyph.utils.numeric import silent_numpy, nrmse
-
+from glyph.utils.numeric import nrmse, silent_numpy
 
 pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential'])
 pset = gp.individual.add_sc(pset, gp.individual.sc_mmqout)
-
-
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = pset
+Individual = gp.Individual(pset=pset)
 
 
 @Memoize
@@ -56,6 +50,7 @@ def main():
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
         print(gp.individual.simplify_this(best), best.fitness.values)
+
 
 if __name__ == "__main__":
     main()

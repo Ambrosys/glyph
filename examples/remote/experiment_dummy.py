@@ -1,12 +1,7 @@
 import argparse
 import collections
 import json
-
-import zmq
-import json
 import logging
-
-import numpy as np
 
 from experiment import EventLoop
 
@@ -17,7 +12,8 @@ class DummyEventLoop(EventLoop):
 
     def evaluate(self, pop):
         self.logger.debug(len(pop))
-        return dict(fitness=[0 for ind in pop])
+        return dict(fitness=[0 for _ in pop])
+
 
 if __name__ == "__main__":
 
@@ -31,7 +27,7 @@ if __name__ == "__main__":
     else:
         cfile = {}
 
-    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub": 2}
+    primitives = {"x": 0, "k0": -1, "k1": -1, "Add": 2, "Mul": 2, "Sub": 2}
     defaults = {"primitives": primitives}
 
     config = collections.ChainMap(cfile, defaults)

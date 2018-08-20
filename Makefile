@@ -5,10 +5,11 @@ init:
 	pip install -e .
 
 test:
-	py.test tests --cov=glyph --cov-config setup.cfg
+	pytest glyph --doctest-modules
+	pytest tests --cov=glyph --cov-config setup.cfg
 
 integration:
-	py.test tests --runslow -n8 --cov=glyph --cov-config setup.cfg
+	pytest tests/integration_test --runslow -n8 --cov=glyph --cov-config setup.cfg
 
 dev:
 	pip install -r requirements-dev.txt

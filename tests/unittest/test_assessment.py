@@ -1,33 +1,38 @@
 """Tests for module control.gp.algorithms."""
 
-import re
 import operator
+import re
 
-import pytest
-import numpy as np
-import scipy.integrate
 import dill
+import numpy as np
+import pytest
+import scipy.integrate
 
-from glyph import gp
 from glyph import assessment
-from glyph.utils.numeric import rms, hill_climb
+from glyph import gp
+from glyph.utils.numeric import hill_climb, rms
 
+SingleConstIndividual = gp.Individual(
+    pset=gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg', 'sqrt'],
+                                arguments=['x_0'],
+                                constants=['c']),
+    name="SingleConstIndividual",
+    marker="sympy"
+)
 
-class SingleConstIndividual(gp.AExpressionTree):
-    """An individual class."""
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg', 'sqrt'], arguments=['x_0'], constants=['c'])
-    marker = "sympy"
+TwoConstIndividual = gp.Individual(
+    pset=gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'],
+                                arguments=['x_0'],
+                                constants=['c_0', 'c_1']),
+    name="TwoConstIndividual",
+    marker="sympy"
+)
 
-
-class TwoConstIndividual(gp.AExpressionTree):
-    """An individual class."""
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'], arguments=['x_0'], constants=['c_0', 'c_1'])
-    marker = "sympy"
-
-
-class UnlimitedConstants(gp.AExpressionTree):
-    pset = gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'exponential', 'symc'))
-    marker = "symc"
+UnlimitedConstants = gp.Individual(
+    pset=gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'exponential', 'symc')),
+    name="UnlimitedConstants",
+    marker="symc"
+)
 
 
 class Any(int):
@@ -49,11 +54,12 @@ def tupleize(x):
         x = x,
     return x
 
+
 def assert_all_close(a, b, r_tol=1e-6):
     """Custom all_close to account for comparisons to Any()"""
     a = tupleize(a)
     b = tupleize(b)
-    assert all([abs(p+operator.neg(q)) <= r_tol for p, q in zip(a, b)])
+    assert all([abs(p + operator.neg(q)) <= r_tol for p, q in zip(a, b)])
 
 
 const_opt_agreement_cases = [
@@ -69,7 +75,7 @@ const_opt_agreement_cases = [
     (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, np.linspace(0, 100, 100), (1.0, 2.0), 2),
     (UnlimitedConstants, 'x_0', lambda x: x, np.linspace(0, 100, 100), (), 0),
 
-    (SingleConstIndividual, 'sqrt(Neg(c))', lambda x: x, np.linspace(0, 100, 100), Any(), 1) #raises exception
+    (SingleConstIndividual, 'sqrt(Neg(c))', lambda x: x, np.linspace(0, 100, 100), Any(), 1)  # raises exception
 ]
 
 
@@ -108,12 +114,11 @@ def test_const_opt_scalar(case):
 
 
 def test_const_opt_scalar_functional():
-
     def integral(ind, *const):
         f = gp.sympy_phenotype(ind)
 
         def f_square(x, *const):
-            return f(x, *const)**2
+            return f(x, *const) ** 2
 
         s, *_ = scipy.integrate.quad(f_square, 0, 1, args=tupleize(const))
         return s
@@ -141,7 +146,6 @@ def test_hill_climb():
     popt, rms_opt = assessment.const_opt_scalar(error, ind, method=hill_climb, options=optiones)
     assert rms_opt <= optiones["target"]
     assert_all_close(desired, popt, r_tol=0.1)
-
 
 
 @pytest.mark.parametrize('case', const_opt_agreement_cases)

@@ -25,8 +25,8 @@ from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 import glyph.application
 import glyph.utils
+import glyph.gp.individual
 from glyph.assessment import const_opt
-from glyph.gp import AExpressionTree
 from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
 from glyph.observer import ProgressObserver
@@ -596,7 +596,7 @@ class RemoteAssessmentRunner:
         return self.update_fitness(population, meta=meta)
 
 
-class Individual(AExpressionTree):
+class Individual(glyph.gp.individual.AExpressionTree):
     pass
 
 

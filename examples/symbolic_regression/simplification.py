@@ -10,10 +10,8 @@ from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
 
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+Individual = gp.Individual(pset=pset)
 
 
 @silent_numpy
