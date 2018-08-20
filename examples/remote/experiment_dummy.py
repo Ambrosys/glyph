@@ -5,13 +5,15 @@ import logging
 
 from experiment import EventLoop
 
+logger = logging.getLogger()
+
 
 class DummyEventLoop(EventLoop):
     def __init__(self, config):
         super().__init__(None, config)
 
     def evaluate(self, pop):
-        self.logger.debug(len(pop))
+        logger.debug(len(pop))
         return dict(fitness=[0 for _ in pop])
 
 
@@ -19,6 +21,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", default=None)
+    parser.add_argument("--forever", action="store_true")
 
     args = parser.parse_args()
     if args.file:
@@ -35,4 +38,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     loop = DummyEventLoop(dict(config))
-    loop.run()
+    loop.run(forever=args.forever)

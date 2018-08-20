@@ -1,21 +1,19 @@
 import argparse
 import collections
-
-import zmq
 import json
 import logging
 
 import numpy as np
-from deap.gp import compile
 
+import zmq
 from build_pset import build_pset
+from deap.gp import compile
 
 logger = logging.getLogger(__name__)
 
 
 class EventLoop(object):
-    def __init__(self, experiment, config, socket=None, port=5555):
-        self.socket = socket or zmq.Context().socket(zmq.REP)
+    def __init__(self, experiment, config, port=5555):
         self.port = port
         self.experiment = experiment
         self.config = config
@@ -26,21 +24,26 @@ class EventLoop(object):
         return "tcp://*:{}".format(self.port)
 
     def start(self):
+        self.socket = zmq.Context().socket(zmq.REP)
         self.socket.bind(self.address)
 
     def shutdown(self):
         self.socket.close()
 
-    def run(self):
-        self.start()
+    def run(self, forever=False):
         while True:
-            request = json.loads(self.socket.recv().decode('ascii'))
-            logger.info(request)
-            result = self.work(request)
-            logger.info(result)
-            if result is None:
+            logger.info("Starting new experiment.")
+            self.start()
+            while True:
+                request = json.loads(self.socket.recv().decode('ascii'))
+                logger.info(request)
+                result = self.work(request)
+                if result is None:
+                    break
+                logger.info(result)
+                self.socket.send(json.dumps(result).encode('ascii'))
+            if not forever:
                 break
-            self.socket.send(json.dumps(result).encode('ascii'))
 
     def work(self, request):
         action = request['action']

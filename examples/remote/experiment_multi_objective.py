@@ -1,11 +1,14 @@
-import zmq
 import json
 import logging
 
 import numpy as np
+
+import zmq
+from build_pset import build_pset
 from deap.gp import compile
 
-from build_pset import build_pset
+logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG)
 
 
 class EventLoop(object):
@@ -85,10 +88,6 @@ class Experiment(object):
 
 
 if __name__ == "__main__":
-
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.DEBUG)
-
     primitives = {"x": 0, "k0": -1, "k1": -1, "Add": 2, "Mul": 2, "Sub": 2}
     experiment = Experiment()
 
