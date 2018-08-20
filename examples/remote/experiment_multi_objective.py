@@ -18,7 +18,7 @@ class EventLoop(object):
 
     @property
     def config(self):
-        return dict(primitives=self.primitives, simplify=False)# , pop_size=20, num_generations=20, consider_complexity=True, simplify=False)
+        return dict(primitives=self.primitives, simplify=False)
 
     @property
     def address(self):
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
 
-    primitives = {"x": 0, "k0":-1, "k1": -1, "Add": 2, "Mul": 2, "Sub":2 }
+    primitives = {"x": 0, "k0": -1, "k1": -1, "Add": 2, "Mul": 2, "Sub": 2}
     experiment = Experiment()
 
     loop = EventLoop(experiment, primitives)

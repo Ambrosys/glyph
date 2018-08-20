@@ -1,6 +1,5 @@
 import argparse
 import collections
-import json
 
 import zmq
 import json
@@ -11,6 +10,8 @@ from deap.gp import compile
 
 from build_pset import build_pset
 
+logger = logging.getLogger(__name__)
+
 
 class EventLoop(object):
     def __init__(self, experiment, config, socket=None, port=5555):
@@ -19,7 +20,6 @@ class EventLoop(object):
         self.experiment = experiment
         self.config = config
         self.pset = build_pset(config["primitives"])
-        self.logger = logging.getLogger(__name__)
 
     @property
     def address(self):
@@ -35,9 +35,9 @@ class EventLoop(object):
         self.start()
         while True:
             request = json.loads(self.socket.recv().decode('ascii'))
-            self.logger.info(request)
+            logger.info(request)
             result = self.work(request)
-            self.logger.info(result)
+            logger.info(result)
             if result is None:
                 break
             self.socket.send(json.dumps(result).encode('ascii'))
@@ -58,7 +58,7 @@ class EventLoop(object):
 
     def evaluate(self, pop):
         fitnesses = []
-        self.logger.debug(len(pop))
+        logger.debug(len(pop))
         for ind in pop:
             func = [compile(t, self.pset) for t in ind]
             fitnesses.append(self.experiment(func))

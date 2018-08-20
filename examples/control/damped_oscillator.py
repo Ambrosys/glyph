@@ -18,13 +18,11 @@ sys.path.append(os.path.dirname(__file__))
 import control_problem
 
 
-# Setup of the control problem and gp algorithm.
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
-                                  arguments=['y_0', 'y_1'], constants=['c'])
-
+pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
+                              arguments=['y0', 'y1'],
+                              constants=['c'],
+                              )
+Individual = gp.Individual(pset=pset, name="Individual")
 
 class AssessmentRunner(assessment.AAssessmentRunner):
     """Define a measure for the fitness assessment.

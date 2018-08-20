@@ -16,12 +16,9 @@ import control_problem
 pop_size = 10
 
 
-# Define genotype data structure and phenotype function.
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
-                                  arguments=['y0', 'y1'])
+pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
+                              arguments=['y0', 'y1'])
+Individual = gp.Individual(pset=pset, name="Individual")
 
 
 def phenotype(individual):
