@@ -152,7 +152,9 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
     terminals = [t.name for t in individual.terminals]
     if any(constant in terminals for constant in individual.pset.constants):
         try:
-            res = opt(fun=closure, x0=p0, **kwargs)
+            with warnings.catch_warnings():  # filter "unknown options for optimizer" warning
+                warnings.filterwarnings("ignore", category=scipy.optimize.OptimizeWarning)
+                res = opt(fun=closure, x0=p0, **kwargs)
             popt = res.x if res.x.shape else np.array([res.x])
             measure_opt = res.fun
             if not res.success:

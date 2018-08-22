@@ -524,7 +524,7 @@ def _constant_normal_form(expr, variables=()):
     if not args:
         return expr
     elif isinstance(expr, sympy.Pow):
-        return  type(expr)(*[_constant_normal_form(a, variables=variables) for a in args[:-1]] + [args[-1]])
+        return type(expr)(*[_constant_normal_form(a, variables=variables) for a in args[:-1]] + [args[-1]])
     else:
         res = type(expr)(*[_constant_normal_form(a, variables=variables) for a in args])
         if res == expr:

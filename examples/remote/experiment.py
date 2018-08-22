@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", default=None)
+    parser.add_argument("--forever", action="store_true")
 
     args = parser.parse_args()
     if args.file:
