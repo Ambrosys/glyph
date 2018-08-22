@@ -4,8 +4,8 @@ import json
 import logging
 
 import numpy as np
-
 import zmq
+
 from build_pset import build_pset
 from deap.gp import compile
 
@@ -92,6 +92,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", default=None)
+    parser.add_argument("--forever", action="store_true")
 
     args = parser.parse_args()
     if args.file:
@@ -109,4 +110,4 @@ if __name__ == "__main__":
     experiment = Experiment(len([v for v in config["primitives"].values() if v == 0]))
 
     loop = EventLoop(experiment, dict(config))
-    loop.run()
+    loop.run(args.forever)
