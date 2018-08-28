@@ -9,7 +9,7 @@ Individual & genetic operators
 This wraps around the backend, which is currently deap.
 In contrast to deap, the individual class has to be associated with a primitive set. This makes checkpointing and later evaluation of results easier.
 
-This abstraction layer also allows for an interchangeable representation. We plan to support graphs and stacks in the future. Please refer to :doc:`../dev/roadmap`.
+This abstraction layer also allows for an interchangeable representation. We plan to support graphs and stacks in the future.
 
 Genetric operators mutation and crossover operators.
 

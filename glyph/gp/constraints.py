@@ -24,7 +24,7 @@ class NullSpace:    # todo documentation
 
         if self.zero:
             if expr.is_zero:
-                return  True
+                return True
 
         return False
 

@@ -1,5 +1,6 @@
 *.sqlite
 dask-worker-space
+doc/source/dev/api
 # Byte-compiled / optimized / DLL files
 .pytest_cache
 __pycache__/

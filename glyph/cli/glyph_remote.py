@@ -2,7 +2,6 @@
 # Licence: LGPL
 
 import argparse
-import concurrent.futures
 import copy
 import itertools
 import json
@@ -10,12 +9,12 @@ import logging
 import os
 import random
 from functools import partial
-from queue import Queue
 from threading import Thread
 from time import sleep
 
 import numpy as np
 
+import concurrent.futures
 import deap.gp
 import deap.tools
 import enum
@@ -35,6 +34,7 @@ from glyph.observer import ProgressObserver
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
+from queue import Queue
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 logger = logging.getLogger(__name__)
