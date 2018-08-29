@@ -12,11 +12,15 @@ AUTHOR = "Markus Abel, Julien Gout, Markus Quade"
 KEYWORDS = "complex systems, control, machine learning, genetic programming"
 LICENCE = "LGPL"
 PYTHON = ">=3.5"
+DEPENDENCY_LINKS = ["git+https://github.com/Magnati/Gooey.git#egg=gooey-1.0.0"]
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 with open(os.path.join(here, "requirements.txt"), "r") as f:
     REQUIRED = f.readlines()
+
+with open(os.path.join(here, "requirements-gui.txt"), "r") as f:
+    REQUIRED_GUI = f.readlines()
 
 with open(os.path.join(here, "README.md"), "r") as f:
     LONG_DESCRIPTION = f.read()
@@ -45,6 +49,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
         ],
+        extras_require={"gui": REQUIRED_GUI},
         entry_points={
             "console_scripts": [
                 "glyph-remote = glyph.cli.glyph_remote:main"
