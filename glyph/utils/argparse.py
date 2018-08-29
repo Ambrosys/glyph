@@ -4,8 +4,11 @@
 """Collection of helper functions for arparse."""
 
 import argparse
+import logging
 import os
+import sys
 
+logger = logging.getLogger(__name__)
 
 def positive_int(string):
     """Check whether string is an integer greater than 0."""
@@ -62,3 +65,32 @@ def readable_file(string):
     except IOError:
         raise argparse.ArgumentTypeError("Must be a readable file path {}".format(path))
     return path
+
+def readable_yaml_file(string):
+    """Check weather file is a .yaml file and readable"""
+    path = os.path.abspath(string)
+    if not path.endswith(".yaml") and not path.endswith(".yml"):
+        raise argparse.ArgumentTypeError("Must be a .yaml file {}".format(path))
+    return readable_file(string)
+
+def make_boolean_checkers(func):
+    fn_name = f"is_{func.__name__}"
+    thismodule = sys.modules[__name__]
+    def fn(string):
+        try:
+            func(string)
+        except Exception as e:
+            logger.error(e)
+            return False
+        return True
+    setattr(thismodule, fn_name, fn)
+
+fn_list = [
+    positive_int,
+    non_negative_int,
+    unit_interval,
+    readable_file,
+    readable_yaml_file
+]
+for elem in fn_list:
+    make_boolean_checkers(elem)
