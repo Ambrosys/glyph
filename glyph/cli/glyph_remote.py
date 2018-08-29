@@ -32,7 +32,12 @@ from glyph.gp.constraints import (NullSpace, apply_constraints,
 from glyph.gp.individual import (_constant_normal_form, add_sc, pretty_print,
                                  sc_mmqout, simplify_this)
 from glyph.observer import ProgressObserver
-from glyph.utils.argparse import readable_file
+from glyph.utils.argparse import positive_int, is_positive_int, \
+                            non_negative_int, is_non_negative_int, \
+                            unit_interval, is_unit_interval, \
+                            readable_file, is_readable_file, \
+                            readable_yaml_file, is_readable_yaml_file, \
+                            np_infinity_int, is_np_infinity_int
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
 from glyph.gui.glyph_gooey import get_gooey
@@ -114,62 +119,157 @@ class RemoteApp(glyph.application.Application):
         )
         self.logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
+class GooeyOptionsArg(enum.Enum):
+    POSITIVE_INT = {
+        "validator": {
+            "callback": is_positive_int,
+            "message": "This is not a positive integer.",
+        }
+    }
+    NON_NEGATIVE_INT = {
+        "validator": {
+            "callback": is_non_negative_int,
+            "message": "This is not a non negative integer.",
+        }
+    }
+    READABLE_FILE = {
+        "validator": {
+            "callback": is_readable_file,
+            "message": "This is not a readable file.",
+        }
+    }
 
 def get_parser(parser=None, gui=False):
     parser = parser or argparse.ArgumentParser(prog="glyph-remote")
-    parser.add_argument(
-        "--port", type=int, default=5555, help="Port for the zeromq communication (default: 5555)"
+    parameter_arg_list = []
+
+    port_dict = dict(
+        type=positive_int,
+        default=5555,
+        help="Port for the zeromq communication (default: 5555)",
     )
-    parser.add_argument("--ip", type=str, default="localhost", help="IP of the client (default: localhost)")
-    parser.add_argument(
-        "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
+    if gui:
+        port_dict.update(
+            dict(
+                gooey_options={
+                    "validator": {
+                        "callback": is_positive_int,
+                        "message": "This should be a positive port number in the range of 0 - 65535.",
+                    }
+                }
+            )
+        )
+    parameter_arg_list.append(["--port", port_dict])
+
+    ip_dict = dict(
+        type=str, default="localhost", help="IP of the client (default: localhost)"
     )
+    parameter_arg_list.append(["--ip", ip_dict])
+
+    send_meta_data_dict = dict(
+        action="store_true", default=False, help="Send metadata after each generation"
+    )
+    parameter_arg_list.append(["--send_meta_data", send_meta_data_dict])
+
+    gui_output_dict = dict(
+        action="store_true",
+        default=False,
+        help="Additional gui output (default: False)",
+    )
+    parameter_arg_list.append(["--gui-output", gui_output_dict])
+
+    verbose_dict = dict(
+        dest="verbosity",
+        choices=["", "v", "vv", "vvv", "vvvv"],
+        default="v",
+        help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
+    )
+    parameter_arg_list.append(["--verbose", "-v", verbose_dict])
+
+    logging_dict = dict(
+        dest="logging_config",
+        type=str,
+        default="logging.yaml",
+        help="set config file for logging; overides --verbose (default: logging.yaml)",
+    )
+    if gui:
+        logging_dict.update(dict(widget="FileChooser"))
+    parameter_arg_list.append(["--logging", "-l", logging_dict])
+
+    for elem in parameter_arg_list:
+        parser.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
+
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group()
-    group.add_argument(
-        "--remote",
+    group = config.add_mutually_exclusive_group(required=True if gui else False)
+    remote_dict = dict(
         action="store_true",
         dest="remote",
         default=False,
         help="Request GP configs from experiment handler.",
     )
-    group.add_argument("--cfile", dest="cfile", type=readable_file, help="Read GP configs from file")
+    parameter_arg_list.append(["--remote", remote_dict])
+
+    cfile_dict = dict(
+        dest="cfile", type=readable_yaml_file, help="Read GP configs from file"
+    )
+    if gui:
+        cfile_dict.update(
+            dict(
+                widget="FileChooser",
+                gooey_options={
+                    "validator": {
+                        "callback": is_readable_yaml_file,
+                        "message": "This should be a readable .yaml file.",
+                    }
+                },
+            )
+        )
+    parameter_arg_list.append(["--cfile", cfile_dict])
+
+    for elem in parameter_arg_list:
+        group.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
 
     RemoteApp.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group(required=False)
-    cp_group.add_argument("--ndim", type=int, default=1)
-    cp_group.add_argument(
-        "--resume",
+    cp_group = parser.add_mutually_exclusive_group(required=True if gui else False)
+
+    ndim_dict = dict(type=positive_int, default=1)
+    if gui:
+        ndim_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
+    parameter_arg_list.append(["--ndim", ndim_dict])
+    resume_dict = dict(
         dest="resume_file",
         metavar="FILE",
-        type=str,
+        type=readable_file,
         help="continue previous run from a checkpoint file",
     )
-    cp_group.add_argument(
-        "-o",
+    if gui:
+        del resume_dict["metavar"]
+        resume_dict.update(
+            dict(widget="FileChooser", gooey_options=GooeyOptionsArg.READABLE_FILE.value)
+        )
+    parameter_arg_list.append(["--resume", resume_dict])
+
+    o_dict = dict(
         dest="checkpoint_file",
         metavar="FILE",
         type=str,
         default=os.path.join(".", "checkpoint.pickle"),
         help="checkpoint to FILE (default: ./checkpoint.pickle)",
     )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        dest="verbosity",
-        action="count",
-        default=0,
-        help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv",
+    if gui:
+        del o_dict["metavar"]
+        o_dict.update(dict(widget="FileChooser"))
+    parameter_arg_list.append(["-o", o_dict])
+
+    for elem in parameter_arg_list:
+        cp_group.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
+
+    glyph.application.AlgorithmFactory.add_options(
+        parser.add_argument_group("algorithm")
     )
-    parser.add_argument(
-        "--logging",
-        "-l",
-        dest="logging_config",
-        type=str,
-        default="logging.yaml",
-        help="set config file for logging; overides --verbose (default: logging.yaml)",
-    )
-    glyph.application.AlgorithmFactory.add_options(parser.add_argument_group("algorithm"))
     group_breeding = parser.add_argument_group("breeding")
     glyph.application.MateFactory.add_options(group_breeding)
     glyph.application.MutateFactory.add_options(group_breeding)
@@ -177,144 +277,226 @@ def get_parser(parser=None, gui=False):
     glyph.application.CreateFactory.add_options(group_breeding)
 
     ass_group = parser.add_argument_group("assessment")
-    ass_group.add_argument(
-        "--simplify",
+    simplify_dict = dict(
         action="store_true",
         default=False,
         help="Simplify expression before sending them. (default: False)",
     )
-    ass_group.add_argument(
-        "--consider_complexity",
-        type=bool,
+    parameter_arg_list.append(["--simplify", simplify_dict])
+
+    consider_complexity_dict = dict(
+        action="store_false",
         default=True,
         help="Consider the complexity of solutions for MOO (default: True)",
     )
-    ass_group.add_argument(
-        "--no_caching",
+    parameter_arg_list.append(["--consider_complexity", consider_complexity_dict])
+
+    no_caching_dict = dict(
         dest="caching",
         action="store_false",
         default=True,
         help="Cache evaluation (default: False)",
     )
-    ass_group.add_argument(
-        "--persistent_caching",
+    parameter_arg_list.append(["--no_caching", no_caching_dict])
+
+    persistent_caching_dict = dict(
         default=None,
         help="Key for persistent data base cache for caching between experiments (default: None)",
     )
-    ass_group.add_argument(
-        "--max_fev_const_opt",
-        type=int,
+    parameter_arg_list.append(["--persistent_caching", persistent_caching_dict])
+
+    max_fev_const_opt_dict = dict(
+        type=non_negative_int,
         default=100,
         help="Maximum number of function evaluations for constant optimization (default: 100)",
     )
-    ass_group.add_argument(
-        "--directions",
-        type=int,
+    if gui:
+        max_fev_const_opt_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
+    parameter_arg_list.append(["--max_fev_const_opt", max_fev_const_opt_dict])
+
+    directions_dict = dict(
+        type=positive_int,
         default=5,
         help="Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)",
     )
-    ass_group.add_argument("--precision", type=int, default=3, help="Precision of constants (default: 3)")
-    ass_group.add_argument(
-        "--const_opt_method",
+    if gui:
+        max_fev_const_opt_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
+    parameter_arg_list.append(["--directions", directions_dict])
+
+    precision_dict = dict(
+        type=non_negative_int, default=3, help="Precision of constants (default: 3)"
+    )
+    if gui:
+        precision_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
+    parameter_arg_list.append(["--precision", precision_dict])
+
+    const_opt_method_dict = dict(
         choices=["hill_climb", "Nelder-Mead"],
         default="Nelder-Mead",
         help="Algorithm to optimize constants given a structure (default: Nelder-Mead)",
     )
-    ass_group.add_argument(
-        "--structural_constants",
+    parameter_arg_list.append(["--const_opt_method", const_opt_method_dict])
+
+    structural_constants_dict = dict(
         action="store_true",
         default=False,
         help="Make use of structural constants. (default: False)",
     )
-    ass_group.add_argument(
-        "--sc_min", type=float, default=-1, help="Minimum value of sc for scaling. (default: -1)"
+    parameter_arg_list.append(["--structural_constants", structural_constants_dict])
+
+    sc_min_dict = dict(
+        type=float, default=-1, help="Minimum value of sc for scaling. (default: -1)"
     )
-    ass_group.add_argument(
-        "--sc_max", type=float, default=1, help="Maximum value of sc for scaling. (default: 1)"
+    parameter_arg_list.append(["--sc_min", sc_min_dict])
+
+    sc_max_dict = dict(
+        type=float, default=1, help="Maximum value of sc for scaling. (default: 1)"
     )
-    ass_group.add_argument(
-        "--smart", action="store_true", default=False, help="Use smart constant optimization. (default: False)"
+    parameter_arg_list.append(["--sc_max", sc_max_dict])
+
+    smart_dict = dict(
+        action="store_true",
+        default=False,
+        help="Use smart constant optimization. (default: False)",
     )
-    ass_group.add_argument(
-        "--smart_step_size",
-        type=int,
+    parameter_arg_list.append(["--smart", smart_dict])
+
+    smart_step_size_dict = dict(
+        type=non_negative_int,
         default=10,
         help="Number of fev in iterative function optimization. (default: 10)",
     )
-    ass_group.add_argument(
-        "--smart_min_stat",
-        type=int,
+    if gui:
+        smart_step_size_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
+    parameter_arg_list.append(["--smart_step_size", smart_step_size_dict])
+
+    smart_min_stat_dict = dict(
+        type=non_negative_int,
         default=10,
         help="Number of samples required prior to stopping (default: 10)",
     )
-    ass_group.add_argument(
-        "--smart_threshold",
-        type=int,
+    if gui:
+        smart_min_stat_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
+    parameter_arg_list.append(["--smart_min_stat", smart_min_stat_dict])
+
+    smart_threshold_dict = dict(
+        type=non_negative_int,
         default=25,
         help="Quantile of improvement rate. Abort constant optimization if below (default: 25)",
     )
-    ass_group.add_argument(
-        "--chunk_size",
-        type=int,
+    if gui:
+        smart_threshold_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
+    parameter_arg_list.append(["--smart_threshold", smart_threshold_dict])
+
+    chunk_size_dict = dict(
+        type=positive_int,
         default=30,
         help="Number of individuals send per single request. (default: 30)",
     )
-    ass_group.add_argument(
-        "--multi_objective",
+    if gui:
+        chunk_size_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
+    parameter_arg_list.append(["--chunk_size", chunk_size_dict])
+
+    multi_objective_dict = dict(
         action="store_true",
         default=False,
         help="Returned fitness is multi-objective (default: False)",
     )
-    ass_group.add_argument(
-        "--send_symbolic",
+    parameter_arg_list.append(["--multi_objective", multi_objective_dict])
+
+    send_symbolic_dict = dict(
         action="store_true",
         default=False,
         help="Send the expression with symbolic constants (default: False)",
     )
-    ass_group.add_argument(
-        "--re_evaluate",
+    parameter_arg_list.append(["--send_symbolic", send_symbolic_dict])
+
+    re_evaluate_dict = dict(
         action="store_true",
         default=False,
         help="Re-evaluate old individuals (default: False)",
     )
+    parameter_arg_list.append(["--re_evaluate", re_evaluate_dict])
+
+    for elem in parameter_arg_list:
+        ass_group.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
 
     break_condition = parser.add_argument_group("break condition")
-    break_condition.add_argument(
-        "--ttl",
+    ttl_dict = dict(
         type=int,
         default=-1,
         help="Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)",
     )
-    break_condition.add_argument(
-        "--target", type=float, default=0, help="Target error used in stopping criteria (default: 0)"
+    parameter_arg_list.append(["--ttl", ttl_dict])
+
+    target_dict = dict(
+        type=float,
+        default=0,
+        help="Target error used in stopping criteria (default: 0)",
     )
-    break_condition.add_argument(
-        "--max_iter_total",
-        type=int,
+    parameter_arg_list.append(["--target", target_dict])
+
+    max_iter_total_dict = dict(
+        type=np_infinity_int,
         default=np.infty,
-        help="Maximum number of function evaluations (default: np.infty)",
+        help="Maximum number of function evaluations (default: 'inf' [stands for np.infty])",
     )
+    if gui:
+        max_iter_total_dict.update(
+            dict(
+                gooey_options={
+                    "validator": {
+                        "callback": is_np_infinity_int,
+                        "message": 'This is neither "inf" nor a natural number.',
+                    }
+                }
+            )
+        )
+    parameter_arg_list.append(["--max_iter_total", max_iter_total_dict])
+
+    for elem in parameter_arg_list:
+        break_condition.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
 
     constraints = parser.add_argument_group("constraints")
-    constraints.add_argument(
-        "--constraints_zero", type=bool, default=True, help="Discard zero individuals (default: True)"
+    constraints_zero_dict = dict(
+        action="store_false",
+        default=True,
+        help="Discard zero individuals (default: True)",
     )
-    constraints.add_argument(
-        "--constraints_constant", type=bool, default=True, help="Discard constant individuals (default: True)"
+    parameter_arg_list.append(["--constraints_zero", constraints_zero_dict])
+
+    constraints_constant_dict = dict(
+        action="store_false",
+        default=True,
+        help="Discard constant individuals (default: True)",
     )
-    constraints.add_argument(
-        "--constraints_infty",
-        type=bool,
+    parameter_arg_list.append(["--constraints_constant", constraints_constant_dict])
+
+    constraints_infty_dict = dict(
+        action="store_false",
         default=True,
         help="Discard individuals with infinities (default: True)",
     )
+    parameter_arg_list.append(["--constraints_infty", constraints_infty_dict])
+
+    for elem in parameter_arg_list:
+        constraints.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
 
     observer = parser.add_argument_group("observer")
-    observer.add_argument(
-        "--animate",
+    animate_dict = dict(
         action="store_true",
-        help="Animate the progress of evolutionary optimization. (default: False)"
+        default=False,
+        help="Animate the progress of evolutionary optimization. (default: False)",
     )
+    parameter_arg_list.append(["--animate", animate_dict])
+
+    for elem in parameter_arg_list:
+        observer.add_argument(*elem[:-1], **elem[-1])
+    parameter_arg_list = []
+
     return parser
 
 
@@ -635,6 +817,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
+    args.__dict__["verbosity"] = len(args.verbosity)
     log_level = glyph.utils.logging.log_level(args.verbosity)
     glyph.utils.logging.load_config(
         config_file=args.logging_config, default_level=log_level, placeholders=dict(workdir=workdir)

@@ -7,6 +7,7 @@ import argparse
 import logging
 import os
 import sys
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,16 @@ def readable_yaml_file(string):
         raise argparse.ArgumentTypeError("Must be a .yaml file {}".format(path))
     return readable_file(string)
 
+def np_infinity_int(string):
+    if string == str(np.infty):
+        return np.infty
+    else:
+        try:
+            value = int(string, base=10)
+        except ValueError:
+            raise argparse.ArgumentTypeError("invalid int value: '{}'".format(string))
+        return value
+
 def make_boolean_checkers(func):
     fn_name = f"is_{func.__name__}"
     thismodule = sys.modules[__name__]
@@ -90,7 +101,8 @@ fn_list = [
     non_negative_int,
     unit_interval,
     readable_file,
-    readable_yaml_file
+    readable_yaml_file,
+    np_infinity_int
 ]
 for elem in fn_list:
     make_boolean_checkers(elem)

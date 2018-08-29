@@ -329,7 +329,7 @@ class AlgorithmFactory(AFactory):
                             default=0.5, help='crossover probability for mating (default: 0.5)')
         parser.add_argument('--mutation_prob', metavar='p', type=utils.argparse.unit_interval,
                             default=0.2, help='mutation probability (default: 0.2)')
-        parser.add_argument('--tournament_size', dest='tournament_size', metavar='n', type=utils.argparse.unit_interval,
+        parser.add_argument('--tournament_size', dest='tournament_size', metavar='n', type=utils.argparse.positive_int,
                             default=2, help='tournament size for tournament selection (default: 2)')
 
 
