@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import random
+import sys
 from functools import partial
 from threading import Thread
 from time import sleep
@@ -34,6 +35,7 @@ from glyph.observer import ProgressObserver
 from glyph.utils.argparse import readable_file
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
+from glyph.gui.glyph_gooey import get_gooey
 from queue import Queue
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
@@ -113,8 +115,8 @@ class RemoteApp(glyph.application.Application):
         self.logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
 
-def get_parser():
-    parser = argparse.ArgumentParser(prog="glyph-remote")
+def get_parser(parser=None, gui=False):
+    parser = parser or argparse.ArgumentParser(prog="glyph-remote")
     parser.add_argument(
         "--port", type=int, default=5555, help="Port for the zeromq communication (default: 5555)"
     )
@@ -623,7 +625,11 @@ def make_callback(factories, args):
 
 
 def make_remote_app(callbacks=(), callback_factories=(), parser=None):
-    parser = parser or get_parser()
+    if parser is None:
+        if "--gui" in sys.argv:
+            parser = get_parser(parser=get_gooey(RemoteApp), gui=True)
+        else:
+            parser = get_parser()
     args = parser.parse_args()
     send, recv = connect(args.ip, args.port)
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
