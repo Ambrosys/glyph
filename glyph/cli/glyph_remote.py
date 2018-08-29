@@ -141,8 +141,18 @@ class GooeyOptionsArg(enum.Enum):
 
 def get_parser(parser=None, gui=False):
     parser = parser or argparse.ArgumentParser(prog="glyph-remote")
-    parameter_arg_list = []
+    to_add_list = []
+    parameter_list = []
 
+    # Argparse.add_argument needs some flags followed by kwargs
+    # - For each argument a kwargs dict is created
+    # - This dict is extended for the gui if needed
+    # - Than a tuple is constructed of the needed flags (as a list) and the dict.
+    # - This list contains now all args argaprse.add_argument()/Gooey.add_argument needs
+    # The list is added to a list containing the args for all argparse.arguments of a specifique group (tab)
+    # and the reference to the group is stored as well (parameter_list and to_add_list).
+    # In the end bot of these meta-groups are filled.
+    main_list = []
     port_dict = dict(
         type=positive_int,
         default=5555,
@@ -159,24 +169,24 @@ def get_parser(parser=None, gui=False):
                 }
             )
         )
-    parameter_arg_list.append(["--port", port_dict])
+    main_list.append((["--port"], port_dict))
 
     ip_dict = dict(
         type=str, default="localhost", help="IP of the client (default: localhost)"
     )
-    parameter_arg_list.append(["--ip", ip_dict])
+    main_list.append((["--ip"], ip_dict))
 
     send_meta_data_dict = dict(
         action="store_true", default=False, help="Send metadata after each generation"
     )
-    parameter_arg_list.append(["--send_meta_data", send_meta_data_dict])
+    main_list.append((["--send_meta_data"], send_meta_data_dict))
 
     gui_output_dict = dict(
         action="store_true",
         default=False,
         help="Additional gui output (default: False)",
     )
-    parameter_arg_list.append(["--gui-output", gui_output_dict])
+    main_list.append((["--gui-output"], gui_output_dict))
 
     verbose_dict = dict(
         dest="verbosity",
@@ -184,7 +194,7 @@ def get_parser(parser=None, gui=False):
         default="v",
         help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
     )
-    parameter_arg_list.append(["--verbose", "-v", verbose_dict])
+    main_list.append((["--verbose", "-v"], verbose_dict))
 
     logging_dict = dict(
         dest="logging_config",
@@ -194,12 +204,12 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         logging_dict.update(dict(widget="FileChooser"))
-    parameter_arg_list.append(["--logging", "-l", logging_dict])
+    main_list.append((["--logging", "-l"], logging_dict))
 
-    for elem in parameter_arg_list:
-        parser.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
+    parameter_list.append(main_list)
+    to_add_list.append(parser)
 
+    group_list = []
     config = parser.add_argument_group("config")
     group = config.add_mutually_exclusive_group(required=True if gui else False)
     remote_dict = dict(
@@ -208,7 +218,7 @@ def get_parser(parser=None, gui=False):
         default=False,
         help="Request GP configs from experiment handler.",
     )
-    parameter_arg_list.append(["--remote", remote_dict])
+    group_list.append((["--remote"], remote_dict))
 
     cfile_dict = dict(
         dest="cfile", type=readable_yaml_file, help="Read GP configs from file"
@@ -225,19 +235,19 @@ def get_parser(parser=None, gui=False):
                 },
             )
         )
-    parameter_arg_list.append(["--cfile", cfile_dict])
+    group_list.append((["--cfile"], cfile_dict))
+    parameter_list.append(group_list)
+    to_add_list.append(group)
 
-    for elem in parameter_arg_list:
-        group.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
-
+    cp_group_list = []
     RemoteApp.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(required=True if gui else False)
 
     ndim_dict = dict(type=positive_int, default=1)
     if gui:
         ndim_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
-    parameter_arg_list.append(["--ndim", ndim_dict])
+    cp_group_list.append((["--ndim"], ndim_dict))
+
     resume_dict = dict(
         dest="resume_file",
         metavar="FILE",
@@ -249,7 +259,7 @@ def get_parser(parser=None, gui=False):
         resume_dict.update(
             dict(widget="FileChooser", gooey_options=GooeyOptionsArg.READABLE_FILE.value)
         )
-    parameter_arg_list.append(["--resume", resume_dict])
+    cp_group_list.append((["--resume"], resume_dict))
 
     o_dict = dict(
         dest="checkpoint_file",
@@ -261,11 +271,10 @@ def get_parser(parser=None, gui=False):
     if gui:
         del o_dict["metavar"]
         o_dict.update(dict(widget="FileChooser"))
-    parameter_arg_list.append(["-o", o_dict])
+    cp_group_list.append((["-o"], o_dict))
 
-    for elem in parameter_arg_list:
-        cp_group.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
+    parameter_list.append(cp_group_list)
+    to_add_list.append(cp_group)
 
     glyph.application.AlgorithmFactory.add_options(
         parser.add_argument_group("algorithm")
@@ -276,20 +285,21 @@ def get_parser(parser=None, gui=False):
     glyph.application.SelectFactory.add_options(group_breeding)
     glyph.application.CreateFactory.add_options(group_breeding)
 
+    ass_group_list = []
     ass_group = parser.add_argument_group("assessment")
     simplify_dict = dict(
         action="store_true",
         default=False,
         help="Simplify expression before sending them. (default: False)",
     )
-    parameter_arg_list.append(["--simplify", simplify_dict])
+    ass_group_list.append((["--simplify"], simplify_dict))
 
     consider_complexity_dict = dict(
         action="store_false",
         default=True,
         help="Consider the complexity of solutions for MOO (default: True)",
     )
-    parameter_arg_list.append(["--consider_complexity", consider_complexity_dict])
+    ass_group_list.append((["--consider_complexity"], consider_complexity_dict))
 
     no_caching_dict = dict(
         dest="caching",
@@ -297,13 +307,13 @@ def get_parser(parser=None, gui=False):
         default=True,
         help="Cache evaluation (default: False)",
     )
-    parameter_arg_list.append(["--no_caching", no_caching_dict])
+    ass_group_list.append((["--no_caching"], no_caching_dict))
 
     persistent_caching_dict = dict(
         default=None,
         help="Key for persistent data base cache for caching between experiments (default: None)",
     )
-    parameter_arg_list.append(["--persistent_caching", persistent_caching_dict])
+    ass_group_list.append((["--persistent_caching"], persistent_caching_dict))
 
     max_fev_const_opt_dict = dict(
         type=non_negative_int,
@@ -312,7 +322,7 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         max_fev_const_opt_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
-    parameter_arg_list.append(["--max_fev_const_opt", max_fev_const_opt_dict])
+    ass_group_list.append((["--max_fev_const_opt"], max_fev_const_opt_dict))
 
     directions_dict = dict(
         type=positive_int,
@@ -321,45 +331,45 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         max_fev_const_opt_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
-    parameter_arg_list.append(["--directions", directions_dict])
+    ass_group_list.append((["--directions"], directions_dict))
 
     precision_dict = dict(
         type=non_negative_int, default=3, help="Precision of constants (default: 3)"
     )
     if gui:
         precision_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
-    parameter_arg_list.append(["--precision", precision_dict])
+    ass_group_list.append((["--precision"], precision_dict))
 
     const_opt_method_dict = dict(
         choices=["hill_climb", "Nelder-Mead"],
         default="Nelder-Mead",
         help="Algorithm to optimize constants given a structure (default: Nelder-Mead)",
     )
-    parameter_arg_list.append(["--const_opt_method", const_opt_method_dict])
+    ass_group_list.append((["--const_opt_method"], const_opt_method_dict))
 
     structural_constants_dict = dict(
         action="store_true",
         default=False,
         help="Make use of structural constants. (default: False)",
     )
-    parameter_arg_list.append(["--structural_constants", structural_constants_dict])
+    ass_group_list.append((["--structural_constants"], structural_constants_dict))
 
     sc_min_dict = dict(
         type=float, default=-1, help="Minimum value of sc for scaling. (default: -1)"
     )
-    parameter_arg_list.append(["--sc_min", sc_min_dict])
+    ass_group_list.append((["--sc_min"], sc_min_dict))
 
     sc_max_dict = dict(
         type=float, default=1, help="Maximum value of sc for scaling. (default: 1)"
     )
-    parameter_arg_list.append(["--sc_max", sc_max_dict])
+    ass_group_list.append((["--sc_max"], sc_max_dict))
 
     smart_dict = dict(
         action="store_true",
         default=False,
         help="Use smart constant optimization. (default: False)",
     )
-    parameter_arg_list.append(["--smart", smart_dict])
+    ass_group_list.append((["--smart"], smart_dict))
 
     smart_step_size_dict = dict(
         type=non_negative_int,
@@ -368,7 +378,7 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         smart_step_size_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
-    parameter_arg_list.append(["--smart_step_size", smart_step_size_dict])
+    ass_group_list.append((["--smart_step_size"], smart_step_size_dict))
 
     smart_min_stat_dict = dict(
         type=non_negative_int,
@@ -377,7 +387,7 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         smart_min_stat_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
-    parameter_arg_list.append(["--smart_min_stat", smart_min_stat_dict])
+    ass_group_list.append((["--smart_min_stat"], smart_min_stat_dict))
 
     smart_threshold_dict = dict(
         type=non_negative_int,
@@ -386,7 +396,7 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         smart_threshold_dict.update(dict(gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value))
-    parameter_arg_list.append(["--smart_threshold", smart_threshold_dict])
+    ass_group_list.append((["--smart_threshold"], smart_threshold_dict))
 
     chunk_size_dict = dict(
         type=positive_int,
@@ -395,47 +405,47 @@ def get_parser(parser=None, gui=False):
     )
     if gui:
         chunk_size_dict.update(dict(gooey_options=GooeyOptionsArg.POSITIVE_INT.value))
-    parameter_arg_list.append(["--chunk_size", chunk_size_dict])
+    ass_group_list.append((["--chunk_size"], chunk_size_dict))
 
     multi_objective_dict = dict(
         action="store_true",
         default=False,
         help="Returned fitness is multi-objective (default: False)",
     )
-    parameter_arg_list.append(["--multi_objective", multi_objective_dict])
+    ass_group_list.append((["--multi_objective"], multi_objective_dict))
 
     send_symbolic_dict = dict(
         action="store_true",
         default=False,
         help="Send the expression with symbolic constants (default: False)",
     )
-    parameter_arg_list.append(["--send_symbolic", send_symbolic_dict])
+    ass_group_list.append((["--send_symbolic"], send_symbolic_dict))
 
     re_evaluate_dict = dict(
         action="store_true",
         default=False,
         help="Re-evaluate old individuals (default: False)",
     )
-    parameter_arg_list.append(["--re_evaluate", re_evaluate_dict])
+    ass_group_list.append((["--re_evaluate"], re_evaluate_dict))
 
-    for elem in parameter_arg_list:
-        ass_group.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
+    parameter_list.append(ass_group_list)
+    to_add_list.append(ass_group)
 
+    break_condition_list = []
     break_condition = parser.add_argument_group("break condition")
     ttl_dict = dict(
         type=int,
         default=-1,
         help="Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)",
     )
-    parameter_arg_list.append(["--ttl", ttl_dict])
+    break_condition_list.append((["--ttl"], ttl_dict))
 
     target_dict = dict(
         type=float,
         default=0,
         help="Target error used in stopping criteria (default: 0)",
     )
-    parameter_arg_list.append(["--target", target_dict])
+    break_condition_list.append((["--target"], target_dict))
 
     max_iter_total_dict = dict(
         type=np_infinity_int,
@@ -453,50 +463,53 @@ def get_parser(parser=None, gui=False):
                 }
             )
         )
-    parameter_arg_list.append(["--max_iter_total", max_iter_total_dict])
+    break_condition_list.append((["--max_iter_total"], max_iter_total_dict))
 
-    for elem in parameter_arg_list:
-        break_condition.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
+    parameter_list.append(break_condition_list)
+    to_add_list.append(break_condition)
 
+    constraints_list = []
     constraints = parser.add_argument_group("constraints")
     constraints_zero_dict = dict(
         action="store_false",
         default=True,
         help="Discard zero individuals (default: True)",
     )
-    parameter_arg_list.append(["--constraints_zero", constraints_zero_dict])
+    constraints_list.append((["--constraints_zero"], constraints_zero_dict))
 
     constraints_constant_dict = dict(
         action="store_false",
         default=True,
         help="Discard constant individuals (default: True)",
     )
-    parameter_arg_list.append(["--constraints_constant", constraints_constant_dict])
+    constraints_list.append((["--constraints_constant"], constraints_constant_dict))
 
     constraints_infty_dict = dict(
         action="store_false",
         default=True,
         help="Discard individuals with infinities (default: True)",
     )
-    parameter_arg_list.append(["--constraints_infty", constraints_infty_dict])
+    constraints_list.append((["--constraints_infty"], constraints_infty_dict))
+    parameter_list.append(constraints_list)
+    to_add_list.append(constraints)
 
-    for elem in parameter_arg_list:
-        constraints.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
-
+    observer_list = []
     observer = parser.add_argument_group("observer")
     animate_dict = dict(
         action="store_true",
         default=False,
         help="Animate the progress of evolutionary optimization. (default: False)",
     )
-    parameter_arg_list.append(["--animate", animate_dict])
+    observer_list.append((["--animate"], animate_dict))
+    parameter_list.append(observer_list)
+    to_add_list.append(observer)
 
-    for elem in parameter_arg_list:
-        observer.add_argument(*elem[:-1], **elem[-1])
-    parameter_arg_list = []
-
+    # All arguments are prepared, now we fill the parser
+    for p_list, to_add in zip(parameter_list, to_add_list):
+        # A pair consists of the arguments and the group to which they shall be added
+        for flags, kwargs in p_list:
+            to_add.add_argument(*flags, **kwargs)
+            
     return parser
 
 
