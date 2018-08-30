@@ -12,7 +12,6 @@ AUTHOR = "Markus Abel, Julien Gout, Markus Quade"
 KEYWORDS = "complex systems, control, machine learning, genetic programming"
 LICENCE = "LGPL"
 PYTHON = ">=3.5"
-DEPENDENCY_LINKS = ["git+https://github.com/Magnati/Gooey.git#egg=gooey-1.0.0"]
 
 here = os.path.abspath(os.path.dirname(__file__))
 

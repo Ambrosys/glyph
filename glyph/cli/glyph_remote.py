@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import random
-import sys
 from functools import partial
 from threading import Thread
 from time import sleep
@@ -34,18 +33,21 @@ from glyph.gp.individual import (_constant_normal_form, add_sc, pretty_print,
 from glyph.observer import ProgressObserver
 from glyph.utils.argparse import positive_int, is_positive_int, \
                             non_negative_int, is_non_negative_int, \
-                            unit_interval, is_unit_interval, \
-                            readable_file, is_readable_file, \
+    readable_file, is_readable_file, \
                             readable_yaml_file, is_readable_yaml_file, \
                             np_infinity_int, is_np_infinity_int
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
-from glyph.gui.glyph_gooey import get_gooey, is_gooey_active
 from queue import Queue
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 logger = logging.getLogger(__name__)
 
+try:
+    from glyph.cli.glyph_gooey import get_gooey
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
 
 class ExperimentProtocol(enum.EnumMeta):
     """Communication Protocol with remote experiments."""
@@ -746,8 +748,8 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args, _ = parser.parse_known_args()
     if hasattr(args, "gui") and args.gui:
-        if is_gooey_active():
-            parser = get_parser(get_gooey(RemoteApp), gui=True)
+        if GUI_AVAILABLE:
+            parser = get_parser(get_gooey(), gui=True)
         else:
             raise ImportError("Could not start gui extention. You need to install the gui extras. Use the command 'pip install glyph[gui]' to do so.")
 
