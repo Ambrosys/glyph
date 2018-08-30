@@ -166,8 +166,9 @@ class MutuallyExclusiveGroup(MyGooeyMixin, argparse._MutuallyExclusiveGroup):
     pass
 
 
-def get_parser(parser, gui=False):
-
+def get_parser(parser=None, gui=False):
+    if parser is None:
+        parser = Parser()
     if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
 
@@ -742,7 +743,7 @@ def make_callback(factories, args):
 
 
 def make_remote_app(callbacks=(), callback_factories=(), parser=None):
-    parser = parser or get_parser(Parser())
+    parser = parser or get_parser()
     args, _ = parser.parse_known_args()
     if hasattr(args, "gui") and args.gui:
         parser = get_parser(get_gooey(RemoteApp), gui=True)
