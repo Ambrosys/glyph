@@ -40,7 +40,7 @@ from glyph.utils.argparse import positive_int, is_positive_int, \
                             np_infinity_int, is_np_infinity_int
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
-from glyph.gui.glyph_gooey import get_gooey
+from glyph.gui.glyph_gooey import get_gooey, is_gooey_active
 from queue import Queue
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
@@ -746,7 +746,10 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args, _ = parser.parse_known_args()
     if hasattr(args, "gui") and args.gui:
-        parser = get_parser(get_gooey(RemoteApp), gui=True)
+        if is_gooey_active():
+            parser = get_parser(get_gooey(RemoteApp), gui=True)
+        else:
+            raise ImportError("Could not start gui extention. You need to install the gui extras. Use the command 'pip install glyph[gui]' to do so.")
 
     args = parser.parse_args()
     send, recv = connect(args.ip, args.port)

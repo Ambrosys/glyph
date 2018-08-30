@@ -1,13 +1,31 @@
 import logging
 
-import gooey
-
 logger = logging.getLogger(__name__)
 
-gooey_in_use = False
+try:
+    from gooey import Gooey, GooeyParser
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+    def Gooey(**kwargs):
+        def wrapper(func):
+            pass
+        logger.error("Gooey library is not installed")
+        return wrapper
+
+    def GooeyParser(**kwargs):
+        return None
 
 
-@gooey.Gooey(
+
+
+
+def is_gooey_active():
+    global GUI_AVAILABLE
+    return GUI_AVAILABLE
+
+
+@Gooey(
     auto_start=False,  # Skips the configuration all together and runs the program immediately
     advanced=True,  # toggle whether to show advanced config or not
     encoding="utf-8",  # Text encoding to use when displaying characters (default: 'utf-8')
@@ -53,12 +71,6 @@ gooey_in_use = False
     # error_color, 	            # HEX value of the text displayed when a validation error occurs
 )
 def get_gooey(RemoteApp):
-    global gooey_in_use
-    gooey_in_use = True
-    parser = gooey.GooeyParser(prog="glyph-remote-gui")
+    parser = GooeyParser(prog="glyph-remote-gui")
     return parser
 
-
-def is_gooey_active():
-    global gooey_in_use
-    return gooey_in_use
