@@ -123,7 +123,7 @@ def make_checkpoint(app):
 
 def log(app):
     for line in app.gp_runner.logbook.stream.splitlines():
-        app.logger.info(line)
+        logger.info(line)
 
 
 DEFAULT_CALLBACKS = make_checkpoint, log
@@ -261,7 +261,6 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
     log_level = utils.logging.log_level(args.verbosity)
     utils.logging.load_config(config_file=args.logging_config, default_level=log_level,
                               placeholders=dict(workdir=workdir))
-    logger = logging.getLogger(__name__)
 
     if args.resume_file is not None:
         logger.debug('Loading checkpoint {}'.format(args.resume_file))
