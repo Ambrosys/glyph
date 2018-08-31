@@ -14,6 +14,8 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
+logging.captureWarnings(True)
+
 import yaml
 
 import deap.gp
@@ -39,7 +41,7 @@ from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
 
 logger = logging.getLogger(__name__)
-logging.captureWarnings(True)
+
 
 
 class ExperimentProtocol(enum.EnumMeta):

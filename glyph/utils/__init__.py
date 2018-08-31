@@ -48,6 +48,7 @@ def random_state(obj, rng=random):
 def partition(pred, iterable):
     """Use a predicate to partition entries into false entries and true entries.
 
+    >>> is_odd = lambda x: x % 2
     >>> odd, even = partition(is_odd, range(10))
     >>> list(odd)
     [0, 2, 4, 6, 8]
