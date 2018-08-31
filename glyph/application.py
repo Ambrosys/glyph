@@ -23,6 +23,9 @@ from . import utils
 from .assessment import SingleProcessFactory
 
 
+logger = logging.getLogger(__name__)
+
+
 def update_pareto_front(runner):
     runner.pareto_front.update(runner.population)
 
@@ -149,7 +152,6 @@ class Application(object):
         self.gp_runner = gp_runner
         self.checkpoint_file = checkpoint_file
         self.pareto_fronts = []
-        self.logger = logging.getLogger(__name__)
         self._initialized = False
         self.callbacks = callbacks
 
@@ -197,7 +199,7 @@ class Application(object):
         """Checkpoint current state of evolution."""
         safe(self.checkpoint_file, args=self.args, runner=self.gp_runner,
              random_state=random.getstate(), pareto_fronts=self.pareto_fronts, callbacks=self.callbacks)
-        self.logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
+        logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
     @property
     def workdir(self):

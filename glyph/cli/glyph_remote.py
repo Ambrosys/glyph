@@ -43,7 +43,6 @@ from glyph.utils.logging import print_params, load_config
 logger = logging.getLogger(__name__)
 
 
-
 class ExperimentProtocol(enum.EnumMeta):
     """Communication Protocol with remote experiments."""
 
@@ -133,7 +132,7 @@ class RemoteApp(glyph.application.Application):
             pareto_fronts=self.pareto_fronts,
             callbacks=self.callbacks,
         )
-        self.logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
+        logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
 
 def handle_const_opt_config(args):
@@ -434,11 +433,12 @@ def make_callback(factories, args):
 def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args, _ = parser.parse_known_args()
-    if hasattr(args, "gui") and args.gui:
-        if GUI_AVAILABLE:
-            parser = get_parser(get_gooey(), gui=True)
-        else:
-            raise ValueError(GUI_UNAVAILABLE_MSG)
+    if isinstance(parser, Parser):
+        if hasattr(args, "gui") and args.gui:
+            if GUI_AVAILABLE:
+                parser = get_parser(get_gooey())
+            else:
+                raise ValueError(GUI_UNAVAILABLE_MSG)
     args = parser.parse_args()
     com = Communicator(args.ip, args.port)
     com.connect()
@@ -505,7 +505,8 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 
     bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
-    print_params(logger.info, vars(args))
+    logger.debug("Parameters:")
+    print_params(logger.debug, vars(args))
     return app, bc, args
 
 

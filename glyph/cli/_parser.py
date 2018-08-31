@@ -111,10 +111,10 @@ class MutuallyExclusiveGroup(MyGooeyMixin, argparse._MutuallyExclusiveGroup):
     pass
 
 
-def get_parser(parser=None, gui=False):
+def get_parser(parser=None):
     if parser is None:
         parser = Parser()
-    if isinstance(parser, argparse.ArgumentParser):
+    if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
 
     parser.add_argument(
@@ -155,7 +155,7 @@ def get_parser(parser=None, gui=False):
     )
 
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group(required=True if gui else False)
+    group = config.add_mutually_exclusive_group()
     group.add_argument(
         "--remote",
         action="store_true",
@@ -178,7 +178,7 @@ def get_parser(parser=None, gui=False):
     )
 
     glyph.application.Application.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group(required=True if gui else False)
+    cp_group = parser.add_mutually_exclusive_group()
     cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
     cp_group.add_argument(
         "--resume",
