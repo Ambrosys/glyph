@@ -1,2 +1,2 @@
-wxpython==4.0.3
-gooey==1.0.0
+# gooey>=1.0.0
+-e git+git@github.com:Magnati/Gooey.git#egg=gooey

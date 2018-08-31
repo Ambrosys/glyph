@@ -18,8 +18,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "requirements.txt"), "r") as f:
     REQUIRED = f.readlines()
 
-with open(os.path.join(here, "requirements-gui.txt"), "r") as f:
-    REQUIRED_GUI = f.readlines()
+REQUIRED_GUI = ["gooey>=1.0.0"]
 
 with open(os.path.join(here, "README.md"), "r") as f:
     LONG_DESCRIPTION = f.read()

@@ -7,9 +7,12 @@ import argparse
 import logging
 import os
 import sys
+import functools
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
 
 def positive_int(string):
     """Check whether string is an integer greater than 0."""
@@ -67,12 +70,14 @@ def readable_file(string):
         raise argparse.ArgumentTypeError("Must be a readable file path {}".format(path))
     return path
 
+
 def readable_yaml_file(string):
     """Check weather file is a .yaml file and readable"""
     path = os.path.abspath(string)
     if not path.endswith(".yaml") and not path.endswith(".yml"):
         raise argparse.ArgumentTypeError("Must be a .yaml file {}".format(path))
     return readable_file(string)
+
 
 def np_infinity_int(string):
     if string == str(np.infty):
@@ -84,25 +89,14 @@ def np_infinity_int(string):
             raise argparse.ArgumentTypeError("invalid int value: '{}'".format(string))
         return value
 
-def make_boolean_checkers(func):
-    fn_name = "is_{0}".format(func.__name__)
-    thismodule = sys.modules[__name__]
-    def fn(string):
+
+def catch_and_log(f):
+    @functools.wraps(f)
+    def inner(*args, **kwargs):
         try:
-            func(string)
+            f(*args, **kwargs)
+            return True
         except Exception as e:
             logger.error(e)
             return False
-        return True
-    setattr(thismodule, fn_name, fn)
-
-fn_list = [
-    positive_int,
-    non_negative_int,
-    unit_interval,
-    readable_file,
-    readable_yaml_file,
-    np_infinity_int
-]
-for elem in fn_list:
-    make_boolean_checkers(elem)
+    return inner

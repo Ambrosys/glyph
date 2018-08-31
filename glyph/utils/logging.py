@@ -10,8 +10,9 @@ import yaml
 # module name is in conflict with stdlib and can cause unwanted monkey patching
 
 
-def load_config(config_file, placeholders={}, default_level=logging.INFO):
+def load_config(config_file, placeholders=None, default_level=logging.INFO):
     """Load logging configuration from .yaml file."""
+    placeholders = placeholders or {}
     if not sys.warnoptions:
         # Route warnings through python logging
         logging.captureWarnings(True)
