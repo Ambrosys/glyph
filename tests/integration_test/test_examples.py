@@ -28,8 +28,10 @@ def cd(newdir, cleanup=lambda: True):
 @contextlib.contextmanager
 def tempdir():
     dirpath = tempfile.mkdtemp()
+
     def cleanup():
         shutil.rmtree(dirpath)
+
     with cd(dirpath, cleanup):
         yield dirpath
 
@@ -37,17 +39,9 @@ def tempdir():
 @pytest.mark.parametrize("file", glob.glob(THIS_FILES_DIR + "/../../examples/symbolic_regression/*.py"))
 @slow
 def test_symbolic_regression_example(file):
-    with tempdir() as dirpath:
+    with tempdir():
         error_code = os.system("{} {}".format(sys.executable, file))
         assert error_code == 0
-
-
-# @pytest.mark.parametrize("file", glob.glob(THIS_FILES_DIR + "/../../examples/control/*.py"))
-# @slow
-# def test_symbolic_regression_example(file):
-#     with tempdir() as dirpath:
-#         error_code = os.system("python {} -n 1 -p 4".format(file))
-#         assert error_code == 0
 
 
 @pytest.mark.timeout(300)

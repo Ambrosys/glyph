@@ -4,6 +4,7 @@ import pytest
 
 from glyph.utils.break_condition import *
 
+
 @pytest.mark.parametrize("ttl", [0, 1])
 def test_SoftTimeOut(ttl):
     sttl = SoftTimeOut(ttl)

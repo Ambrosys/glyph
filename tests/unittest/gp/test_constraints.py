@@ -30,6 +30,7 @@ cases = (
     ("Mul(x_0, Div(Mul(Div(x_0, x_0), Div(x_0, x_0)), Div(Add(x_0, x_0), Div(x_0, x_0))))", True, dict(zero=True, constant=True, infty=True), Tree)
 )
 
+
 @pytest.mark.parametrize("case", cases)
 def test_nullspace(case):
     expr, res, settings, cls = case

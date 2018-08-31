@@ -94,24 +94,9 @@ def test_paretobest_are_preserved(AlgorithmClass, IndividualClass):
     assert set(fitness_values(pareto_front)) & set(fitness_values(reference_pareto_front)) != {}
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize("select", [deap.tools.selNSGA2, deap.tools.selSPEA2, deap.tools.selBest])
-def test_selection_bug_nan_fitness(select, IndividualClass):
-    """This test replicates the best individual overall dropping out of the current population if randomly competing
-    with "invalid" individuals, i.e. individuals with some nan fitness values
-    """
-    pop_size = 2
-    num_generations = 10
-    population = IndividualClass.create_population(pop_size)
-    # Set initial fitness values and construct a pareto front.
-    population[-1].fitness.values = 0, 0
-    set_fitnesses(invalid_individuals(population), (float('nan'), float('nan')))
-    best = population[-1]
-    assert best != select(population, 1)[0]
-
-
 def get_best(pop):
     return deap.tools.selBest(pop, 1)[0]
+
 
 # maybe this is not a unit test anymore
 def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):

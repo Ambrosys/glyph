@@ -9,6 +9,7 @@ from glyph.cli.glyph_remote import *
 
 PORT = 12345
 
+
 @pytest.fixture(scope="module")
 def primitives():
     prims = dict(f=2, x=0, k=-1)
@@ -45,7 +46,7 @@ class DummyExperiment:   # a copy of our example
         while True:
             request = json.loads(self.socket.recv().decode('ascii'))
             result = self.work(request)
-            if result == None:
+            if result is None:
                 break
             self.socket.send(json.dumps(result).encode('ascii'))
 
@@ -62,7 +63,9 @@ class DummyExperiment:   # a copy of our example
 class MockQueue():
     def put(self, *args):
         pass
-    def get(self, key):
+
+    @staticmethod
+    def get(*_):
         return 0
 
 # @pytest.fixture(scope="function")
@@ -78,10 +81,11 @@ class MockQueue():
 #     runner.send(dict(action="SHUTDOWN"))
 #     thread.join()
 
+
 @pytest.fixture(scope="function")
 def runner():
-    send = lambda x: None
-    runner = RemoteAssessmentRunner(send, send, chunk_size=1)
+    com = lambda x: None
+    runner = RemoteAssessmentRunner(com, chunk_size=1)
     runner.queue = MockQueue()
     runner.result_queue = runner.queue
     return runner

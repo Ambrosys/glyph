@@ -8,3 +8,4 @@ toolz
 pyzmq
 matplotlib
 cache.py==0.1.3
+deprecated

@@ -2,6 +2,7 @@
 # Licence: LGPL
 
 import random
+import itertools
 from contextlib import contextmanager
 
 from . import argparse
@@ -25,6 +26,7 @@ class Memoize:
             self.memo[key] = self.fn(*args, **kwargs)
         return self.memo[key]
 
+
 @contextmanager
 def random_state(obj, rng=random):
     """Do work inside this contextmanager with a random state defined by obj.
@@ -41,3 +43,20 @@ def random_state(obj, rng=random):
     yield
     obj._prev_state = rng.getstate()
     rng.setstate(getattr(obj, '_tmp_state', rng.getstate()))
+
+
+def partition(pred, iterable):
+    """Use a predicate to partition entries into false entries and true entries.
+
+    >>> odd, even = partition(is_odd, range(10))
+    >>> list(odd)
+    [0, 2, 4, 6, 8]
+    """
+    t1, t2 = itertools.tee(iterable)
+    return itertools.filterfalse(pred, t1), filter(pred, t2)
+
+
+def key_set(itr, key=hash):
+    keys = map(key, itr)
+    s = {k: v for k, v in zip(keys, itr)}
+    return list(s.values())

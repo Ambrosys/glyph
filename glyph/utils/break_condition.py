@@ -107,6 +107,7 @@ def break_condition(target=0, error_index=0, ttl=0, max_iter=np.infty):
     """
 
     sto = SoftTimeOut(ttl)
+
     def cb(app):
         return soft_max_iter(app, max_iter=max_iter) or sto(app) or soft_target(app, target=target, error_index=error_index)
     return cb

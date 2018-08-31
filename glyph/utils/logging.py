@@ -13,6 +13,7 @@ import yaml
 def load_config(config_file, placeholders=None, default_level=logging.INFO):
     """Load logging configuration from .yaml file."""
     placeholders = placeholders or {}
+    logging.captureWarnings(True)
     if not sys.warnoptions:
         # Route warnings through python logging
         logging.captureWarnings(True)

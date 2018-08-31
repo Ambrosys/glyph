@@ -97,16 +97,16 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
 class SmartConstantOptimizer:
     """Decorate a minimize method used in `scipy.optimize.minimize` to cancel non promising constant optimizations.
 
-    The stopping criteria is based on the improvment rate :math:`\frac{\Delta f}[\Delta fev}`.
+    The stopping criteria is based on the improvement rate :math:`\frac{\Delta f}[\Delta fev}`.
 
-    If the improvment rate is below the :math:`q_{threshold}` quantile for a given number of function
+    If the improvement rate is below the :math:`q_{threshold}` quantile for a given number of function
     evaluations, optimization is stopped.
     """
     def __init__(self, method, step_size=10, min_stat=10, threshold=25):
         """
         :params method: see `scipy.optimize.minimize` method
         :params step_size: number of function evaluations betweem iterations
-        :params min_stat: minmum sample size before stopping
+        :params min_stat: minimum sample size before stopping
         :params threshold: quantile
         """
         self.method = method
