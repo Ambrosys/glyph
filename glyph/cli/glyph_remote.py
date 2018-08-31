@@ -31,7 +31,11 @@ from glyph.gp.constraints import (NullSpace, apply_constraints,
 from glyph.gp.individual import (_constant_normal_form, add_sc, pretty_print,
                                  sc_mmqout, simplify_this)
 from glyph.observer import ProgressObserver
-from glyph.utils.argparse import readable_file
+from glyph.utils.argparse import positive_int, is_positive_int, \
+                                non_negative_int, is_non_negative_int, \
+                                readable_file, is_readable_file, \
+                                readable_yaml_file, is_readable_yaml_file, \
+                                np_infinity_int, is_np_infinity_int
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
 from queue import Queue
@@ -39,6 +43,11 @@ from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 logger = logging.getLogger(__name__)
 
+try:
+    from glyph.cli.glyph_gooey import get_gooey
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
 
 class ExperimentProtocol(enum.EnumMeta):
     """Communication Protocol with remote experiments."""
@@ -112,18 +121,100 @@ class RemoteApp(glyph.application.Application):
         )
         self.logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
+class GooeyOptionsArg(enum.Enum):
+    POSITIVE_INT = {
+        "validator": {
+            "callback": is_positive_int,
+            "message": "This is not a positive integer.",
+        }
+    }
+    NON_NEGATIVE_INT = {
+        "validator": {
+            "callback": is_non_negative_int,
+            "message": "This is not a non negative integer.",
+        }
+    }
+    READABLE_FILE = {
+        "validator": {
+            "callback": is_readable_file,
+            "message": "This is not a readable file.",
+        }
+    }
 
-def get_parser():
-    parser = argparse.ArgumentParser(prog="glyph-remote")
+class MyGooeyMixin:
+    def add_argument(self, *args, **kwargs):
+        for key in ["widget", "gooey_options"]:
+            if key in kwargs:
+                del kwargs[key]
+        super().add_argument(*args, **kwargs)
+
+    def add_mutually_exclusive_group(self, **kwargs):
+        group = MutuallyExclusiveGroup(self, **kwargs)
+        self._mutually_exclusive_groups.append(group)
+        return group
+
+    def add_argument_group(self, *args, **kwargs):
+        group = ArgumentGroup(self, *args, **kwargs)
+        self._action_groups.append(group)
+        return group
+
+class Parser(MyGooeyMixin, argparse.ArgumentParser):
+    pass
+
+class ArgumentGroup(MyGooeyMixin, argparse._ArgumentGroup):
+    pass
+
+class MutuallyExclusiveGroup(MyGooeyMixin, argparse._MutuallyExclusiveGroup):
+    pass
+
+
+def get_parser(parser=None, gui=False):
+    if parser is None:
+        parser = Parser()
+    if isinstance(parser, Parser):
+        parser.add_argument("--gui", action="store_true", default=False)
+
     parser.add_argument(
-        "--port", type=int, default=5555, help="Port for the zeromq communication (default: 5555)"
+        "--port",
+        type=positive_int,
+        default=5555,
+        help="Port for the zeromq communication (default: 5555)",
+        gooey_options={
+            "validator": {
+                "callback": is_positive_int,
+                "message": "This should be a positive port number in the range of 0 - 65535.",
+            }
+        }
     )
-    parser.add_argument("--ip", type=str, default="localhost", help="IP of the client (default: localhost)")
+    parser.add_argument(
+        "--ip", type=str, default="localhost", help="IP of the client (default: localhost)"
+    )
     parser.add_argument(
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
     )
+    parser.add_argument(
+        "--gui_output",
+        action="store_true",
+        default=False,
+        help="Additional gui output (default: False)",
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        dest="verbosity",
+        choices=["", "v", "vv", "vvv", "vvvv"],
+        default="v",
+        help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
+    )
+    parser.add_argument(
+        "--logging", "-l",
+        dest="logging_config",
+        type=str,
+        default="logging.yaml",
+        help="set config file for logging; overides --verbose (default: logging.yaml)",
+        widget="FileChooser")
+
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group()
+    group = config.add_mutually_exclusive_group(required=True if gui else False)
     group.add_argument(
         "--remote",
         action="store_true",
@@ -131,18 +222,30 @@ def get_parser():
         default=False,
         help="Request GP configs from experiment handler.",
     )
-    group.add_argument("--cfile", dest="cfile", type=readable_file, help="Read GP configs from file")
+    group.add_argument(
+        "--cfile",
+        dest="cfile", type=readable_yaml_file, help="Read GP configs from file",
+        widget="FileChooser",
+        gooey_options={
+            "validator": {
+                "callback": is_readable_yaml_file,
+                "message": "This should be a readable .yaml file.",
+                }
+            },
+        )
 
     RemoteApp.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group(required=False)
-    cp_group.add_argument("--ndim", type=int, default=1)
+    cp_group = parser.add_mutually_exclusive_group(required=True if gui else False)
+    cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT.value)
     cp_group.add_argument(
         "--resume",
         dest="resume_file",
         metavar="FILE",
-        type=str,
+        type=readable_file,
         help="continue previous run from a checkpoint file",
-    )
+        widget="FileChooser",
+        gooey_options=GooeyOptionsArg.READABLE_FILE.value
+        )
     cp_group.add_argument(
         "-o",
         dest="checkpoint_file",
@@ -150,24 +253,11 @@ def get_parser():
         type=str,
         default=os.path.join(".", "checkpoint.pickle"),
         help="checkpoint to FILE (default: ./checkpoint.pickle)",
+        widget="FileChooser")
+
+    glyph.application.AlgorithmFactory.add_options(
+        parser.add_argument_group("algorithm")
     )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        dest="verbosity",
-        action="count",
-        default=0,
-        help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv",
-    )
-    parser.add_argument(
-        "--logging",
-        "-l",
-        dest="logging_config",
-        type=str,
-        default="logging.yaml",
-        help="set config file for logging; overides --verbose (default: logging.yaml)",
-    )
-    glyph.application.AlgorithmFactory.add_options(parser.add_argument_group("algorithm"))
     group_breeding = parser.add_argument_group("breeding")
     glyph.application.MateFactory.add_options(group_breeding)
     glyph.application.MutateFactory.add_options(group_breeding)
@@ -183,7 +273,7 @@ def get_parser():
     )
     ass_group.add_argument(
         "--consider_complexity",
-        type=bool,
+        action="store_false",
         default=True,
         help="Consider the complexity of solutions for MOO (default: True)",
     )
@@ -201,17 +291,23 @@ def get_parser():
     )
     ass_group.add_argument(
         "--max_fev_const_opt",
-        type=int,
+        type=non_negative_int,
         default=100,
         help="Maximum number of function evaluations for constant optimization (default: 100)",
+        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value,
     )
     ass_group.add_argument(
         "--directions",
-        type=int,
+        type=positive_int,
         default=5,
         help="Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)",
+        gooey_options=GooeyOptionsArg.POSITIVE_INT.value,
     )
-    ass_group.add_argument("--precision", type=int, default=3, help="Precision of constants (default: 3)")
+    ass_group.add_argument(
+        "--precision",
+        type=non_negative_int, default=3, help="Precision of constants (default: 3)",
+        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value,
+    )
     ass_group.add_argument(
         "--const_opt_method",
         choices=["hill_climb", "Nelder-Mead"],
@@ -225,37 +321,45 @@ def get_parser():
         help="Make use of structural constants. (default: False)",
     )
     ass_group.add_argument(
-        "--sc_min", type=float, default=-1, help="Minimum value of sc for scaling. (default: -1)"
+        "--sc_min",
+        type=float, default=-1, help="Minimum value of sc for scaling. (default: -1)"
     )
     ass_group.add_argument(
         "--sc_max", type=float, default=1, help="Maximum value of sc for scaling. (default: 1)"
     )
     ass_group.add_argument(
-        "--smart", action="store_true", default=False, help="Use smart constant optimization. (default: False)"
+        "--smart",
+        action="store_true",
+        default=False,
+        help="Use smart constant optimization. (default: False)",
     )
     ass_group.add_argument(
         "--smart_step_size",
-        type=int,
+        type=non_negative_int,
         default=10,
         help="Number of fev in iterative function optimization. (default: 10)",
+        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value,
     )
     ass_group.add_argument(
         "--smart_min_stat",
-        type=int,
+        type=non_negative_int,
         default=10,
         help="Number of samples required prior to stopping (default: 10)",
+        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value,
     )
     ass_group.add_argument(
         "--smart_threshold",
-        type=int,
+        type=non_negative_int,
         default=25,
         help="Quantile of improvement rate. Abort constant optimization if below (default: 25)",
+        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT.value,
     )
     ass_group.add_argument(
         "--chunk_size",
-        type=int,
+        type=positive_int,
         default=30,
         help="Number of individuals send per single request. (default: 30)",
+        gooey_options=GooeyOptionsArg.POSITIVE_INT.value,
     )
     ass_group.add_argument(
         "--multi_objective",
@@ -284,25 +388,41 @@ def get_parser():
         help="Time to life (in seconds) until soft shutdown. -1 = no ttl (default: -1)",
     )
     break_condition.add_argument(
-        "--target", type=float, default=0, help="Target error used in stopping criteria (default: 0)"
+        "--target",
+        type=float,
+        default=0,
+        help="Target error used in stopping criteria (default: 0)",
     )
     break_condition.add_argument(
         "--max_iter_total",
-        type=int,
+        type=np_infinity_int,
         default=np.infty,
-        help="Maximum number of function evaluations (default: np.infty)",
-    )
+        help="Maximum number of function evaluations (default: 'inf' [stands for np.infty])",
+        gooey_options={
+            "validator": {
+                "callback": is_np_infinity_int,
+                "message": 'This is neither "inf" nor a natural number.',
+                }
+            }
+        )
+
 
     constraints = parser.add_argument_group("constraints")
     constraints.add_argument(
-        "--constraints_zero", type=bool, default=True, help="Discard zero individuals (default: True)"
+        "--constraints_zero",
+        action="store_false",
+        default=True,
+        help="Discard zero individuals (default: True)",
     )
     constraints.add_argument(
-        "--constraints_constant", type=bool, default=True, help="Discard constant individuals (default: True)"
+        "--constraints_constant",
+        action="store_false",
+        default=True,
+        help="Discard constant individuals (default: True)",
     )
     constraints.add_argument(
         "--constraints_infty",
-        type=bool,
+        action="store_false",
         default=True,
         help="Discard individuals with infinities (default: True)",
     )
@@ -311,8 +431,10 @@ def get_parser():
     observer.add_argument(
         "--animate",
         action="store_true",
-        help="Animate the progress of evolutionary optimization. (default: False)"
+        default=False,
+        help="Animate the progress of evolutionary optimization. (default: False)",
     )
+            
     return parser
 
 
@@ -624,11 +746,19 @@ def make_callback(factories, args):
 
 def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
+    args, _ = parser.parse_known_args()
+    if hasattr(args, "gui") and args.gui:
+        if GUI_AVAILABLE:
+            parser = get_parser(get_gooey(), gui=True)
+        else:
+            raise ImportError("Could not start gui extention. You need to install the gui extras. Use the command 'pip install glyph[gui]' to do so.")
+
     args = parser.parse_args()
     send, recv = connect(args.ip, args.port)
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
+    args.__dict__["verbosity"] = len(args.verbosity)
     log_level = glyph.utils.logging.log_level(args.verbosity)
     glyph.utils.logging.load_config(
         config_file=args.logging_config, default_level=log_level, placeholders=dict(workdir=workdir)
