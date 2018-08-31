@@ -32,10 +32,10 @@ from glyph.gp.individual import (_constant_normal_form, add_sc, pretty_print,
                                  sc_mmqout, simplify_this)
 from glyph.observer import ProgressObserver
 from glyph.utils.argparse import positive_int, is_positive_int, \
-                            non_negative_int, is_non_negative_int, \
-    readable_file, is_readable_file, \
-                            readable_yaml_file, is_readable_yaml_file, \
-                            np_infinity_int, is_np_infinity_int
+                                non_negative_int, is_non_negative_int, \
+                                readable_file, is_readable_file, \
+                                readable_yaml_file, is_readable_yaml_file, \
+                                np_infinity_int, is_np_infinity_int
 from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params
 from queue import Queue

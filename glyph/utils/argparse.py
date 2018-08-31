@@ -85,7 +85,7 @@ def np_infinity_int(string):
         return value
 
 def make_boolean_checkers(func):
-    fn_name = f"is_{func.__name__}"
+    fn_name = "is_{0}".format(func.__name__)
     thismodule = sys.modules[__name__]
     def fn(string):
         try:
