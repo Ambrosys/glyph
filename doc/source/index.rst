@@ -30,6 +30,7 @@ Content
    usr/getting_started.rst
    usr/concepts.rst
    usr/glyph_remote.rst
+   usr/gui.rst
 
    Publications <usr/publications.rst>
    About <usr/about.rst>
