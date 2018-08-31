@@ -44,8 +44,8 @@ if __name__ == "__main__":
             "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
             "Intended Audience :: Science/Research",
             "Programming Language :: Python :: 3 :: Only",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
         ],
         extras_require={"gui": REQUIRED_GUI},
         entry_points={
