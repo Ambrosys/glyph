@@ -140,8 +140,8 @@ def get_parser(parser=None, gui=False):
         "--verbose",
         "-v",
         dest="verbosity",
-        choices=["", "v", "vv", "vvv", "vvvv"],
-        default="v",
+        action="count",
+        default=3,
         help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
     )
     parser.add_argument(

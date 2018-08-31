@@ -1,7 +1,14 @@
-language: python
-python:
-  - "3.6"
-  - "3.7-dev"
+matrix:
+  include:
+    - language: python
+      os: linux
+      env: DEPLOY=true
+      python: 3.6
+    - language: python
+      os: linux
+      env: DEPLOY=false
+      python: 3.7
+
 install:
   - pip install -r requirements-dev.txt
 script:
@@ -16,3 +23,4 @@ deploy:
   on:
     tags: true
     all_branches: true
+    condition: $DEPLOY = true

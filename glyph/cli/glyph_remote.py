@@ -38,7 +38,7 @@ from glyph.observer import ProgressObserver
 from glyph.utils import partition, key_set
 from glyph.utils.argparse import *  # noqa
 from glyph.utils.break_condition import break_condition
-from glyph.utils.logging import print_params
+from glyph.utils.logging import print_params, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -439,16 +439,17 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             parser = get_parser(get_gooey(), gui=True)
         else:
             raise ValueError(GUI_UNAVAILABLE_MSG)
-
     args = parser.parse_args()
     com = Communicator(args.ip, args.port)
     com.connect()
-
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
-    args.__dict__["verbosity"] = len(args.verbosity)
 
+    log_level = glyph.utils.logging.log_level(args.verbosity)
+    glyph.utils.logging.load_config(
+        config_file=args.logging_config, level=log_level, placeholders=dict(workdir=workdir)
+    )
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))
         app = RemoteApp.from_checkpoint(args.resume_file, com)
@@ -518,6 +519,7 @@ def send_meta_data(app):
 
 def main():
     app, bc, args = make_remote_app()
+    logger.info("Glyph-remote")
     app.run(break_condition=bc)
 
 

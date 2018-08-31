@@ -119,7 +119,8 @@ def make_checkpoint(app):
 
 
 def log(app):
-    app.logger.info(app.gp_runner.logbook.stream)
+    for line in app.gp_runner.logbook.stream.splitlines():
+        app.logger.info(line)
 
 
 DEFAULT_CALLBACKS = make_checkpoint, log
