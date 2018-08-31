@@ -12,12 +12,12 @@ def get_limits(x, factor=1.1):
 
 
 class ProgressObserver(object):  # pragma: no cover
-    """Animates the progress of the evolutionary optimization.
-
-    Note:
-        Uses matplotlibs interactive mode.
-    """
     def __init__(self):
+        """Animates the progress of the evolutionary optimization.
+
+        Note:
+            Uses matplotlibs interactive mode.
+        """
         plt.ion()
         self.fig = None
         self.axis = None

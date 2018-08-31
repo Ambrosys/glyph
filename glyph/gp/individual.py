@@ -246,15 +246,14 @@ class Individual(type):
 
 
 class AExpressionTree(deap.gp.PrimitiveTree):
-    """Abstract base class for the genotype.
-
-    Derived classes need to specify a primitive set from which the expression
-    tree can be build, as well as a phenotype method.
-    """
-
     hasher = str
 
     def __init__(self, content):
+        """Abstract base class for the genotype.
+
+        Derived classes need to specify a primitive set from which the expression
+        tree can be build, as well as a phenotype method.
+        """
         super(AExpressionTree, self).__init__(content)
         self.fitness = Measure()
 
@@ -321,6 +320,11 @@ def nd_phenotype(nd_tree, backend=sympy_phenotype):
 
 class NDIndividual(type):
     def __new__(mcs, base, name="MyNDIndividual", **kwargs):
+        cls = super().__new__(mcs, name, (ANDimTree,), dict(base=base, **kwargs))
+        setattr(sys.modules[__name__], name, cls)
+        return cls
+
+    def __init__(cls, base, name="MyNDIndividual", **kwargs):  # noqa
         """Construct a new n-dimensional expression tree type.
 
         Args:
@@ -330,17 +334,13 @@ class NDIndividual(type):
 
         Returns: n-dimensional expression tree class
         """
-        cls = super().__new__(mcs, name, (ANDimTree,), dict(base=base, **kwargs))
-        setattr(sys.modules[__name__], name, cls)
-        return cls
-
-    def __init__(cls, base, name="MyNDIndividual", **kwargs):  # noqa
         super().__init__(name, (ANDimTree,), dict(base=base, **kwargs))
 
 
 class ANDimTree(list):
-    """
-    A naive tree class representing a vector-valued expression. Each dimension is encoded as a expression tree.
+    """ A naive tree class representing a vector-valued expression.
+
+    Each dimension is encoded as a expression tree.
     """
     def __init__(self, trees):
         super().__init__(trees)

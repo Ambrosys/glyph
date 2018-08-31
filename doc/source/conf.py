@@ -33,15 +33,15 @@ apidoc_excluded_paths = ["tests", "setup.py"]
 apidoc_separate_modules = False
 
 autodoc_default_flags = ["members"]
-autodoc_member_order = "bysource"
-
+autoclass_content = "init"
+napoleon_include_special_with_doc = True
 source_suffix = [".rst"]
 
 language = None
 exclude_patterns = ["_build"]
 
 pygments_style = "trac"
-add_module_names = True
+add_module_names = False
 add_function_parentheses = False
 todo_include_todos = True
 
