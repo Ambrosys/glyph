@@ -134,14 +134,11 @@ def get_parser(parser=None):
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
     )
     parser.add_argument(
-        "--gui_output", action="store_true", default=False, help="Additional gui output (default: False)"
-    )
-    parser.add_argument(
-        "--verbose",
         "-v",
+        "--verbose",
         dest="verbosity",
         action="count",
-        default=3,
+        default=0,
         help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
     )
     parser.add_argument(

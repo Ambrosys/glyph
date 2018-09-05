@@ -8,9 +8,12 @@ import scipy
 import toolz
 import functools
 import warnings
+import logging
 
 from glyph.gp.individual import _get_index
 
+
+logger = logging.getLogger(__name__)
 
 class SingleProcessFactory:
     map = map
@@ -130,7 +133,7 @@ def default_constants(ind):
 def const_opt(measure, individual, lsq=False, default_constants=default_constants, f_kwargs=None, **kwargs):
     """Apply constant optimization
 
-    :param measure: `callable(individual, *f_args) -> scalar`.
+    :param measure: callable(individual, *f_args) -> scalar.
     :param individual: an individual tha is passed on to measure.
     :param bounds: bounds for the constant values (s. `scipy.optimize.minimize`).
     :param method: Type of solver. Should either be 'leastsq', or one of
@@ -158,7 +161,7 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
             popt = res.x if res.x.shape else np.array([res.x])
             measure_opt = res.fun
             if not res.success:
-                warnings.warn(res.message, UserWarning)
+                logger.debug(res.message)
         except ValueError:
             return p0, closure(p0)
     if measure_opt is None:

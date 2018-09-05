@@ -222,13 +222,15 @@ class EvalQueue(Queue):
 
         def process(keys, payload_meta):
             payload, meta = zip(*payload_meta)
+            logger.debug(f"Send {len(payload)} payloads.")
             if any(meta):
                 self.com.send(dict(action=ExperimentProtocol.EXPERIMENT, payload=payload, meta=meta))
             else:
                 self.com.send(dict(action=ExperimentProtocol.EXPERIMENT, payload=payload))
             fitnesses = self.com.recv()["fitness"]
+            logger.debug(f"Received {len(fitnesses)} fitness values.")
             for key, fit in zip(keys, fitnesses):
-                logger.debug("Writing result for key: {}".format(key))
+                logger.log(logging.NOTSET, "Writing result for key: {}".format(key))
                 self.result_queue[key] = fit
 
         while self.expect > 0:
@@ -241,7 +243,7 @@ class EvalQueue(Queue):
             else:
                 key, payload_meta = key_payload_meta
                 if key not in self.result_queue:
-                    logger.debug("Queueing key: {}".format(key))
+                    logger.log(logging.NOTSET, "Queueing key: {}".format(key))
                     payloads.append(payload_meta)
                     keys.append(key)
             if len(payloads) == min(self.expect, chunk_size):

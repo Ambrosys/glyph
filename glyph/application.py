@@ -117,8 +117,15 @@ def default_gprunner(Individual, assessment_runner, callbacks=DEFAULT_CALLBACKS_
 
 
 def make_checkpoint(app):
-    if app.valid_checkpointing and (app.gp_runner.step_count % app.args.checkpoint_frequency == 0):
+    valid_checkpointing = app.checkpoint_file is not None and isinstance(app.args.checkpoint_frequency, int)
+
+    if not valid_checkpointing:
+        logger.warning("ValueError in checkpointing settings.")
+        return
+
+    if app.gp_runner.step_count % app.args.checkpoint_frequency == 0:
         app.checkpoint()
+        logger.debug(f"Saved checkpoint to {app.checkpoint_file}.")
 
 
 def log(app):
@@ -191,15 +198,10 @@ class Application(object):
         for cb in self.callbacks:
             cb(self)
 
-    @property
-    def valid_checkpointing(self):
-        return self.checkpoint_file is not None and isinstance(self.args.checkpoint_frequency, int)
-
     def checkpoint(self):
         """Checkpoint current state of evolution."""
         safe(self.checkpoint_file, args=self.args, runner=self.gp_runner,
              random_state=random.getstate(), pareto_fronts=self.pareto_fronts, callbacks=self.callbacks)
-        logger.debug('Saved checkpoint to {}'.format(self.checkpoint_file))
 
     @property
     def workdir(self):
@@ -452,13 +454,13 @@ class ParallelizationFactory(AFactory):
 
 def safe(file_name, **kwargs):
     """Dump kwargs to file."""
-    with open(file_name, 'wb') as file:
+    with open(file_name, "wb") as file:
         dill.dump(kwargs, file)
 
 
 def load(file_name):
     """Load data saved with safe()."""
-    with open(file_name, 'rb') as file:
+    with open(file_name, "rb") as file:
         cp = dill.load(file)
     return cp
 
