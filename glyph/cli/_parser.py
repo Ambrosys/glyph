@@ -48,7 +48,7 @@ try:
     def get_gooey(prog="glyph-remote"):
         probably_fork = "site-packages" not in gooey.__file__
         logger.debug("Gooey located at {}.".format(gooey.__file__))
-        if probably_fork:
+        if not probably_fork:
             logger.warning("GUI input validators may have no effect")
         parser = GooeyParser(prog=prog)
         return parser
@@ -119,9 +119,7 @@ def get_parser(parser=None):
     if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
 
-    gui_active = False
-    if GUI_AVAILABLE and isinstance(parser, GooeyParser):
-        gui_active = True
+    gui_active = GUI_AVAILABLE and isinstance(parser, GooeyParser)
 
     parser.add_argument(
         "--port",
@@ -138,9 +136,6 @@ def get_parser(parser=None):
     parser.add_argument("--ip", type=str, default="localhost", help="IP of the client (default: localhost)")
     parser.add_argument(
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
-    )
-    parser.add_argument(
-        "--gui_output", action="store_true", default=False, help="Additional gui output (default: False)"
     )
     # Gooey has a bug when using the action 'count'.
     # To work as expected the '-' flag has to be first and the '--' flag has to be second.
@@ -164,7 +159,7 @@ def get_parser(parser=None):
 
     config = parser.add_argument_group("config")
     group = config.add_mutually_exclusive_group(
-        required=True if gui_active else False
+        required=gui_active
     )
     group.add_argument(
         "--remote",
@@ -189,7 +184,7 @@ def get_parser(parser=None):
 
     glyph.application.Application.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(
-        required=True if gui_active else False
+        required=gui_active
     )
     cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
     cp_group.add_argument(
