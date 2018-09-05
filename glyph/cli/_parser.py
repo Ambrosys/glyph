@@ -65,36 +65,36 @@ Use the command 'pip install glyph[gui]' to do so."""
 
 class ProgressBar:
 
-    GUI_ACTIVE = False
-    LIMIT = 0
-    VALUE = 0
+    gui_active = False
+    limit = 0
+    value = 0
 
     @classmethod
     def set_gui_active(cls):
-        cls.GUI_ACTIVE = True
+        cls.gui_active = True
 
     @classmethod
     def is_gui_active(cls):
-        return cls.GUI_ACTIVE
+        return cls.gui_active
 
     @classmethod
     def set_limits(cls, lower_limit, upper_limit):
-        if cls.GUI_ACTIVE:
-            cls.LIMIT = upper_limit
-            cls.VALUE = lower_limit
+        if cls.gui_active:
+            cls.limit = upper_limit
+            cls.value = lower_limit
 
     @classmethod
     def incr_value(cls):
-        if cls.GUI_ACTIVE:
-            if cls.VALUE < cls.LIMIT:
-                cls.VALUE += 1
-            print("generation: {}/{}".format(cls.VALUE, cls.LIMIT))
+        if cls.gui_active:
+            if cls.value < cls.limit:
+                cls.value += 1
+            print("generation: {}/{}".format(cls.value, cls.limit))
             sys.stdout.flush()
 
     @classmethod
     def set_value(cls, value, limit=None):
-        if cls.GUI_ACTIVE:
-            limit = limit or cls.LIMIT
+        if cls.gui_active:
+            limit = limit or cls.limit
             print("generation: {}/{}".format(value, limit))
             sys.stdout.flush()
 
@@ -128,6 +128,9 @@ class MyGooeyMixin:
         super().add_argument(*args, **kwargs)
 
     def add_mutually_exclusive_group(self, *args, **kwargs):
+        for key in ["gooey_options"]:
+            if key in kwargs:
+                del kwargs[key]
         group = MutuallyExclusiveGroup(self, *args, **kwargs)
         self._mutually_exclusive_groups.append(group)
         return group
@@ -191,7 +194,9 @@ def get_parser(parser=None, gui_active=False):
     )
 
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group()
+    group = config.add_mutually_exclusive_group(
+        required=True if ProgressBar.is_gui_active() else False,
+        gooey_options={'initial_selection': 0})
     group.add_argument(
         "--remote",
         action="store_true",
@@ -214,7 +219,9 @@ def get_parser(parser=None, gui_active=False):
     )
 
     glyph.application.Application.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group()
+    cp_group = parser.add_mutually_exclusive_group(
+        required=True if ProgressBar.is_gui_active() else False,
+        gooey_options={'initial_selection': 0})
     cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
     cp_group.add_argument(
         "--resume",

@@ -452,7 +452,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
 
-    log_level = glyph.utils.logging.log_level(len(args.verbosity))
+    log_level = glyph.utils.logging.log_level(args.verbosity)
     glyph.utils.logging.load_config(
         config_file=args.logging_config, level=log_level, placeholders=dict(workdir=workdir)
     )
