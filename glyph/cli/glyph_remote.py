@@ -436,16 +436,12 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args, _ = parser.parse_known_args()
     if isinstance(parser, Parser):
-        if hasattr(args, "gui_active") and args.gui_active:
-            ProgressBar.set_gui_active()
         if hasattr(args, "gui") and args.gui:
             if GUI_AVAILABLE:
-                parser = get_parser(get_gooey(), gui_active=True)
+                parser = get_parser(get_gooey())
             else:
                 raise ValueError(GUI_UNAVAILABLE_MSG)
     args = parser.parse_args()
-    ProgressBar.set_limits(0, args.num_generations)
-
     com = Communicator(args.ip, args.port)
     com.connect()
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))

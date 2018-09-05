@@ -21,7 +21,6 @@ import deap.tools
 from . import gp
 from . import utils
 from .assessment import SingleProcessFactory
-from .cli._parser import ProgressBar
 
 
 logger = logging.getLogger(__name__)
@@ -189,13 +188,10 @@ class Application(object):
             self.gp_runner.init(self.args.pop_size)
             self._update()
             iterations += 1
-            ProgressBar.set_value(iterations)
         while self.gp_runner.step_count < self.args.num_generations and not break_condition(self):
             self.gp_runner.step()
             self._update()
             iterations += 1
-            ProgressBar.set_value(iterations)
-
         return iterations
 
     def _update(self):

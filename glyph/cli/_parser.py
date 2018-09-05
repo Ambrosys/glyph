@@ -43,8 +43,8 @@ try:
         tabbed_groups=True,
         navigation_title="Actions",
         show_sidebar=False,
-        progress_regex=r"^generation: (\d+)/(\d+)$",
-        progress_expr="x[0] / x[1] * 100",
+        progress_regex=r"^.*INFO\D+\d+\D+(?P<gen>[0-9]+)\D+\d+[.]{1}\d+\D+\d+[.]{1}\d+.*$",
+        progress_expr="(gen + 1) % 10 / 10 * 100",
     )
     def get_gooey(prog="glyph-remote"):
         probably_fork = "site-packages" not in gooey.__file__
@@ -61,42 +61,6 @@ except ImportError as e:
     GUI_UNAVAILABLE_MSG = """Could not start gui extention.
 You need to install the gui extras.
 Use the command 'pip install glyph[gui]' to do so."""
-
-
-class ProgressBar:
-
-    gui_active = False
-    limit = 0
-    value = 0
-
-    @classmethod
-    def set_gui_active(cls):
-        cls.gui_active = True
-
-    @classmethod
-    def is_gui_active(cls):
-        return cls.gui_active
-
-    @classmethod
-    def set_limits(cls, lower_limit, upper_limit):
-        if cls.gui_active:
-            cls.limit = upper_limit
-            cls.value = lower_limit
-
-    @classmethod
-    def incr_value(cls):
-        if cls.gui_active:
-            if cls.value < cls.limit:
-                cls.value += 1
-            print("generation: {}/{}".format(cls.value, cls.limit))
-            sys.stdout.flush()
-
-    @classmethod
-    def set_value(cls, value, limit=None):
-        if cls.gui_active:
-            limit = limit or cls.limit
-            print("generation: {}/{}".format(value, limit))
-            sys.stdout.flush()
 
 
 class GooeyOptionsArg:
@@ -153,11 +117,13 @@ class MutuallyExclusiveGroup(MyGooeyMixin, argparse._MutuallyExclusiveGroup):
     pass
 
 
-def get_parser(parser=None, gui_active=False):
+def get_parser(parser=None):
     if parser is None:
         parser = Parser()
     if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
+
+    gui_active = GUI_AVAILABLE and isinstance(parser, GooeyParser)
 
     parser.add_argument(
         "--port",
@@ -175,6 +141,11 @@ def get_parser(parser=None, gui_active=False):
     parser.add_argument(
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
     )
+    parser.add_argument(
+        "--gui_output", action="store_true", default=False, help="Additional gui output (default: False)"
+    )
+    # Gooey has a bug when using the action 'count'.
+    # To work as expected the '-' flag has to be first and the '--' flag has to be second.
     parser.add_argument(
         "-v",
         "--verbose",
@@ -195,8 +166,8 @@ def get_parser(parser=None, gui_active=False):
 
     config = parser.add_argument_group("config")
     group = config.add_mutually_exclusive_group(
-        required=True if ProgressBar.is_gui_active() else False,
-        gooey_options={'initial_selection': 0})
+        required=True if gui_active else False
+    )
     group.add_argument(
         "--remote",
         action="store_true",
@@ -220,8 +191,8 @@ def get_parser(parser=None, gui_active=False):
 
     glyph.application.Application.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(
-        required=True if ProgressBar.is_gui_active() else False,
-        gooey_options={'initial_selection': 0})
+        required=True if gui_active else False
+    )
     cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
     cp_group.add_argument(
         "--resume",
@@ -412,12 +383,6 @@ def get_parser(parser=None, gui_active=False):
         action="store_true",
         default=False,
         help="Animate the progress of evolutionary optimization. (default: False)",
-    )
-    observer.add_argument(
-        "--gui_active",
-        action="store_false" if gui_active else "store_true",
-        default=True if gui_active else False,
-        help="Is set automatically to the right value (in gui mode: True, else False)",
     )
 
     return parser
