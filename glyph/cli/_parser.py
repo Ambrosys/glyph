@@ -42,11 +42,13 @@ try:
         tabbed_groups=True,
         navigation_title="Actions",
         show_sidebar=False,
+        progress_regex=r"^.*INFO\D+\d+\D+(?P<gen>[0-9]+)\D+\d+[.]{1}\d+\D+\d+[.]{1}\d+.*$",
+        progress_expr="(gen + 1) % 10 / 10 * 100",
     )
     def get_gooey(prog="glyph-remote"):
         probably_fork = "site-packages" not in gooey.__file__
         logger.debug("Gooey located at {}.".format(gooey.__file__))
-        if probably_fork:
+        if not probably_fork:
             logger.warning("GUI input validators may have no effect")
         parser = GooeyParser(prog=prog)
         return parser
@@ -117,6 +119,8 @@ def get_parser(parser=None):
     if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
 
+    gui_active = GUI_AVAILABLE and isinstance(parser, GooeyParser)
+
     parser.add_argument(
         "--port",
         type=positive_int,
@@ -133,6 +137,8 @@ def get_parser(parser=None):
     parser.add_argument(
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
     )
+    # Gooey has a bug when using the action 'count'.
+    # To work as expected the '-' flag has to be first and the '--' flag has to be second.
     parser.add_argument(
         "-v",
         "--verbose",
@@ -152,7 +158,9 @@ def get_parser(parser=None):
     )
 
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group()
+    group = config.add_mutually_exclusive_group(
+        required=gui_active
+    )
     group.add_argument(
         "--remote",
         action="store_true",
@@ -175,7 +183,9 @@ def get_parser(parser=None):
     )
 
     glyph.application.Application.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group()
+    cp_group = parser.add_mutually_exclusive_group(
+        required=gui_active
+    )
     cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
     cp_group.add_argument(
         "--resume",
