@@ -1,6 +1,7 @@
 import argparse
 import os
 import logging
+import sys
 
 import numpy as np
 
@@ -42,6 +43,8 @@ try:
         tabbed_groups=True,
         navigation_title="Actions",
         show_sidebar=False,
+        progress_regex=r"^generation: (\d+)/(\d+)$",
+        progress_expr="x[0] / x[1] * 100",
     )
     def get_gooey(prog="glyph-remote"):
         probably_fork = "site-packages" not in gooey.__file__
@@ -58,6 +61,42 @@ except ImportError as e:
     GUI_UNAVAILABLE_MSG = """Could not start gui extention.
 You need to install the gui extras.
 Use the command 'pip install glyph[gui]' to do so."""
+
+
+class ProgressBar:
+
+    GUI_ACTIVE = False
+    LIMIT = 0
+    VALUE = 0
+
+    @classmethod
+    def set_gui_active(cls):
+        cls.GUI_ACTIVE = True
+
+    @classmethod
+    def is_gui_active(cls):
+        return cls.GUI_ACTIVE
+
+    @classmethod
+    def set_limits(cls, lower_limit, upper_limit):
+        if cls.GUI_ACTIVE:
+            cls.LIMIT = upper_limit
+            cls.VALUE = lower_limit
+
+    @classmethod
+    def incr_value(cls):
+        if cls.GUI_ACTIVE:
+            if cls.VALUE < cls.LIMIT:
+                cls.VALUE += 1
+            print("generation: {}/{}".format(cls.VALUE, cls.LIMIT))
+            sys.stdout.flush()
+
+    @classmethod
+    def set_value(cls, value, limit=None):
+        if cls.GUI_ACTIVE:
+            limit = limit or cls.LIMIT
+            print("generation: {}/{}".format(value, limit))
+            sys.stdout.flush()
 
 
 class GooeyOptionsArg:
@@ -111,7 +150,7 @@ class MutuallyExclusiveGroup(MyGooeyMixin, argparse._MutuallyExclusiveGroup):
     pass
 
 
-def get_parser(parser=None):
+def get_parser(parser=None, gui_active=False):
     if parser is None:
         parser = Parser()
     if isinstance(parser, Parser):
@@ -366,6 +405,12 @@ def get_parser(parser=None):
         action="store_true",
         default=False,
         help="Animate the progress of evolutionary optimization. (default: False)",
+    )
+    observer.add_argument(
+        "--gui_active",
+        action="store_false" if gui_active else "store_true",
+        default=True if gui_active else False,
+        help="Is set automatically to the right value (in gui mode: True, else False)",
     )
 
     return parser

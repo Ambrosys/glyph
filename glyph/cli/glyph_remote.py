@@ -436,19 +436,23 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     parser = parser or get_parser()
     args, _ = parser.parse_known_args()
     if isinstance(parser, Parser):
+        if hasattr(args, "gui_active") and args.gui_active:
+            ProgressBar.set_gui_active()
         if hasattr(args, "gui") and args.gui:
             if GUI_AVAILABLE:
-                parser = get_parser(get_gooey())
+                parser = get_parser(get_gooey(), gui_active=True)
             else:
                 raise ValueError(GUI_UNAVAILABLE_MSG)
     args = parser.parse_args()
+    ProgressBar.set_limits(0, args.num_generations)
+
     com = Communicator(args.ip, args.port)
     com.connect()
     workdir = os.path.dirname(os.path.abspath(args.checkpoint_file))
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
 
-    log_level = glyph.utils.logging.log_level(args.verbosity)
+    log_level = glyph.utils.logging.log_level(len(args.verbosity))
     glyph.utils.logging.load_config(
         config_file=args.logging_config, level=log_level, placeholders=dict(workdir=workdir)
     )
