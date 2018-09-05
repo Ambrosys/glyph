@@ -119,7 +119,9 @@ def get_parser(parser=None):
     if isinstance(parser, Parser):
         parser.add_argument("--gui", action="store_true", default=False)
 
-    gui_active = GUI_AVAILABLE and isinstance(parser, GooeyParser)
+    gui_active = False
+    if GUI_AVAILABLE and isinstance(parser, GooeyParser):
+        gui_active = True
 
     parser.add_argument(
         "--port",
