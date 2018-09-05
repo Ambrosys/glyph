@@ -1,7 +1,6 @@
 import argparse
 import os
 import logging
-import sys
 
 import numpy as np
 
@@ -92,9 +91,6 @@ class MyGooeyMixin:
         super().add_argument(*args, **kwargs)
 
     def add_mutually_exclusive_group(self, *args, **kwargs):
-        for key in ["gooey_options"]:
-            if key in kwargs:
-                del kwargs[key]
         group = MutuallyExclusiveGroup(self, *args, **kwargs)
         self._mutually_exclusive_groups.append(group)
         return group
