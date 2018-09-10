@@ -143,9 +143,9 @@ def get_parser(parser=None):
         "-v",
         "--verbose",
         dest="verbosity",
-        action="count",
-        default=0,
-        help="set verbose output; raise verbosity level with -vv, -vvv, -vvvv from lv 1-3",
+        choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"],
+        default="INFO",
+        help="Set logging level",
     )
     parser.add_argument(
         "--logging",
@@ -351,24 +351,8 @@ def get_parser(parser=None):
     )
 
     constraints = parser.add_argument_group("constraints")
-    constraints.add_argument(
-        "--constraints_zero",
-        action="store_false",
-        default=True,
-        help="Discard zero individuals (default: True)",
-    )
-    constraints.add_argument(
-        "--constraints_constant",
-        action="store_false",
-        default=True,
-        help="Discard constant individuals (default: True)",
-    )
-    constraints.add_argument(
-        "--constraints_infty",
-        action="store_false",
-        default=True,
-        help="Discard individuals with infinities (default: True)",
-    )
+    glyph.application.ConstraintsFactory.add_options(constraints)
+
 
     observer = parser.add_argument_group("observer")
     observer.add_argument(

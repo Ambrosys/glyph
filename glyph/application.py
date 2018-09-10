@@ -3,6 +3,7 @@
 
 """Convenience classes and functions that allow you to quickly build gp apps."""
 
+import abc
 import os
 import sys
 import time
@@ -290,6 +291,7 @@ class AFactory(object):
         return cls._create(config, *args, **kwargs)
 
     @staticmethod
+    @abc.abstractmethod
     def add_options(parser):
         """Add available parser options."""
         raise NotImplementedError
@@ -299,7 +301,7 @@ class AFactory(object):
         try:
             func = cls._mapping[key]
         except KeyError:
-            raise RuntimeError('Option {} not supported'.format(key))
+            raise RuntimeError(f"Option {key} not supported")
         return func
 
 
@@ -450,6 +452,66 @@ class ParallelizationFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         # todo
+
+
+class ConstraintsFactory(AFactory):
+    @staticmethod
+    def add_options(parser):
+        parser.add_argument(
+            "--constraints_timeout",
+            type=utils.argparse.non_negative_int,
+            default=60,
+            help="Seconds before giving up and using a new random individual (default: 60)"
+        )
+        parser.add_argument(
+            "--constraints_n_retries",
+            type=utils.argparse.non_negative_int,
+            default=30,
+            help="Number of genetic operation before giving up and using a new random individual (default: 30)"
+        )
+        parser.add_argument(
+            "--constraints_zero",
+            action="store_false",
+            default=True,
+            help="Discard zero individuals (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_constant",
+            action="store_false",
+            default=True,
+            help="Discard constant individuals (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_infty",
+            action="store_false",
+            default=True,
+            help="Discard individuals with infinities (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_pretest",
+            default=False,
+            help="Path to pretest file."
+        )
+        parser.add_argument(
+            "--constraints_pretest_service",
+            action="store_true",
+            help="Use service for pretesting."
+        )
+
+    @staticmethod
+    def _create(config, com=None):
+        constraints = [
+            gp.NonFiniteExpression(
+                zero=config.constraints_zero,
+                infty=config.constraints_infty,
+                constant=config.constraints_constant,
+            )
+        ]
+        if config.constraints_pretest:
+            constraints.append(gp.Pretest(config.constraints_pretest))
+        if config.constraints_pretest_service:
+            constraints.append(gp.PreTestService(com))
+        return gp.Constraint(constraints)
 
 
 def safe(file_name, **kwargs):

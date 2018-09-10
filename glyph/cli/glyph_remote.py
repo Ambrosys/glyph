@@ -32,7 +32,7 @@ from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 from glyph.assessment import const_opt
 from glyph.cli._parser import *  # noqa
-from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
+from glyph.gp.constraints import constrain
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
 from glyph.observer import ProgressObserver
 from glyph.utils import partition, key_set
@@ -448,9 +448,10 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
 
-    log_level = glyph.utils.logging.log_level(args.verbosity)
     glyph.utils.logging.load_config(
-        config_file=args.logging_config, level=log_level, placeholders=dict(workdir=workdir)
+        config_file=args.logging_config,
+        level=getattr(logging, args.verbosity),
+        placeholders=dict(workdir=workdir)
     )
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))
@@ -467,11 +468,11 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         select = glyph.application.SelectFactory.create(args)
         create_method = glyph.application.CreateFactory.create(args, Individual)
 
-        ns = NullSpace(
-            zero=args.constraints_zero, constant=args.constraints_constant, infty=args.constraints_infty
-        )
-        mate, mutate, Individual.create = apply_constraints(
-            [mate, mutate, Individual.create], constraints=build_constraints(ns)
+        mate, mutate, Individual.create = constrain(
+            [mate, mutate, Individual.create],
+            glyph.application.ConstraintsFactory.create(args),
+            n_trials=args.constraints_n_retries,
+            timeout=args.constraints_timeout,
         )
 
         ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
