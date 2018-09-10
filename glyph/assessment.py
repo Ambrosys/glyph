@@ -10,10 +10,13 @@ import functools
 import warnings
 import logging
 
+import stopit
+
 from glyph.gp.individual import _get_index
 
 
 logger = logging.getLogger(__name__)
+
 
 class SingleProcessFactory:
     map = map
@@ -234,3 +237,18 @@ def tuple_wrap(func):
                 return res,
         annotate(closure, {'return': tuple})
         return closure
+
+
+def max_fitness_on_timeout(max_fitness, timeout):
+    """Decorate a function. Associate max_fitness with long running individuals.
+
+    :param max_fitness: fitness of aborted individual calls.
+    :param timeout: time until timeout
+    :returns: fitness or max_fitness
+    """
+    def decorate(f):
+        @functools.wraps(f)
+        def inner(*args, **kwargs):
+            return stopit.threading_timeoutable(default=max_fitness)(f)(*args, timeout=timeout, **kwargs)
+        return inner
+    return decorate

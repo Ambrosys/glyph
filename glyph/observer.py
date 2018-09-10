@@ -5,10 +5,10 @@ import numpy as np
 def get_limits(x, factor=1.1):
     """Calculates the plot range given an array x."""
     avg = np.nanmean(x)
-    l = np.nanmax(x) - np.nanmin(x)
-    if l == 0:
-        l = 0.5
-    return avg - l/2 * factor, avg + l/2 * factor
+    range_ = np.nanmax(x) - np.nanmin(x)
+    if range_ == 0:
+        range_ = 0.5
+    return avg - range_/2 * factor, avg + range_/2 * factor
 
 
 class ProgressObserver(object):  # pragma: no cover
@@ -16,7 +16,7 @@ class ProgressObserver(object):  # pragma: no cover
         """Animates the progress of the evolutionary optimization.
 
         Note:
-            Uses matplotlibs interactive mode.
+            Uses matplotlib's interactive mode.
         """
         plt.ion()
         self.fig = None

@@ -4,8 +4,15 @@
 from .individual import simplify_this, AExpressionTree
 
 
-class NullSpace:    # todo documentation
+class NullSpace:
     def __init__(self, zero=True, infty=True, constant=False):
+        """
+
+        Args:
+            zero:
+            infty:
+            constant:
+        """
         self.zero = zero
         self.infty = infty
         self.constant = constant
@@ -47,7 +54,7 @@ def build_constraints(null_space, n_trials=30):
                     t = out[0]
                 else:
                     raise RuntimeError
-                if not t in null_space:
+                if t not in null_space:
                     break
             else:
                 if inds:

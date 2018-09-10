@@ -13,5 +13,6 @@ docutils <0.13.1
 networkx
 codecov
 sphinx
-sphinx-readable-theme
+# sphinx-readable-theme
+-e git+https://github.com/Ohjeah/sphinx-readable-theme.git#egg=readable
 sphinxcontrib-apidoc
