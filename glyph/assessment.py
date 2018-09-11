@@ -11,6 +11,7 @@ import warnings
 import logging
 
 import stopit
+import deprecated
 
 from glyph.gp.individual import _get_index
 
@@ -26,20 +27,17 @@ class SingleProcessFactory:
 
 
 class AAssessmentRunner(object):
-    """Abstract runner for the (parallel) assessment of individuals in a population.
-
-    Child classes have to at least override the measure() method, which might be
-    executed in a different process or even on a remote machine depending on the
-    parallelization scheme.
-    Child classes may override the setup() method, which is executed once on
-    object instantiation.
-    Child classes may override the assign_fitness() method, which is executed in
-    the main process. This can be usefull if you want to locally post-process
-    the results of measure(), when collected from remote processes.
-    """
-
     def __init__(self, parallel_factory=SingleProcessFactory()):
-        """Store an instance of parallel_factory.
+        """Abstract runner for the (parallel) assessment of individuals in a population.
+
+        Child classes have to at least override the measure() method, which might be
+        executed in a different process or even on a remote machine depending on the
+        parallelization scheme.
+        Child classes may override the setup() method, which is executed once on
+        object instantiation.
+        Child classes may override the assign_fitness() method, which is executed in
+        the main process. This can be usefull if you want to locally post-process
+        the results of measure(), when collected from remote processes.
 
         :param parallel_factory: callable() -> obj, obj has to implement some
                                  kind of (parallel) map() method.
@@ -115,8 +113,7 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
 
 
 def default_constants(ind):
-    """
-    Return a one for each different constant in the primitive set.
+    """Return a one for each different constant in the primitive set.
 
     :param ind:
     :type ind: `glyph.gp.individual.AExpressionTree`
@@ -172,9 +169,12 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
     return popt, measure_opt
 
 
-const_opt_scalar = const_opt  # old aliases
+@deprecated.deprecated(reason="Use const_opt instead.", version="0.4")
+def const_opt_scalar(*args, **kwargs):
+    return const_opt(*args, **kwargs)
 
 
+@deprecated.deprecated(reason="Use const_opt(*args, lsq=True, **kwargs) instead.", version="0.4")
 def const_opt_leastsq(measure, individual, default_constants=default_constants, f_kwargs=None, **kwargs):
     return const_opt(measure, individual, lsq=True, default_constants=default_constants, f_kwargs=f_kwargs, **kwargs)
 

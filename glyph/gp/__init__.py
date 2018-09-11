@@ -1,6 +1,3 @@
-# Copyright: 2017, Markus Abel, Julien Gout, Markus Quade
-# Licence: LGPL
-
 from .algorithms import *
 from .algorithms import all_algorithms
 from .breeding import all_crossover, all_mutations

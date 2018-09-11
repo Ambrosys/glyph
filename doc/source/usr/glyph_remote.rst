@@ -144,7 +144,7 @@ and `Website <https://wxpython.org/>`_.
 
 
 Since up-to-date (28.08.2018) the necessary changes to the used graphic library Gooey are not part of the master branch,
-it might be necessary to install Gooey by hand from the repo `https://github.com/Magnati/Gooey <https://github.com/Magnati/Gooey>`_ in three steps.
+it might be necessary to install Gooey by hand from this fork:
 
 - ``pip install -e "git+git@github.com:Magnati/Gooey.git#egg=gooey"``
 
@@ -203,7 +203,7 @@ The function is expected to return a boolean, depending on the individual is rej
 
 An example file could look like this:
 
-.. code-block::
+.. code:: python
 
     import time
 

@@ -94,7 +94,7 @@ html_show_sphinx = False
 html_show_copyright = True
 
 intersphinx_mapping = {
-    "python": ("http://docs.python.org/3.5", None),
+    "python": ("http://docs.python.org/3.6", None),
     "deap": ("http://deap.readthedocs.io/en/master/", None),
     "np": ("http://docs.scipy.org/doc/numpy", None),
     "scipy": ("http://docs.scipy.org/doc/scipy/reference", None),
