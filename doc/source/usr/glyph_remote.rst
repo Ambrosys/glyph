@@ -50,6 +50,8 @@ The possible action values are:
 +-------------------+--------------------+----------------------------+
 | *EXPERIMENT*      | list of expressions| list of fitness value(s)   |
 +-------------------+--------------------+----------------------------+
+| *METADATA*        | –                  | any                        |
++-------------------+--------------------+----------------------------+
 | *SHUTDOWN*        | –                  | –                          |
 +-------------------+--------------------+----------------------------+
 
@@ -168,4 +170,46 @@ Usage
 Within the GUI there is a tab for each group of parameters.
 If all parameters are set, click the start-button to start the experiment.
 
+
+Pretesting & Constraints
+------------------------
+
+In glyph-remote, genetic operations can be constrained. A genetic operation (i.e. every operation that create or modifies the genotype of an individual).
+If a constraint is violated, the genetic operation is rejected. If out of time, the last candidate is used.
+
+Currently, two different types of constraints are implemented:
+- algebraic constraints using sympy
+- pretesting constraints
+
+Algebraic constraints
+~~~~~~~~~~~~~~~~~~~~~
+
+Sympy is used to check whether expressions are:
+
+- zero
+- constant
+- infinite
+
+The three options can be individually activated.
+
+
+Pretesting
+~~~~~~~~~~
+
+You can invoke file-based pretesting with the `--constraints_pretest filename.py` flag.
+The flag `--constraints_pretest_function` lets you pass the function name which will be invoked to pretest individuals.
+
+The function is expected to return a boolean, depending on the individual is rejected (False) or accepted (True).
+
+An example file could look like this:
+
+.. code-block::
+
+    import time
+
+
+    def chi(ind):
+        time.sleep(1)
+        print(f"Hello World, this is {ind}")
+        return True
 

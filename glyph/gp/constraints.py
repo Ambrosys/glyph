@@ -19,6 +19,8 @@ class Constraint:
         self.spaces = spaces
 
     def _contains(self, element):
+        if not self.spaces:
+            return False
         return any(element in subspace for subspace in self.spaces)
 
     def __contains__(self, element):
@@ -88,13 +90,22 @@ class PreTest(Constraint):
         return self.f(element)
 
 
-class PreTestService(Constraint):
-    def __init__(self, com):
-        self.com = com
+class PreTestService(Constraint):  # todo com cannot be pickled !
+    def __init__(self, assessment_runner):
+        self.assessment_runner = assessment_runner
+
+    @property
+    def com(self):
+        return self.assessment_runner.com
+
+    @property
+    def make_str(self):
+        return self.assessment_runner.make_str
 
     def _contains(self, element):
-        self.com.send(dict(action="PRETEST", payload=element))
-        return self.com.recv()["value"]
+        payload = self.make_str(element)
+        self.com.send(dict(action="PRETEST", payload=payload))
+        return self.com.recv()["ok"] == "True"
 
 
 def reject_constrain_violation(constraint, n_trials=30, timeout=60):
@@ -139,5 +150,7 @@ def constrain(funcs, constraint, n_trials=30, timeout=60):
     :return: constrained operators
     """
 
+    if not constraint:
+        return funcs
     return [reject_constrain_violation(constraint, n_trials=n_trials, timeout=timeout)(f)
             for f in funcs]

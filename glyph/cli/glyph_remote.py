@@ -30,6 +30,7 @@ from cache import DBCache
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 
+from glyph._version import get_versions
 from glyph.assessment import const_opt
 from glyph.cli._parser import *  # noqa
 from glyph.gp.constraints import constrain
@@ -41,15 +42,16 @@ from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params, load_config
 
 logger = logging.getLogger(__name__)
+version = get_versions()["version"]
 
 
 class ExperimentProtocol(enum.EnumMeta):
     """Communication Protocol with remote experiments."""
 
-    EXPERIMENT = "EXPERIMENT"
-    SHUTDOWN = "SHUTDOWN"
-    METADATA = "METADATA"
     CONFIG = "CONFIG"
+    EXPERIMENT = "EXPERIMENT"
+    METADATA = "METADATA"
+    SHUTDOWN = "SHUTDOWN"
 
 
 class Communicator:
@@ -87,6 +89,7 @@ class RemoteApp(glyph.application.Application):
         try:
             super().run(break_condition=break_condition)
         except KeyboardInterrupt:
+            logger.info("Received KeyboardInterrupt. Trying checkpointing.")
             self.checkpoint()
         finally:
             self.assessment_runner.com.send(dict(action=ExperimentProtocol.SHUTDOWN))
@@ -462,6 +465,21 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
+
+        assessment_runner = RemoteAssessmentRunner(
+            com,
+            method=args.const_opt_method,
+            options=args.options,
+            consider_complexity=args.consider_complexity,
+            caching=args.caching,
+            persistent_caching=args.persistent_caching,
+            simplify=args.simplify,
+            chunk_size=args.chunk_size,
+            multi_objective=args.multi_objective,
+            send_symbolic=args.send_symbolic,
+            reevaluate=args.re_evaluate,
+        )
+
         Individual.pset = pset
         mate = glyph.application.MateFactory.create(args, Individual)
         mutate = glyph.application.MutateFactory.create(args, Individual)
@@ -482,19 +500,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         algorithm_factory = partial(
             glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate
         )
-        assessment_runner = RemoteAssessmentRunner(
-            com,
-            method=args.const_opt_method,
-            options=args.options,
-            consider_complexity=args.consider_complexity,
-            caching=args.caching,
-            persistent_caching=args.persistent_caching,
-            simplify=args.simplify,
-            chunk_size=args.chunk_size,
-            multi_objective=args.multi_objective,
-            send_symbolic=args.send_symbolic,
-            reevaluate=args.re_evaluate,
-        )
+
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
         callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
@@ -523,7 +529,7 @@ def send_meta_data(app):
 
 def main():
     app, bc, args = make_remote_app()
-    logger.info("Glyph-remote")
+    logger.info(f"Glyph-remote: Version {version}")
     app.run(break_condition=bc)
 
 

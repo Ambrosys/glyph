@@ -35,24 +35,24 @@ def update_logbook_record(runner):
     if not runner.mstats:
         runner.mstats = create_stats(len(runner.population[0].fitness.values))
     record = runner.mstats.compile(runner.population)
-    runner.logbook.record(gen=runner.step_count, evals=runner._evals, **record)
+    runner.logbook.record(gen=runner.step_count,
+                          evals=runner._evals,
+                          **record
+    )
 
 
 DEFAULT_CALLBACKS_GP_RUNNER = (update_pareto_front, update_logbook_record)
 
 
 class GPRunner(object):
-    """Runner for gp problem sets.
-
-    Takes care of propper initialization, execution, and accounting of a gp run
-    (i.e. population creation, random state, generation count, hall of fame, and
-    logbook). The method init() has to be called once before stepping through
-    the evolution process with method step(); init() and step() invoke the
-    assessment runner.
-    """
-
     def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=DEFAULT_CALLBACKS_GP_RUNNER):
-        """Init GPRunner.
+        """Runner for gp problem sets.
+
+        Takes care of propper initialization, execution, and accounting of a gp run
+        (i.e. population creation, random state, generation count, hall of fame, and
+        logbook). The method init() has to be called once before stepping through
+        the evolution process with method step(); init() and step() invoke the
+        assessment runner.
 
         :param IndividualClass: Class inherited from gp.AExpressionTree.
         :param algorithm_factory: callable() -> gp algorithm, as defined in
@@ -138,18 +138,16 @@ DEFAULT_CALLBACKS = make_checkpoint, log
 
 
 class Application(object):
-    """An application based on `GPRunner`.
-
-    Controls execution of the runner and adds checkpointing and logging
-    functionality; also defines a set of available command line options and
-    their default values.
-
-    To create a full console application one can use the factory function
-    create_console_app().
-    """
-
     def __init__(self, config, gp_runner, checkpoint_file=None, callbacks=DEFAULT_CALLBACKS):
-        """
+        """An application based on `GPRunner`.
+
+        Controls execution of the runner and adds checkpointing and logging
+        functionality; also defines a set of available command line options and
+        their default values.
+
+        To create a full console application one can use the factory function
+        default_console_app().
+
         :param config: Container holding all configs
         :type config: dict or argparse.Namespace
         :param gp_runner: Instance of `GPRunner`
@@ -493,6 +491,12 @@ class ConstraintsFactory(AFactory):
             help="Path to pretest file."
         )
         parser.add_argument(
+            "--constraints_pretest_function",
+            type=str,
+            default="chi",
+            help="Path to pretest file."
+        )
+        parser.add_argument(
             "--constraints_pretest_service",
             action="store_true",
             help="Use service for pretesting."
@@ -500,17 +504,23 @@ class ConstraintsFactory(AFactory):
 
     @staticmethod
     def _create(config, com=None):
-        constraints = [
-            gp.NonFiniteExpression(
-                zero=config.constraints_zero,
-                infty=config.constraints_infty,
-                constant=config.constraints_constant,
+        constraints = []
+        if config.constraints_zero or config.constraints_infty or config.constraints_constant:
+            constraints.append(
+                gp.NonFiniteExpression(
+                    zero=config.constraints_zero,
+                    infty=config.constraints_infty,
+                    constant=config.constraints_constant,
+                )
             )
-        ]
         if config.constraints_pretest:
-            constraints.append(gp.Pretest(config.constraints_pretest))
-        if config.constraints_pretest_service:
-            constraints.append(gp.PreTestService(com))
+            constraints.append(
+                gp.PreTest(config.constraints_pretest,
+                           fun=config.constraints_pretest_function
+                )
+            )
+        # if config.constraints_pretest_service: # todo (enable after com refactor)
+        # constraints.append(gp.PreTestService(com))
         return gp.Constraint(constraints)
 
 
