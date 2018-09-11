@@ -3,10 +3,8 @@ import sys
 import logging
 import importlib
 
-import stopit
-
 from .individual import simplify_this, AExpressionTree
-
+from glyph.utils import Timeout
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +19,11 @@ class Constraint:
         return any(element in subspace for subspace in self.spaces)
 
     def __contains__(self, element):
-        #try:
-        return self._contains(element)
-        #except Exception as e:
-         #   logger.debug(f"Exception was raised during constraints check: {e}.")
-         #   return False
+        try:
+            return self._contains(element)
+        except Exception as e:
+            logger.debug(f"Exception was raised during constraints check: {e}.")
+            return False
 
 
 class NonFiniteExpression(Constraint):
@@ -43,6 +41,9 @@ class NonFiniteExpression(Constraint):
 
     def _contains(self, element):
         expr = simplify_this(element)
+        if isinstance(expr, str):
+            logger.debug(f"Could not simplify {element}.")
+            return False
         if self.constant:
             if expr.is_constant():
                 return True
@@ -116,7 +117,7 @@ def reject_constrain_violation(constraint, n_trials=30, timeout=60):
 
     def reject(operator):
         def inner(*inds, **kw):
-            with stopit.ThreadingTimeout(timeout) as to_ctx:
+            with Timeout(timeout) as to_ctx:
                 for i in range(n_trials):
                     out = operator(*inds, **kw)
                     if isinstance(out, AExpressionTree):  # can this be done w/o type checking?

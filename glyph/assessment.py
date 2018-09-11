@@ -14,6 +14,7 @@ import stopit
 import deprecated
 
 from glyph.gp.individual import _get_index
+from glyph.utils import timeoutable
 
 
 logger = logging.getLogger(__name__)
@@ -249,6 +250,6 @@ def max_fitness_on_timeout(max_fitness, timeout):
     def decorate(f):
         @functools.wraps(f)
         def inner(*args, **kwargs):
-            return stopit.threading_timeoutable(default=max_fitness)(f)(*args, timeout=timeout, **kwargs)
+            return timeoutable(default=max_fitness)(f)(*args, timeout=timeout, **kwargs)
         return inner
     return decorate

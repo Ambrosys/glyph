@@ -5,7 +5,7 @@ import deap.gp
 import deap.tools
 
 from glyph import gp
-from glyph.assessment import const_opt_scalar
+from glyph.assessment import const_opt
 from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
@@ -54,7 +54,7 @@ def error(ind, *args):
 
 @Memoize
 def measure(ind):
-    popt, err_opr = const_opt_scalar(error, ind)
+    popt, err_opr = const_opt(error, ind)
     ind.popt = popt
     return err_opr, len(ind)
 

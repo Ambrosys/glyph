@@ -4,6 +4,7 @@ import abc
 import copy
 import functools
 import itertools
+import logging
 import re
 import sys
 
@@ -14,6 +15,7 @@ import sympy
 
 import glyph.utils
 
+logger = logging.getLogger(__name__)
 
 #def len_subtree(i):
 #    sl_left = ind.searchSubtree(i+1)
@@ -420,14 +422,13 @@ def convert_inverse_prim(prim, args):
     We achieve this by overwriting the corresponding format method of the sub and div prim.
     """
     prim = copy.copy(prim)
-    prim.name = re.sub(r'([A-Z])', lambda pat: pat.group(1).lower(), prim.name)    # lower all capital letters
-
     converter = {
         'sub': lambda *args_: "Add({}, Mul(-1,{}))".format(*args_),
-        'div': lambda *args_: "Mul({}, Pow({}, -1))".format(*args_)
+        'div': lambda *args_: "Mul({}, Pow({}, -1))".format(*args_),
+        'add': lambda *args_: "Add({}, {})".format(*args_),
+        'mul': lambda *args_: "Mul({}, {})".format(*args_),
     }
-    prim_formatter = converter.get(prim.name, prim.format)
-
+    prim_formatter = converter.get(prim.name.lower(), prim.format)
     return prim_formatter(*args)
 
 
@@ -448,16 +449,22 @@ def stringify_for_sympy(f):
 
 
 @glyph.utils.Memoize
-def simplify_this(expr):
+def simplify_this(expr, timeout=5):
     """
     :param expr:
     :type expr: str
-    :return: Sympy representation of simplified expression#
+    :return: Sympy representation of simplified expression
 
     :warning: does not respect closures
     """
     with glyph.utils.random_state(simplify_this):  # to avoid strange side effects of sympy testcases and random
-        return sympy.simplify(stringify_for_sympy(expr))
+        with glyph.utils.Timeout(timeout):
+            try:
+                return sympy.simplify(stringify_for_sympy(expr))
+            except Exception as e:
+                logger.debug(f"Exception during simplification of {expr}: {e}.")
+                return expr
+        return expr
 
 
 def child_trees(ind):

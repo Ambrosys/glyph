@@ -1,6 +1,9 @@
+import os
 import random
 import itertools
 from contextlib import contextmanager
+
+import stopit
 
 from . import argparse
 from . import logging
@@ -59,3 +62,8 @@ def key_set(itr, key=hash):
     keys = map(key, itr)
     s = {k: v for k, v in zip(keys, itr)}
     return list(s.values())
+
+
+_is_posix = "posix" in os.name
+Timeout = stopit.SignalTimeout if _is_posix else stopit.ThreadingTimeout
+timeoutable = stopit.signal_timeoutable if _is_posix else stopit.threading_timeoutable
