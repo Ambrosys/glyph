@@ -185,6 +185,10 @@ def build_pset_gp(primitives, structural_constants=False, cmin=-1, cmax=1):
 
     Locally, all primitives correspond to the id() function.
     """
+
+    if any(x in primitives for x in ["add", "mul"]):
+        logger.warning("Some primitive names may be incompatible with sympy related features.")
+
     pset = deap.gp.PrimitiveSet("main", arity=0)
     pset.constants = set()
     for fname, arity in primitives.items():

@@ -129,6 +129,7 @@ def reject_constrain_violation(constraint, n_trials=30, timeout=60):
                     if t not in constraint:
                         break
                 else:
+                    logger.warning(f"Number of tries exhausted during constrained operation {operator} on individual {inds}.")  # noqa
                     if inds:
                         return inds
                     else:
