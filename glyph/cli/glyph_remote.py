@@ -124,7 +124,6 @@ class RemoteApp(glyph.application.Application):
 
     def checkpoint(self):
         """Checkpoint current state of evolution."""
-
         runner = copy.deepcopy(self.gp_runner)
         del runner.assessment_runner
         glyph.application.safe(
@@ -135,7 +134,6 @@ class RemoteApp(glyph.application.Application):
             pareto_fronts=self.pareto_fronts,
             callbacks=self.callbacks,
         )
-        logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
 
 def handle_const_opt_config(args):

@@ -164,7 +164,7 @@ def const_opt(measure, individual, lsq=False, default_constants=default_constant
             popt = res.x if res.x.shape else np.array([res.x])
             measure_opt = res.fun
             if not res.success:
-                logger.debug(res.message)
+                logger.debug(f"Evaluating {str(individual)}: {res.message}")
         except ValueError:
             return p0, closure(p0)
     if measure_opt is None:

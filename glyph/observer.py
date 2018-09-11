@@ -27,9 +27,12 @@ class ProgressObserver(object):  # pragma: no cover
     @staticmethod
     def _update_plt(ax, line, *data):
         x, y = data
+        x = np.array(x)
+        y = np.array(y)
+        print(x, y)
         ax.set_xlim(*get_limits(x))
         ax.set_ylim(*get_limits(y))
-        line.set_data(x, y)
+        line.set_data([1, 2, 3], [1, 2, 3])
 
     def _blank_canvas(self, chapters):
         self.fig, self.axes = plt.subplots(nrows=len(chapters) + 1)
