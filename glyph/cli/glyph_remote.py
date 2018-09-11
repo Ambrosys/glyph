@@ -527,8 +527,8 @@ def send_meta_data(app):
 
 
 def main():
-    app, bc, args = make_remote_app()
     logger.info(f"Glyph-remote: Version {version}")
+    app, bc, args = make_remote_app()
     app.run(break_condition=bc)
 
 

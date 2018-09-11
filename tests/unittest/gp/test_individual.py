@@ -154,40 +154,33 @@ def test_get_len(case):
     assert StructConst.get_len(expr) == x
 
 
-def test_struct_const_format():
-    f = lambda x, y: x + y
-    sc = StructConst(f)
-
-    left = "Add(x0, x0)"
-    right = "y0"
-
-    assert sc.format(left, right) == str(4)
-
-
 @pytest.fixture
 def sc_ind():
     pset = numpy_primitive_set(1)
-    f = lambda x, y: 0
+    f = lambda x, y: x/y
     pset = add_sc(pset, f)
     pset.addPrimitive(operator.neg, 1, "Neg")
 
     return Individual(pset=pset)
 
 
-@pytest.mark.parametrize("case", get_len_case)
-def test_struct_const_repr(case, sc_ind):
-    subexpr, _ = case
-    expr = "Add(x_0, SC({subexpr}, {subexpr}))".format(subexpr=subexpr)
-    ind = sc_ind.from_string(expr)
+sc_cases = (
+    ("SC(x_0, x_0)", 1),
+    ("SC(x_0, SC(x_0, x_0))", 1/3),
+)
 
+
+@pytest.mark.parametrize("expr,res", sc_cases)
+def test_struc_const(expr, res, sc_ind):
+    ind = sc_ind.from_string(expr)
     func = numpy_phenotype(ind)
-    assert func(1) == 1
+    assert func(0) == res
 
 
 def test_simplify_this_struct_const(sc_ind):
     expr = "SC(0.0, Add(x_0, Neg(x_0)))"
     ind = sc_ind.from_string(expr)
-    assert str(ind) == str(simplify_this(ind))
+    assert ind.to_polish() in str(simplify_this(ind))  # rounding
 
 
 child_tree_cases = (

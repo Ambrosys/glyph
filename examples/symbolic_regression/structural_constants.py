@@ -23,7 +23,7 @@ def measure(ind):
     yhat = f(points)
     if np.isscalar(yhat):
         yhat = np.ones_like(y) * yhat
-    return nrmse(y, yhat), len(ind)
+    return nrmse(y, yhat), len(gp.individual.resolve_sc(ind))
 
 
 def update_fitness(population, map=map):
@@ -35,7 +35,7 @@ def update_fitness(population, map=map):
 
 
 def main():
-    pop_size = 100
+    pop_size = 400
 
     mate = deap.gp.cxOnePoint
     expr_mut = partial(deap.gp.genFull, min_=0, max_=2)
@@ -45,7 +45,7 @@ def main():
 
     pop = update_fitness(Individual.create_population(pop_size))
 
-    for gen in range(20):
+    for gen in range(200):
         pop = algorithm.evolve(pop)
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]

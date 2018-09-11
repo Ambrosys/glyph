@@ -37,25 +37,45 @@ def sc_mmqout(x, y, cmin=-1, cmax=1):
 
 
 class StructConst(deap.gp.Primitive):
-    def __init__(self, func):
+    def __init__(self, func, arity=2):
         """
         :param func: evaluate left and right subtree and assign a constant.
         """
         self.func = func
-        super().__init__("SC", [deap.gp.__type__]*2, deap.gp.__type__)
+        super().__init__("SC", [deap.gp.__type__]*arity, deap.gp.__type__)
 
     @staticmethod
     def get_len(expr, tokens=("(,")):
         regex = "|".join("\\{}".format(t) for t in tokens)
         return len(re.split(regex, expr))
 
-    def format(self, *args):
-        left, right = args
-        return str(self.func(self.get_len(left), self.get_len(right)))
+    def as_terminal(self, *args):
+        vals = list(map(len, args))
+        return deap.gp.Terminal(self.func(*vals), False, deap.gp.__type__)
+
+
+def resolve_sc(ind):
+    """Evaluate StructConst in individual top to bottom."""
+    nodes = type(ind)(ind[:])
+
+    # structure based constants need to be evaluated top to bottom first
+    is_sc = lambda n: isinstance(n, StructConst)
+    while any(n for n in nodes if is_sc(n)):
+        # get the first structure based constant
+        i, node = next(filter((lambda x: is_sc(x[1])), enumerate(nodes)))
+        slice_ = nodes.searchSubtree(i)
+        # find its subtree
+        subtree = type(ind)(nodes[slice_])
+        # replace the subtree by a Terminal representing its numeric value
+        # child_trees helper function yields a list of tree which are used as arguments by the first primitive
+        args = list(child_trees(subtree))
+        nodes[slice_] = [node.as_terminal(*args)]
+    return nodes
 
 
 def add_sc(pset, func):
     """Adds a structural constant to a given primitive set.
+
     :param func: `callable(x, y) -> float` where x and y are the expressions of the left and right subtree
     :param pset: You may want to use `sympy_primitive_set` or `numpy_primitive_set` without symbolic constants.
     :type pset: `deap.gp.PrimitiveSet`
@@ -123,7 +143,7 @@ def sympy_phenotype(individual):
     """
     pset = individual.pset
     args = _build_args_string(pset, pset.constants)
-    expr = sympy.sympify(deap.gp.compile(repr(individual), pset))
+    expr = sympy.sympify(deap.gp.compile(str(individual), pset))
     func = sympy.utilities.lambdify(args, expr, modules='numpy')
     return func
 
@@ -215,7 +235,7 @@ def numpy_phenotype(individual):
         index = []
     consts = ["c_{}".format(i) for i in range(len(index))]
     args = _build_args_string(pset, consts)
-    expr = repr(individual)
+    expr = str(individual)
     for c_ in consts:
         expr = expr.replace(c, c_, 1)
     func = sympy.utilities.lambdify(args, expr, modules=pset.context)
@@ -256,14 +276,21 @@ class AExpressionTree(deap.gp.PrimitiveTree):
         self.fitness = Measure()
 
     def __repr__(self):
+        return self.to_polish(replace_struct=False)
+
+    def __str__(self):
+        return self.to_polish()
+
+    def to_polish(self, for_sympy=False, replace_struct=True):
         """Symbolic representation of the expression tree."""
-        repr = ''
+        nodes = resolve_sc(self) if replace_struct else self
+        repr = ""
         stack = []
-        for node in self:
+        for node in nodes:
             stack.append((node, []))
             while len(stack[-1][1]) == stack[-1][0].arity:
                 prim, args = stack.pop()
-                repr = prim.format(*args)
+                repr = prim.format(*args) if not for_sympy else convert_inverse_prim(prim, args)
                 if len(stack) == 0:
                     break
                 stack[-1][1].append(repr)
@@ -432,22 +459,6 @@ def convert_inverse_prim(prim, args):
     return prim_formatter(*args)
 
 
-def stringify_for_sympy(f):
-    """Return the expression in a human readable string.
-    """
-    string = ""
-    stack = []
-    for node in f:
-        stack.append((node, []))
-        while len(stack[-1][1]) == stack[-1][0].arity:
-            prim, args = stack.pop()
-            string = convert_inverse_prim(prim, args)
-            if len(stack) == 0:
-                break  # If stack is empty, all nodes should have been seen
-            stack[-1][1].append(string)
-    return string
-
-
 @glyph.utils.Memoize
 def simplify_this(expr, timeout=5):
     """
@@ -460,7 +471,7 @@ def simplify_this(expr, timeout=5):
     with glyph.utils.random_state(simplify_this):  # to avoid strange side effects of sympy testcases and random
         with glyph.utils.Timeout(timeout):
             try:
-                return sympy.simplify(stringify_for_sympy(expr))
+                return sympy.simplify(expr.to_polish(for_sympy=True))
             except Exception as e:
                 logger.debug(f"Exception during simplification of {expr}: {e}.")
                 return expr
@@ -468,6 +479,7 @@ def simplify_this(expr, timeout=5):
 
 
 def child_trees(ind):
+    """Yield all child tree which are used as arguments for the head node of ind."""
     start = 1
     while start < len(ind):
         slice_ = ind.searchSubtree(start)
