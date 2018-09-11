@@ -1,3 +1,4 @@
+src/
 *.sqlite
 dask-worker-space
 doc/source/dev/api

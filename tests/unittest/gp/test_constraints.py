@@ -1,4 +1,5 @@
 from functools import partial
+import tempfile
 
 import pytest
 
@@ -32,12 +33,11 @@ cases = (
 
 
 @pytest.mark.parametrize("case", cases)
-def test_nullspace(case):
+def test_NonFiniteExpression(case):
     expr, res, settings, cls = case
     cls.pset = add_sc(cls.pset, sc_qout)
-    ns = NullSpace(**settings)
+    ns = NonFiniteExpression(**settings)
     ind = cls.from_string(expr)
-    print(simplify_this(ind).is_constant())
     assert (ind in ns) == res
 
 
@@ -45,16 +45,16 @@ def mock(*inds, ret=None):
     return [ret] * max(len(inds), 1)
 
 
-@pytest.mark.parametrize("i", range(3)) # create = 0, mutate = 1, mate = 2
+@pytest.mark.parametrize("i", range(3))  # create = 0, mutate = 1, mate = 2
 def test_constraint_decorator(i, NumpyIndividual):
 
     ind = NumpyIndividual.from_string("Sub(x_0, x_0)")
     this_mock = partial(mock, ret=ind)
 
-    ns = NullSpace()
+    ns = NonFiniteExpression()
     assert ind in ns
 
-    [this_mock] = apply_constraints([this_mock], build_constraints(ns))
+    [this_mock] = constrain([this_mock], ns)
 
     if i == 0:
         with pytest.raises(UserWarning):
@@ -72,8 +72,8 @@ def test_constraint_in_nd(NumpyIndividual):
 
     ind = NumpyIndividual.from_string("Sub(x_0, x_0)")
     this_mock = partial(mock, ret=ind)
-    ns = NullSpace()
-    [this_mock] = apply_constraints([this_mock], build_constraints(ns))
+    ns = NonFiniteExpression()
+    [this_mock] = constrain([this_mock], ns)
     mate = partial(nd_mutation, mut1d=this_mock)
 
     nd_ind = NDTree([ind]*2)
@@ -82,3 +82,10 @@ def test_constraint_in_nd(NumpyIndividual):
 
     for c, d in zip(nd_ind, new_nd_ind):
         assert c == d
+
+
+def test_pretest():
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp:
+        tmp.write("chi = lambda *args: True")
+    constraint = PreTest(tmp.name)
+    assert 1 in constraint

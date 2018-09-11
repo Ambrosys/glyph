@@ -30,9 +30,10 @@ from cache import DBCache
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 
+from glyph._version import get_versions
 from glyph.assessment import const_opt
 from glyph.cli._parser import *  # noqa
-from glyph.gp.constraints import NullSpace, apply_constraints, build_constraints
+from glyph.gp.constraints import constrain
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
 from glyph.observer import ProgressObserver
 from glyph.utils import partition, key_set
@@ -41,15 +42,16 @@ from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params, load_config
 
 logger = logging.getLogger(__name__)
+version = get_versions()["version"]
 
 
 class ExperimentProtocol(enum.EnumMeta):
     """Communication Protocol with remote experiments."""
 
-    EXPERIMENT = "EXPERIMENT"
-    SHUTDOWN = "SHUTDOWN"
-    METADATA = "METADATA"
     CONFIG = "CONFIG"
+    EXPERIMENT = "EXPERIMENT"
+    METADATA = "METADATA"
+    SHUTDOWN = "SHUTDOWN"
 
 
 class Communicator:
@@ -87,6 +89,7 @@ class RemoteApp(glyph.application.Application):
         try:
             super().run(break_condition=break_condition)
         except KeyboardInterrupt:
+            logger.info("Received KeyboardInterrupt. Trying checkpointing.")
             self.checkpoint()
         finally:
             self.assessment_runner.com.send(dict(action=ExperimentProtocol.SHUTDOWN))
@@ -121,7 +124,6 @@ class RemoteApp(glyph.application.Application):
 
     def checkpoint(self):
         """Checkpoint current state of evolution."""
-
         runner = copy.deepcopy(self.gp_runner)
         del runner.assessment_runner
         glyph.application.safe(
@@ -132,7 +134,6 @@ class RemoteApp(glyph.application.Application):
             pareto_fronts=self.pareto_fronts,
             callbacks=self.callbacks,
         )
-        logger.debug("Saved checkpoint to {}".format(self.checkpoint_file))
 
 
 def handle_const_opt_config(args):
@@ -448,9 +449,10 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
 
-    log_level = glyph.utils.logging.log_level(args.verbosity)
     glyph.utils.logging.load_config(
-        config_file=args.logging_config, level=log_level, placeholders=dict(workdir=workdir)
+        config_file=args.logging_config,
+        level=getattr(logging, args.verbosity),
+        placeholders=dict(workdir=workdir)
     )
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))
@@ -461,26 +463,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             pset = build_pset_gp(args.primitives, args.structural_constants, args.sc_min, args.sc_max)
         except AttributeError:
             raise AttributeError("You need to specify the pset")
-        Individual.pset = pset
-        mate = glyph.application.MateFactory.create(args, Individual)
-        mutate = glyph.application.MutateFactory.create(args, Individual)
-        select = glyph.application.SelectFactory.create(args)
-        create_method = glyph.application.CreateFactory.create(args, Individual)
 
-        ns = NullSpace(
-            zero=args.constraints_zero, constant=args.constraints_constant, infty=args.constraints_infty
-        )
-        mate, mutate, Individual.create = apply_constraints(
-            [mate, mutate, Individual.create], constraints=build_constraints(ns)
-        )
-
-        ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
-        ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)
-        ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
-        NDTree.create_population = ndcreate
-        algorithm_factory = partial(
-            glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate
-        )
         assessment_runner = RemoteAssessmentRunner(
             com,
             method=args.const_opt_method,
@@ -494,6 +477,28 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             send_symbolic=args.send_symbolic,
             reevaluate=args.re_evaluate,
         )
+
+        Individual.pset = pset
+        mate = glyph.application.MateFactory.create(args, Individual)
+        mutate = glyph.application.MutateFactory.create(args, Individual)
+        select = glyph.application.SelectFactory.create(args)
+        create_method = glyph.application.CreateFactory.create(args, Individual)
+
+        mate, mutate, Individual.create = constrain(
+            [mate, mutate, Individual.create],
+            glyph.application.ConstraintsFactory.create(args),
+            n_trials=args.constraints_n_retries,
+            timeout=args.constraints_timeout,
+        )
+
+        ndmate = partial(glyph.gp.breeding.nd_crossover, cx1d=mate)
+        ndmutate = partial(glyph.gp.breeding.nd_mutation, mut1d=mutate)
+        ndcreate = lambda size: [NDTree(create_method(args.ndim)) for _ in range(size)]
+        NDTree.create_population = ndcreate
+        algorithm_factory = partial(
+            glyph.application.AlgorithmFactory.create, args, ndmate, ndmutate, select, ndcreate
+        )
+
         gp_runner = glyph.application.GPRunner(NDTree, algorithm_factory, assessment_runner)
 
         callbacks = glyph.application.DEFAULT_CALLBACKS + callbacks + make_callback(callback_factories, args)
@@ -522,7 +527,7 @@ def send_meta_data(app):
 
 def main():
     app, bc, args = make_remote_app()
-    logger.info("Glyph-remote")
+    logger.info(f"Glyph-remote: Version {version}")
     app.run(break_condition=bc)
 
 

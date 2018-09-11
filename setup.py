@@ -11,7 +11,7 @@ EMAIL = "markus.quade@ambrosys.de"
 AUTHOR = "Markus Abel, Julien Gout, Markus Quade"
 KEYWORDS = "complex systems, control, machine learning, genetic programming"
 LICENCE = "LGPL"
-PYTHON = ">=3.5"
+PYTHON = ">=3.6"
 
 here = os.path.abspath(os.path.dirname(__file__))
 

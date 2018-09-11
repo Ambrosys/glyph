@@ -1,14 +1,19 @@
+import logging
+
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def get_limits(x, factor=1.1):
     """Calculates the plot range given an array x."""
     avg = np.nanmean(x)
-    l = np.nanmax(x) - np.nanmin(x)
-    if l == 0:
-        l = 0.5
-    return avg - l/2 * factor, avg + l/2 * factor
+    range_ = np.nanmax(x) - np.nanmin(x)
+    if range_ == 0:
+        range_ = 0.5
+    return avg - range_/2 * factor, avg + range_/2 * factor
 
 
 class ProgressObserver(object):  # pragma: no cover
@@ -16,8 +21,11 @@ class ProgressObserver(object):  # pragma: no cover
         """Animates the progress of the evolutionary optimization.
 
         Note:
-            Uses matplotlibs interactive mode.
+            Uses matplotlib's interactive mode.
         """
+        logger.debug("The ProgressObserver needs an interactive matplotlib backend.")
+        logger.debug(f"Using {matplotlib.rcParams['backend']} as backend in matplotlib.")
+        logger.debug("Try export MPLBACKEND='TkAgg'")
         plt.ion()
         self.fig = None
         self.axis = None
@@ -27,9 +35,11 @@ class ProgressObserver(object):  # pragma: no cover
     @staticmethod
     def _update_plt(ax, line, *data):
         x, y = data
+        x = np.array(x)
+        y = np.array(y)
         ax.set_xlim(*get_limits(x))
         ax.set_ylim(*get_limits(y))
-        line.set_data(x, y)
+        line.set_data(data)
 
     def _blank_canvas(self, chapters):
         self.fig, self.axes = plt.subplots(nrows=len(chapters) + 1)

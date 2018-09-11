@@ -49,6 +49,9 @@ class EventLoop(object):
         action = request['action']
         if action == "CONFIG":
             return self.config
+        elif action == "PRETEST":
+            logger.info("Pretest OK")
+            return dict(ok=True)
         elif action == "SHUTDOWN":
             return self.shutdown()
         elif action == "EXPERIMENT":

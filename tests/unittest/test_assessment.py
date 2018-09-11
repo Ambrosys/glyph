@@ -2,6 +2,7 @@
 
 import operator
 import re
+import sys
 
 import dill
 import numpy as np
@@ -199,3 +200,20 @@ def test_tuple_wrap():
     assert f1 == f(1)
     g = assessment.tuple_wrap(lambda x: [x])
     assert isinstance(g(1), tuple)
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="does not run on windows")
+def test_max_fitness_on_timeout():
+
+    f = lambda: 1
+
+    def g():
+        import time
+        time.sleep(10)
+        return f()
+
+    decorator = assessment.max_fitness_on_timeout(2, 1)
+
+    assert decorator(f)() == 1
+    assert decorator(g)() == 2

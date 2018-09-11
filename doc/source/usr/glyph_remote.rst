@@ -50,6 +50,8 @@ The possible action values are:
 +-------------------+--------------------+----------------------------+
 | *EXPERIMENT*      | list of expressions| list of fitness value(s)   |
 +-------------------+--------------------+----------------------------+
+| *METADATA*        | –                  | any                        |
++-------------------+--------------------+----------------------------+
 | *SHUTDOWN*        | –                  | –                          |
 +-------------------+--------------------+----------------------------+
 
@@ -123,3 +125,91 @@ to one are variables and -1 is reserved for symbolic constants.
         "x": 0,
       },
     }
+
+
+GUI
+---
+
+
+Install
+~~~~~~~
+
+Glyph comes with an optional GUI to use the ``glyph-remote`` script with more convenience.
+
+The GUI uses the package ``wxPython``. The installation manual can be found `here <https://github.com/wxWidgets/Phoenix/blob/master/README.rst#prerequisites>`_
+and `Website <https://wxpython.org/>`_.
+
+
+**Manual Gooey installtion**
+
+
+Since up-to-date (28.08.2018) the necessary changes to the used graphic library Gooey are not part of the master branch,
+it might be necessary to install Gooey by hand from the repo `https://github.com/Magnati/Gooey <https://github.com/Magnati/Gooey>`_ in three steps.
+
+- ``pip install -e "git+git@github.com:Magnati/Gooey.git#egg=gooey"``
+
+
+**Installation with pip installtion**
+
+
+To install glyph including the gui option use the following command:
+
+.. code-block::
+
+    python pip install pyglyph[gui]``
+
+To start the script with the gui just use the ``--gui`` parameter:
+
+.. code-block::
+
+    glyph-remote --gui
+
+Usage
+~~~~~~
+
+Within the GUI there is a tab for each group of parameters.
+If all parameters are set, click the start-button to start the experiment.
+
+
+Pretesting & Constraints
+------------------------
+
+In glyph-remote, genetic operations can be constrained. A genetic operation (i.e. every operation that create or modifies the genotype of an individual).
+If a constraint is violated, the genetic operation is rejected. If out of time, the last candidate is used.
+
+Currently, two different types of constraints are implemented:
+- algebraic constraints using sympy
+- pretesting constraints
+
+Algebraic constraints
+~~~~~~~~~~~~~~~~~~~~~
+
+Sympy is used to check whether expressions are:
+
+- zero
+- constant
+- infinite
+
+The three options can be individually activated.
+
+
+Pretesting
+~~~~~~~~~~
+
+You can invoke file-based pretesting with the `--constraints_pretest filename.py` flag.
+The flag `--constraints_pretest_function` lets you pass the function name which will be invoked to pretest individuals.
+
+The function is expected to return a boolean, depending on the individual is rejected (False) or accepted (True).
+
+An example file could look like this:
+
+.. code-block::
+
+    import time
+
+
+    def chi(ind):
+        time.sleep(1)
+        print(f"Hello World, this is {ind}")
+        return True
+

@@ -2,18 +2,17 @@
 # Licence: LGPL
 
 import time
-import signal
 import functools
 
+import stopit
 import numpy as np
 
 
 class SoftTimeOut:
-    """Break condition based on a soft time out.
-    Start a new generation as long as there is some time left.
-    """
     def __init__(self, ttl):
-        """
+        """Break condition based on a soft time out.
+
+        Start a new generation as long as there is some time left.
 
         :param ttl: time to live in seconds
         """
@@ -32,52 +31,8 @@ class SoftTimeOut:
         return self.alive
 
 
-def timeout(ttl):
-    """ Decorate a function. Will raise `TimeourError` if function call takes longer than the ttl.
-
-    Vendored from ffx.
-
-    :param ttl: time to live in seconds
-    """
-    def decorate(f):
-        def handler(signum, frame):
-            raise TimeoutError()
-
-        @functools.wraps(f)
-        def new_f(*args, **kwargs):
-            old = signal.signal(signal.SIGALRM, handler)
-            signal.alarm(ttl)
-            try:
-                result = f(*args, **kwargs)
-            finally:
-                signal.signal(signal.SIGALRM, old)
-            signal.alarm(0)
-            return result
-        return new_f
-    return decorate
-
-
-def max_fitness_on_timeout(max_fitness):
-    """ Decorate a function. Associate max_fitness with long running individuals.
-
-    :param max_fitness: fitness of aborted individual calls.
-    :returns: fitness or max_fitness
-    """
-    def decorate(f):
-        @functools.wraps(f)
-        def inner(*args, **kwargs):
-            try:
-                fitness = f(*args, **kwargs)
-            except TimeoutError:
-                fitness = max_fitness
-            return fitness
-        return inner
-    return decorate
-
-
 def soft_max_iter(app, max_iter=np.infty):
-    """
-    Soft breaking condition. Will check after each generation weather maximum number of iterations is exceeded.
+    """Soft breaking condition. Will check after each generation weather maximum number of iterations is exceeded.
 
     :type app: `glyph.application.Application`
     :param max_iter: maximum number of function evaluations

@@ -3,6 +3,7 @@
 
 """Convenience classes and functions that allow you to quickly build gp apps."""
 
+import abc
 import os
 import sys
 import time
@@ -34,24 +35,24 @@ def update_logbook_record(runner):
     if not runner.mstats:
         runner.mstats = create_stats(len(runner.population[0].fitness.values))
     record = runner.mstats.compile(runner.population)
-    runner.logbook.record(gen=runner.step_count, evals=runner._evals, **record)
+    runner.logbook.record(gen=runner.step_count,
+                          evals=runner._evals,
+                          **record
+    )
 
 
 DEFAULT_CALLBACKS_GP_RUNNER = (update_pareto_front, update_logbook_record)
 
 
 class GPRunner(object):
-    """Runner for gp problem sets.
-
-    Takes care of propper initialization, execution, and accounting of a gp run
-    (i.e. population creation, random state, generation count, hall of fame, and
-    logbook). The method init() has to be called once before stepping through
-    the evolution process with method step(); init() and step() invoke the
-    assessment runner.
-    """
-
     def __init__(self, IndividualClass, algorithm_factory, assessment_runner, callbacks=DEFAULT_CALLBACKS_GP_RUNNER):
-        """Init GPRunner.
+        """Runner for gp problem sets.
+
+        Takes care of propper initialization, execution, and accounting of a gp run
+        (i.e. population creation, random state, generation count, hall of fame, and
+        logbook). The method init() has to be called once before stepping through
+        the evolution process with method step(); init() and step() invoke the
+        assessment runner.
 
         :param IndividualClass: Class inherited from gp.AExpressionTree.
         :param algorithm_factory: callable() -> gp algorithm, as defined in
@@ -137,18 +138,16 @@ DEFAULT_CALLBACKS = make_checkpoint, log
 
 
 class Application(object):
-    """An application based on `GPRunner`.
-
-    Controls execution of the runner and adds checkpointing and logging
-    functionality; also defines a set of available command line options and
-    their default values.
-
-    To create a full console application one can use the factory function
-    create_console_app().
-    """
-
     def __init__(self, config, gp_runner, checkpoint_file=None, callbacks=DEFAULT_CALLBACKS):
-        """
+        """An application based on `GPRunner`.
+
+        Controls execution of the runner and adds checkpointing and logging
+        functionality; also defines a set of available command line options and
+        their default values.
+
+        To create a full console application one can use the factory function
+        default_console_app().
+
         :param config: Container holding all configs
         :type config: dict or argparse.Namespace
         :param gp_runner: Instance of `GPRunner`
@@ -196,7 +195,12 @@ class Application(object):
 
     def _update(self):
         for cb in self.callbacks:
-            cb(self)
+            try:
+                logger.debug(f"Running callback {cb}.")
+                cb(self)
+            except Exception as e:
+                logger.error(f"Error during execution of {cb}")
+                logger.warning(e)
 
     def checkpoint(self):
         """Checkpoint current state of evolution."""
@@ -290,6 +294,7 @@ class AFactory(object):
         return cls._create(config, *args, **kwargs)
 
     @staticmethod
+    @abc.abstractmethod
     def add_options(parser):
         """Add available parser options."""
         raise NotImplementedError
@@ -299,7 +304,7 @@ class AFactory(object):
         try:
             func = cls._mapping[key]
         except KeyError:
-            raise RuntimeError('Option {} not supported'.format(key))
+            raise RuntimeError(f"Option {key} not supported")
         return func
 
 
@@ -450,6 +455,78 @@ class ParallelizationFactory(AFactory):
     def add_options(parser):
         """Add available parser options."""
         # todo
+
+
+class ConstraintsFactory(AFactory):
+    @staticmethod
+    def add_options(parser):
+        parser.add_argument(
+            "--constraints_timeout",
+            type=utils.argparse.non_negative_int,
+            default=60,
+            help="Seconds before giving up and using a new random individual (default: 60)"
+        )
+        parser.add_argument(
+            "--constraints_n_retries",
+            type=utils.argparse.non_negative_int,
+            default=30,
+            help="Number of genetic operation before giving up and using a new random individual (default: 30)"
+        )
+        parser.add_argument(
+            "--constraints_zero",
+            action="store_false",
+            default=True,
+            help="Discard zero individuals (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_constant",
+            action="store_false",
+            default=True,
+            help="Discard constant individuals (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_infty",
+            action="store_false",
+            default=True,
+            help="Discard individuals with infinities (default: True)",
+        )
+        parser.add_argument(
+            "--constraints_pretest",
+            default=False,
+            help="Path to pretest file."
+        )
+        parser.add_argument(
+            "--constraints_pretest_function",
+            type=str,
+            default="chi",
+            help="Path to pretest file."
+        )
+        parser.add_argument(
+            "--constraints_pretest_service",
+            action="store_true",
+            help="Use service for pretesting."
+        )
+
+    @staticmethod
+    def _create(config, com=None):
+        constraints = []
+        if config.constraints_zero or config.constraints_infty or config.constraints_constant:
+            constraints.append(
+                gp.NonFiniteExpression(
+                    zero=config.constraints_zero,
+                    infty=config.constraints_infty,
+                    constant=config.constraints_constant,
+                )
+            )
+        if config.constraints_pretest:
+            constraints.append(
+                gp.PreTest(config.constraints_pretest,
+                           fun=config.constraints_pretest_function
+                )
+            )
+        # if config.constraints_pretest_service: # todo (enable after com refactor)
+        # constraints.append(gp.PreTestService(com))
+        return gp.Constraint(constraints)
 
 
 def safe(file_name, **kwargs):

@@ -34,7 +34,7 @@ to their optimization tasks.
 Installation
 ------------
 
-Glyph is a **python 3.5+** only package.
+Glyph is a **python 3.6+** only package.
 
 You can install the latest stable version from PyPI with pip
 

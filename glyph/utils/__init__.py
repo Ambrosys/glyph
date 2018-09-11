@@ -12,11 +12,12 @@ from . import break_condition
 
 
 class Memoize:
-    """Memoize(fn) - an instance which acts like fn but memoizes its arguments
-       Will only work on functions with non-mutable arguments
-       http://code.activestate.com/recipes/52201/
-    """
     def __init__(self, fn):
+        """Memoize(fn) - an instance which acts like fn but memoizes its arguments
+
+        Will only work on functions with non-mutable arguments
+        http://code.activestate.com/recipes/52201/
+        """
         self.fn = fn
         self.memo = {}
 
