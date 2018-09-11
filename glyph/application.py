@@ -195,7 +195,12 @@ class Application(object):
 
     def _update(self):
         for cb in self.callbacks:
-            cb(self)
+            try:
+                logger.debug(f"Running callback {cb}.")
+                cb(self)
+            except Exception as e:
+                logger.error(f"Error during execution of {cb}")
+                logger.warning(e)
 
     def checkpoint(self):
         """Checkpoint current state of evolution."""
