@@ -177,7 +177,6 @@ def test_pickle_assessment_runner():
 
 @pytest.mark.parametrize("x", [[np.nan], np.array([np.nan]), np.nan])
 def test_replace_nan(x):
-    print(x)
     x_clean = assessment.replace_nan(x)
     assert isinstance(x_clean, type(x))
     try:
@@ -217,3 +216,14 @@ def test_max_fitness_on_timeout():
 
     assert decorator(f)() == 1
     assert decorator(g)() == 2
+
+
+ec_cases = (
+    ("x_0", 1),
+    ("Add(exp(x_0), x_0)", 8),
+)
+
+
+@pytest.mark.parametrize("expr, res", ec_cases)
+def test_expressional_complexity(NumpyIndividual, expr, res):
+    assert assessment.expressional_complexity(NumpyIndividual.from_string(expr)) == res

@@ -91,7 +91,7 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
     return res
 
 
-class SmartConstantOptimizer:
+class SlowConversionTerminator:
     def __init__(self, method, step_size=10, min_stat=10, threshold=25):
         """Decorate a minimize method used in `scipy.optimize.minimize` to cancel non promising constant optimizations.
 
@@ -136,7 +136,3 @@ class SmartConstantOptimizer:
 
         return res
 
-
-def expressional_complexity(ind):
-    """Sum of length of all subtrees of the individual."""
-    return sum(len(ind[ind.searchSubtree(i)]) for i in range(len(ind)))

@@ -250,3 +250,16 @@ def max_fitness_on_timeout(max_fitness, timeout):
             return timeoutable(default=max_fitness)(f)(*args, timeout=timeout, **kwargs)
         return inner
     return decorate
+
+
+def expressional_complexity(ind):
+    """Sum of length of all subtrees of the individual."""
+    return sum(len(ind[ind.searchSubtree(i)]) for i in range(len(ind)))
+
+
+complexity_measures = {
+    "ec_genotype": expressional_complexity,
+    "ec_phenotype": lambda ind: expressional_complexity(ind.resolve_sc()),
+    "num_nodes_genotype": len,
+    "num_nodes_phenotype": lambda ind: len(ind.resolve_sc())
+}

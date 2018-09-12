@@ -17,18 +17,18 @@ import yaml
 
 import deap.gp
 import deap.tools
-from deprecated import deprecated
-import glyph.application
-import glyph.gp.individual
-import glyph.utils
 import sympy
 import zmq
+from deprecated import deprecated
 from cache import DBCache
 from scipy.optimize._minimize import _minimize_neldermead as nelder_mead
 
 
+import glyph.application
+import glyph.gp.individual
+import glyph.utils
 from glyph._version import get_versions
-from glyph.assessment import const_opt
+from glyph.assessment import const_opt, complexity_measures
 from glyph.cli._parser import *  # noqa
 from glyph.gp.constraints import constrain
 from glyph.gp.individual import _constant_normal_form, add_sc, pretty_print, sc_mmqout, simplify_this
@@ -39,7 +39,11 @@ from glyph.utils.break_condition import break_condition
 from glyph.utils.logging import print_params, load_config
 
 logger = logging.getLogger(__name__)
-version = get_versions()["version"]
+
+
+def get_version_info():
+    version = get_versions()["version"]
+    return f"Version {version}"
 
 
 class ExperimentProtocol(enum.EnumMeta):
@@ -100,7 +104,7 @@ class RemoteApp(glyph.application.Application):
         gp_runner = cp["runner"]
         gp_runner.assessment_runner = RemoteAssessmentRunner(
             com,
-            consider_complexity=args.consider_complexity,
+            complexity_measure=args.complexity_measure,
             method=args.const_opt_method,
             options=args.options,
             caching=args.caching,
@@ -264,7 +268,7 @@ class RemoteAssessmentRunner:
     def __init__(
         self,
         com,
-        consider_complexity=True,
+        complexity_measure=None,
         multi_objective=False,
         method="Nelder-Mead",
         options={"smart_options": {"use": False}},
@@ -277,7 +281,7 @@ class RemoteAssessmentRunner:
     ):
         """Contains assessment logic. Uses zmq connection to request evaluation."""
         self.com = com
-        self.consider_complexity = consider_complexity
+        self.complexity_measure = complexity_measures.get(complexity_measure, None)
         self.multi_objective = multi_objective
         self.caching = caching
         self.cache = {} if persistent_caching is None else DBCache("glyph-remote", persistent_caching)
@@ -296,7 +300,7 @@ class RemoteAssessmentRunner:
 
             self.smart_options = options.get("smart_options")
             if self.smart_options["use"]:
-                self.method = glyph.utils.numeric.SmartConstantOptimizer(
+                self.method = glyph.utils.numeric.SlowConversionTerminator(
                     glyph.utils.numeric.hill_climb, **self.smart_options["kw"]
                 )
 
@@ -345,8 +349,8 @@ class RemoteAssessmentRunner:
 
         self.queue.put(None)
         individual.popt = popt
-        if self.consider_complexity:
-            fitness = *error, sum(map(len, individual))
+        if self.complexity_measure:
+            fitness = *error, sum(map(self.complexity_measure, individual))
         else:
             fitness = error
         return fitness
@@ -469,7 +473,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
             com,
             method=args.const_opt_method,
             options=args.options,
-            consider_complexity=args.consider_complexity,
+            complexity_measure=args.complexity_measure,
             caching=args.caching,
             persistent_caching=args.persistent_caching,
             simplify=args.simplify,
@@ -513,9 +517,13 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
         app = RemoteApp(args, gp_runner, args.checkpoint_file, callbacks=callbacks)
 
     bc = break_condition(ttl=args.ttl, target=args.target, max_iter=args.max_iter_total, error_index=0)
+    return app, bc, args
+
+
+def log_info(args):
+    logger.info(f"Glyph-remote. {get_version_info()}")
     logger.debug("Parameters:")
     print_params(logger.debug, vars(args))
-    return app, bc, args
 
 
 def send_meta_data(app):
@@ -527,8 +535,8 @@ def send_meta_data(app):
 
 
 def main():
-    logger.info(f"Glyph-remote: Version {version}")
     app, bc, args = make_remote_app()
+    log_info(args)
     app.run(break_condition=bc)
 
 

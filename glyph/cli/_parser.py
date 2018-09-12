@@ -5,6 +5,7 @@ import logging
 import numpy as np
 
 import glyph.application
+import glyph.assessment
 from glyph.utils.argparse import (
     catch_and_log,
     positive_int,
@@ -137,11 +138,10 @@ def get_parser(parser=None):
     parser.add_argument(
         "--send_meta_data", action="store_true", default=False, help="Send metadata after each generation"
     )
-    # Gooey has a bug when using the action 'count'.
-    # To work as expected the '-' flag has to be first and the '--' flag has to be second.
     parser.add_argument(
         "-v",
         "--verbose",
+        type=str.upper,
         dest="verbosity",
         choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"],
         default="INFO",
@@ -221,10 +221,10 @@ def get_parser(parser=None):
         help="Simplify expression before sending them. (default: False)",
     )
     ass_group.add_argument(
-        "--consider_complexity",
-        action="store_false",
-        default=True,
-        help="Consider the complexity of solutions for MOO (default: True)",
+        "--complexity_measure",
+        choices=["None"] + list(glyph.assessment.complexity_measures.keys()),
+        default=None,
+        help="Consider the complexity of solutions for MOO (default: None)",
     )
     ass_group.add_argument(
         "--no_caching",
@@ -352,7 +352,6 @@ def get_parser(parser=None):
 
     constraints = parser.add_argument_group("constraints")
     glyph.application.ConstraintsFactory.add_options(constraints)
-
 
     observer = parser.add_argument_group("observer")
     observer.add_argument(

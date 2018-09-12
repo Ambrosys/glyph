@@ -17,13 +17,6 @@ import glyph.utils
 
 logger = logging.getLogger(__name__)
 
-#def len_subtree(i):
-#    sl_left = ind.searchSubtree(i+1)
-#    len_left = sl_left.stop - sl_left.start
-#    sl_right = ind.searchSubtree(sl_left.stop)
-#    len_right = sl_right.stop - sl_right.start
-#    return len_left, len_right
-
 
 def sc_qout(x, y):
     """SC is the quotient of the number of nodes of its left and right child-trees x and y"""
@@ -52,25 +45,6 @@ class StructConst(deap.gp.Primitive):
     def as_terminal(self, *args):
         vals = list(map(len, args))
         return deap.gp.Terminal(self.func(*vals), False, deap.gp.__type__)
-
-
-def resolve_sc(ind):
-    """Evaluate StructConst in individual top to bottom."""
-    nodes = type(ind)(ind[:])
-
-    # structure based constants need to be evaluated top to bottom first
-    is_sc = lambda n: isinstance(n, StructConst)
-    while any(n for n in nodes if is_sc(n)):
-        # get the first structure based constant
-        i, node = next(filter((lambda x: is_sc(x[1])), enumerate(nodes)))
-        slice_ = nodes.searchSubtree(i)
-        # find its subtree
-        subtree = type(ind)(nodes[slice_])
-        # replace the subtree by a Terminal representing its numeric value
-        # child_trees helper function yields a list of tree which are used as arguments by the first primitive
-        args = list(child_trees(subtree))
-        nodes[slice_] = [node.as_terminal(*args)]
-    return nodes
 
 
 def add_sc(pset, func):
@@ -281,9 +255,27 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     def __str__(self):
         return self.to_polish()
 
+    def resolve_sc(self):
+        """Evaluate StructConst in individual top to bottom."""
+        nodes = type(self)(self[:])
+
+        # structure based constants need to be evaluated top to bottom first
+        is_sc = lambda n: isinstance(n, StructConst)
+        while any(n for n in nodes if is_sc(n)):
+            # get the first structure based constant
+            i, node = next(filter((lambda x: is_sc(x[1])), enumerate(nodes)))
+            slice_ = nodes.searchSubtree(i)
+            # find its subtree
+            subtree = type(self)(nodes[slice_])
+            # replace the subtree by a Terminal representing its numeric value
+            # child_trees helper function yields a list of tree which are used as arguments by the first primitive
+            args = list(child_trees(subtree))
+            nodes[slice_] = [node.as_terminal(*args)]
+        return nodes
+
     def to_polish(self, for_sympy=False, replace_struct=True):
         """Symbolic representation of the expression tree."""
-        nodes = resolve_sc(self) if replace_struct else self
+        nodes = self.resolve_sc() if replace_struct else self
         repr = ""
         stack = []
         for node in nodes:
