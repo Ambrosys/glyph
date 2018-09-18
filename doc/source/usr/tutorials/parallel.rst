@@ -1,7 +1,7 @@
 Parallel
 ========
 
-pickling problems
+Pickling problems
 -----------------
 
 Most parallelization frameworks rely on the built-in pickle module which

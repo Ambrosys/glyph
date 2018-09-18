@@ -1,4 +1,4 @@
-Labview tutorial
+Labview Tutorial
 ----------------
 
 Contributed by P. Oswald.
