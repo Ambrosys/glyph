@@ -85,15 +85,3 @@ def np_infinity_int(string):
         except ValueError:
             raise argparse.ArgumentTypeError("invalid int value: '{}'".format(string))
         return value
-
-
-def catch_and_log(f):
-    @functools.wraps(f)
-    def inner(*args, **kwargs):
-        try:
-            f(*args, **kwargs)
-            return True
-        except Exception as e:
-            logger.error(e)
-            return False
-    return inner
