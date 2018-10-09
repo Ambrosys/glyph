@@ -7,7 +7,6 @@ import numpy as np
 import glyph.application
 import glyph.assessment
 from glyph.utils.argparse import (
-    catch_and_log,
     positive_int,
     non_negative_int,
     np_infinity_int,
@@ -63,30 +62,9 @@ You need to install the gui extras.
 Use the command 'pip install glyph[gui]' to do so."""
 
 
-class GooeyOptionsArg:
-    POSITIVE_INT = {
-        "validator": {
-            "callback": catch_and_log(positive_int),
-            "message": "This is not a positive integer.",
-        }
-    }
-    NON_NEGATIVE_INT = {
-        "validator": {
-            "callback": catch_and_log(non_negative_int),
-            "message": "This is not a non negative integer.",
-        }
-    }
-    READABLE_FILE = {
-        "validator": {
-            "callback": catch_and_log(readable_file),
-            "message": "This is not a readable file.",
-        }
-    }
-
-
 class MyGooeyMixin:
     def add_argument(self, *args, **kwargs):
-        for key in ["widget", "gooey_options"]:
+        for key in ["widget"]:
             if key in kwargs:
                 del kwargs[key]
         super().add_argument(*args, **kwargs)
@@ -127,12 +105,6 @@ def get_parser(parser=None):
         type=positive_int,
         default=5555,
         help="Port for the zeromq communication (default: 5555)",
-        gooey_options={
-            "validator": {
-                "callback": catch_and_log(positive_int),
-                "message": "This should be a positive port number in the range of 0 - 65535.",
-            }
-        },
     )
     parser.add_argument("--ip", type=str, default="localhost", help="IP of the client (default: localhost)")
     parser.add_argument(
@@ -174,19 +146,13 @@ def get_parser(parser=None):
         type=readable_yaml_file,
         help="Read GP configs from file",
         widget="FileChooser",
-        gooey_options={
-            "validator": {
-                "callback": catch_and_log(readable_yaml_file),
-                "message": "This should be a readable .yaml file.",
-            }
-        },
     )
 
     glyph.application.Application.add_options(parser)
     cp_group = parser.add_mutually_exclusive_group(
         required=gui_active
     )
-    cp_group.add_argument("--ndim", type=positive_int, default=1, gooey_options=GooeyOptionsArg.POSITIVE_INT)
+    cp_group.add_argument("--ndim", type=positive_int, default=1)
     cp_group.add_argument(
         "--resume",
         dest="resume_file",
@@ -194,7 +160,6 @@ def get_parser(parser=None):
         type=readable_file,
         help="continue previous run from a checkpoint file",
         widget="FileChooser",
-        gooey_options=GooeyOptionsArg.READABLE_FILE,
     )
     cp_group.add_argument(
         "-o",
@@ -243,21 +208,18 @@ def get_parser(parser=None):
         type=non_negative_int,
         default=100,
         help="Maximum number of function evaluations for constant optimization (default: 100)",
-        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT,
     )
     ass_group.add_argument(
         "--directions",
         type=positive_int,
         default=5,
         help="Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)",
-        gooey_options=GooeyOptionsArg.POSITIVE_INT,
     )
     ass_group.add_argument(
         "--precision",
         type=non_negative_int,
         default=3,
         help="Precision of constants (default: 3)",
-        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT,
     )
     ass_group.add_argument(
         "--const_opt_method",
@@ -285,28 +247,24 @@ def get_parser(parser=None):
         type=non_negative_int,
         default=10,
         help="Number of fev in iterative function optimization. (default: 10)",
-        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT,
     )
     ass_group.add_argument(
         "--smart_min_stat",
         type=non_negative_int,
         default=10,
         help="Number of samples required prior to stopping (default: 10)",
-        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT,
     )
     ass_group.add_argument(
         "--smart_threshold",
         type=non_negative_int,
         default=25,
         help="Quantile of improvement rate. Abort constant optimization if below (default: 25)",
-        gooey_options=GooeyOptionsArg.NON_NEGATIVE_INT,
     )
     ass_group.add_argument(
         "--chunk_size",
         type=positive_int,
         default=30,
         help="Number of individuals send per single request. (default: 30)",
-        gooey_options=GooeyOptionsArg.POSITIVE_INT,
     )
     ass_group.add_argument(
         "--multi_objective",
@@ -342,12 +300,6 @@ def get_parser(parser=None):
         type=np_infinity_int,
         default=np.infty,
         help="Maximum number of function evaluations (default: 'inf' [stands for np.infty])",
-        gooey_options={
-            "validator": {
-                "callback": catch_and_log(np_infinity_int),
-                "message": 'This is neither "inf" nor a natural number.',
-            }
-        },
     )
 
     constraints = parser.add_argument_group("constraints")
