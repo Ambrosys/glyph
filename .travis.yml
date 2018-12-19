@@ -8,9 +8,11 @@ matrix:
       os: linux
       env: DEPLOY=false
       python: 3.7-dev
-
+cache:
+  directories:
+    - $HOME/.cache/pip
 install:
-  - pip install -r requirements-dev.txt
+  - pip install -r --upgrade requirements-dev.txt
 script:
   - make test
 after_success:
