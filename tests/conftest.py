@@ -17,10 +17,9 @@ def NumpyIndividual():
     return gp.Individual(gp.numpy_primitive_set(arity=13), "NumpyIndividual")
 
 
-@pytest.fixture(scope="function", params=[SympyIndividual, NumpyIndividual])
+@pytest.fixture(scope="function", params=["SympyIndividual", "NumpyIndividual"])
 def IndividualClass(request):
-    cls = request.param
-    return cls()
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(scope="function", params=gp.all_algorithms)
