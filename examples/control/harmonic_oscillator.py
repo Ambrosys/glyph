@@ -21,7 +21,7 @@ import control_problem
 
 
 # Setup of the control problem and gp algorithm.
-class Individual(gp.AExpressionTree):
+class Individual(gp.individual.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
 
     pset = gp.sympy_primitive_set(categories=['algebraic', 'trigonometric', 'exponential'],
@@ -67,7 +67,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('\n')
     logger.info('Hall of Fame:')
-    for individual in app.gp_runner.halloffame[:4]:
+    for individual in app.gp_runner.pareto_front[:4]:
         logger.info('{}  {} = {}'.format(individual.fitness.values, repr(individual), str(individual)))
 
     if not args.plot:
@@ -91,7 +91,7 @@ def main():
     l, = ax0.plot(x, target, alpha=alpha)
     labels.append('target')
     lines.append(l)
-    for ind in reversed(app.gp_runner.halloffame[:n]):
+    for ind in reversed(app.gp_runner.pareto_front[:n]):
         label = 'with $a(y_0, y_1) = {}$'.format(str(ind))
         label = label.replace('**', '^').replace('*', '\cdot ')
         y = assessment_runner.trajectory(ind)

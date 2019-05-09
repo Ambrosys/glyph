@@ -28,7 +28,7 @@ def error(ind, *args):
 
 @Memoize
 def measure(ind):
-    popt, err_opr = const_opt_scalar(error, ind)
+    popt, err_opr = const_opt(error, ind)
     ind.popt = popt
     return err_opr, len(ind)
 

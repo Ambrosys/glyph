@@ -87,7 +87,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('\n')
     logger.info('Hall of Fame:')
-    for individual in app.gp_runner.halloffame:
+    for individual in app.gp_runner.pareto_front:
         popt = getattr(individual, 'popt', ())
         logger.info('{}  {}, {} = {}'.format(individual.fitness.values, str(individual), individual.pset.constants, popt))
 
@@ -116,7 +116,7 @@ def main():
     labels.append('target')
     lines.append(l)
     uncontrolled = Individual.from_string('Add(y_0, Neg(y_0))')
-    for ind in cons(uncontrolled, reversed(app.gp_runner.halloffame[:n])):
+    for ind in cons(uncontrolled, reversed(app.gp_runner.pareto_front[:n])):
         popt = getattr(ind, 'popt', np.zeros(len(ind.pset.constants)))
         label = 'with $a(y_0, y_1) = {}$, $c={}$'.format(str(ind), popt)
         label = label.replace('**', '^').replace('*', '\cdot ')

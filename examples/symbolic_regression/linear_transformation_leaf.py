@@ -35,7 +35,7 @@ def phenotype(individual):
     return func
 
 
-class Individual(gp.AExpressionTree):
+class Individual(gp.individual.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
     pset = pset
 

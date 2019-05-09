@@ -7,16 +7,14 @@ import numpy as np
 
 from glyph import gp
 from glyph.application import create_stats
-from glyph.assessment import const_opt_scalar
+from glyph.assessment import const_opt
 from glyph.observer import ProgressObserver
 from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
 
-class Individual(gp.AExpressionTree):
-    """The gp representation (genotype) of the actuator for the control problem."""
-
-    pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+Individual = gp.Individual(pset=pset)
 
 
 @silent_numpy
@@ -36,7 +34,7 @@ def error(ind, *args):
 def measure(ind):
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
-        popt, err_opr = const_opt_scalar(error, ind)
+        popt, err_opr = const_opt(error, ind)
     ind.popt = popt
     return err_opr, len(ind)
 
