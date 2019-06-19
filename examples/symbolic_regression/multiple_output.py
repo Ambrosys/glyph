@@ -1,3 +1,8 @@
+"""
+MIMO
+====
+"""
+
 from functools import partial, partialmethod
 
 import numpy as np
@@ -8,7 +13,7 @@ from glyph.gp.breeding import cxonepoint, mutuniform, nd_crossover, nd_mutation
 from glyph.gp.individual import Individual, NDIndividual, nd_phenotype, numpy_phenotype, numpy_primitive_set
 from glyph.utils.numeric import rmse
 
-pset = numpy_primitive_set(1, categories=('algebraic', 'symc'))
+pset = numpy_primitive_set(1, categories=("algebraic", "symc"))
 MyTree = Individual(pset=pset, name="MyTree")
 MyNDTree = NDIndividual(base=MyTree, name="MyNDTree")
 MyNDTree.create_population = partialmethod(MyNDTree.create_population, ndim=2)
@@ -29,7 +34,7 @@ def evaluate_(individual, x, y):
         if np.isscalar(yhat[i]):
             yhat[i] = np.ones_like(y[i]) * yhat[i]
     yhat = np.array(yhat)
-    return rmse(yhat, y),
+    return (rmse(yhat, y),)
 
 
 evaluate = partial(evaluate_, x=x, y=y)
@@ -57,6 +62,9 @@ def main():
         pop = update_fitness(pop)
         best = selBest(pop, 1)[0]
         print(best, best.fitness.values)
+
+        if best.fitness.values[0] <= 1e-3:
+            break
 
 
 if __name__ == "__main__":

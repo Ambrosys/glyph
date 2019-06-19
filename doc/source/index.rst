@@ -40,6 +40,7 @@ Tutorials
 .. toctree::
    :maxdepth: 1
 
+   usr/examples/index.rst
    usr/tutorials/parallel.rst
    usr/tutorials/labview.rst
    usr/tutorials/matlab.rst

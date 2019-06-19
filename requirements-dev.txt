@@ -16,3 +16,4 @@ sphinx
 # sphinx-readable-theme
 -e git+https://github.com/Ohjeah/sphinx-readable-theme.git#egg=readable
 sphinxcontrib-apidoc
+sphinx-gallery

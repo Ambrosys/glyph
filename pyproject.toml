@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel", "setuptools_scm"]
+
+[tool.black]
+line-length = 111
+target_version = ['py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | cache
+  | dist
+  | notebooks
+)/
+'''
