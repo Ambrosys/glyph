@@ -5,17 +5,15 @@ If you use glyph please consider citing glyph:
 
 .. code::
 
-    @article{quade2017,
+    @article{quade2019,
      author = {Quade, Markus and Gout, Julien and Abel, Markus},
      title = {{Glyph: {Symbolic} Regression Tools}},
      journal = {J Open Res Softw},
-     pubstate = {submitted},
-     year = {2017},
-     month = sep,
-     primaryclass = {cs.MS},
-     archiveprefix = {arXiv},
-     eprint = {1803.06226},
-     url = {https://arxiv.org/abs/1803.06226},
+     year = {2019},
+     month = jun,
+     doi = {10.5334/jors.192},
+     volume = {19},
+     issue = {7(1)},
     }
 
 
@@ -29,7 +27,6 @@ If you use glyph please consider citing glyph:
      doi = {10.5281/zenodo.1156654},
      url = {https://github.com/Ambrosys/glyph},
      note = {Version 0.3.5},
-     keywords = {forceurl},
     }
 
 

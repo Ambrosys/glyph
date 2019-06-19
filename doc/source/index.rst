@@ -1,7 +1,7 @@
 glyph - symbolic regression tools
 =================================
 
-|Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI|
+|Build Status| |PyPI version| |codecov| |PythonVersion| |Licence| |DOI| |PUB|
 
 **glyph** is a python 3 library based on deap providing abstraction layers for symbolic regression problems.
 
@@ -65,3 +65,5 @@ Know what you're looking for & just need API details? View our auto-generated AP
   :target: https://img.shields.io/pypi/l/pyglyph.svg
 .. |DOI| image:: https://zenodo.org/badge/75950324.svg
   :target: https://zenodo.org/badge/latestdoi/75950324
+.. |PUB| image:: https://img.shields.io/badge/DOI-10.5334%2Fjors.192-blue.svg
+  :target: http://doi.org/10.5334/jors.192

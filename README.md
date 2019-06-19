@@ -12,6 +12,8 @@ version](https://img.shields.io/pypi/v/pyglyph.svg)](https://pypi.python.org/pyp
 [![PythonVersion](https://img.shields.io/pypi/pyversions/pyglyph.svg)](https://img.shields.io/pypi/pyversions/pyglyph.svg)
 [![Licence](https://img.shields.io/pypi/l/pyglyph.svg)](https://img.shields.io/pypi/l/pyglyph.svg)
 [![DOI](https://zenodo.org/badge/75950324.svg)](https://zenodo.org/badge/latestdoi/75950324)
+[![DOI](https://img.shields.io/badge/DOI-10.5334%2Fjors.192-blue.svg
+)](http://doi.org/10.5334/jors.192)
 
 **glyph** is a python 3 library based on deap providing abstraction
 layers for symbolic regression problems.
