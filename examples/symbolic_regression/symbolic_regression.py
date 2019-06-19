@@ -1,3 +1,9 @@
+"""
+Minimal Example
+===============
+"""
+
+
 from functools import partial
 
 import deap.gp
@@ -5,11 +11,11 @@ import deap.tools
 import numpy as np
 
 from glyph import gp
-from glyph.assessment import const_opt_scalar
+from glyph.assessment import const_opt
 from glyph.utils import Memoize
 from glyph.utils.numeric import nrmse, silent_numpy
 
-pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=["algebraic", "trigonometric", "exponential", "symc"])
 Individual = gp.Individual(pset=pset)
 
 
@@ -57,6 +63,9 @@ def main():
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
         print(gp.individual.simplify_this(best), best.fitness.values)
+
+        if best.fitness.values[0] <= 1e-3:
+            break
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 logger = logging.getLogger(__name__)
+EMPTY = np.array(1)
 
 
 def get_limits(x, factor=1.1):
@@ -13,7 +14,7 @@ def get_limits(x, factor=1.1):
     range_ = np.nanmax(x) - np.nanmin(x)
     if range_ == 0:
         range_ = 0.5
-    return avg - range_/2 * factor, avg + range_/2 * factor
+    return avg - range_ / 2 * factor, avg + range_ / 2 * factor
 
 
 class ProgressObserver(object):  # pragma: no cover
@@ -37,9 +38,10 @@ class ProgressObserver(object):  # pragma: no cover
         x, y = data
         x = np.array(x)
         y = np.array(y)
-        ax.set_xlim(*get_limits(x))
-        ax.set_ylim(*get_limits(y))
-        line.set_data(data)
+        ax.relim()
+        ax.autoscale_view()
+        line.set_xdata(x)
+        line.set_ydata(y)
 
     def _blank_canvas(self, chapters):
         self.fig, self.axes = plt.subplots(nrows=len(chapters) + 1)
@@ -47,9 +49,9 @@ class ProgressObserver(object):  # pragma: no cover
             ax.set_xlabel(self.t_key)
             ax.set_ylabel(c)
             ax.set_title("Best " + c)
-            line, = ax.plot([], [])
+            line, = ax.plot(EMPTY, EMPTY)
             self.lines.append(line)
-        line, = self.axes[-1].plot([], [],  "o-")
+        line, = self.axes[-1].plot(EMPTY, EMPTY, "o-")
         self.axes[-1].set_xlabel(chapters[0])
         self.axes[-1].set_ylabel(chapters[1])
         self.axes[-1].set_title("Pareto Front")
@@ -61,10 +63,16 @@ class ProgressObserver(object):  # pragma: no cover
         """
         Note:
             To be used as a callback in :class:`glyph.application.Application`.
+            Needs an interactive mpl backend.
 
         Args:
             app (glyph.application.Application)
         """
+
+        # see also https://github.com/matplotlib/matplotlib/issues/7886
+        if not matplotlib.is_interactive():
+            return
+
         chapters = sorted(app.logbook.chapters.keys())
 
         if self.fig is None:

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel", "setuptools_scm"]
+
+[tool.black]
+line-length = 111
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.venv
+  | build
+  | dist
+)/
+'''

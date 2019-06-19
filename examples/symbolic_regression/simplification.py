@@ -1,3 +1,8 @@
+"""
+Simplification by pruning
+=========================
+"""
+
 from functools import partial
 
 import numpy as np
@@ -10,13 +15,13 @@ from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
 
-pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=["algebraic", "trigonometric", "exponential", "symc"])
 Individual = gp.Individual(pset=pset)
 
 
 @silent_numpy
 def error(ind, *args):
-    g = lambda x: x**2 - 1.1
+    g = lambda x: x ** 2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)
@@ -61,6 +66,9 @@ def main():
         pop = update_fitness(pop)
         best = deap.tools.selBest(pop, 1)[0]
         print(gp.individual.simplify_this(best), best.fitness.values)
+
+        if best.fitness.values[0] <= 1e-3:
+            break
 
 
 if __name__ == "__main__":

@@ -4,15 +4,16 @@ import sys
 
 
 import sphinx_readable_theme
+from sphinx_gallery.sorting import ExplicitOrder
+from sphinx_gallery.sorting import NumberOfCodeLinesSortKey
+
 
 sys.path.insert(0, os.path.abspath("../"))
 from glyph._version import get_versions
 
 project = "glyph"
 master_doc = "index"
-copyright = '{}, <a href="http://www.ambrosys.de">Ambrosys GmbH</a>'.format(
-    datetime.datetime.now().year
-)
+copyright = '{}, <a href="http://www.ambrosys.de">Ambrosys GmbH</a>'.format(datetime.datetime.now().year)
 author = "Ambrosys GmbH"
 version = release = get_versions()["version"]
 
@@ -25,6 +26,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.imgmath",
     "sphinx.ext.napoleon",
+    "sphinx_gallery.gen_gallery",
 ]
 
 apidoc_module_dir = "../../glyph"
@@ -64,9 +66,7 @@ html_theme_path = [sphinx_readable_theme.get_html_theme_path()]
 
 # for sidebarintro.html
 
-html_additional_pages = {
-    "sidebarintro": "sidebarintro.html"
-}
+html_additional_pages = {"sidebarintro": "sidebarintro.html"}
 
 html_context = {
     "github_user": "ambrosys",
@@ -100,3 +100,13 @@ intersphinx_mapping = {
     "scipy": ("http://docs.scipy.org/doc/scipy/reference", None),
 }
 default_role = "any"
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples",  # path to your example scripts
+    "gallery_dirs": "usr/examples",  # path where to save gallery generated examples
+    "subsection_order": ExplicitOrder(["../../examples/symbolic_regression"]),
+    "within_subsection_order": NumberOfCodeLinesSortKey,
+    "filename_pattern": "/*.py",
+    "ignore_pattern": r"observer\.py",
+    # "show_memory": True,
+}
