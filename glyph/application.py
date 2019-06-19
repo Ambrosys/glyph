@@ -262,7 +262,7 @@ def default_console_app(IndividualClass, AssessmentRunnerClass, parser=argparse.
     if not os.path.exists(workdir):
         raise RuntimeError('Path does not exist: "{}"'.format(workdir))
     log_level = utils.logging.log_level(args.verbosity)
-    utils.logging.load_config(config_file=args.logging_config, default_level=log_level,
+    utils.logging.load_config(config_file=args.logging_config, level=log_level,
                               placeholders=dict(workdir=workdir))
 
     if args.resume_file is not None:
