@@ -5,7 +5,7 @@ import deap.tools
 import numpy as np
 
 from glyph import gp
-from glyph.assessment import const_opt_scalar
+from glyph.assessment import const_opt
 from glyph.utils import Memoize
 from glyph.utils.numeric import nrmse, silent_numpy
 
