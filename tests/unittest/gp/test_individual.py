@@ -9,23 +9,21 @@ import deap.gp
 from glyph.gp.individual import *
 
 
-Tree = Individual(name="Tree",
-                  pset=numpy_primitive_set(1,
-                                           categories=('algebraic', 'trigonometric', 'symc')),
-                  marker="symc")
+Tree = Individual(
+    name="Tree", pset=numpy_primitive_set(1, categories=("algebraic", "trigonometric", "symc")), marker="symc"
+)
 
-SympyTree = Individual(name="SympyTree",
-                       pset=sympy_primitive_set(categories=['algebraic', 'exponential'],
-                                                arguments=['x_0'],
-                                                constants=['c_0']),
-                       marker=sympy)
+SympyTree = Individual(
+    name="SympyTree",
+    pset=sympy_primitive_set(categories=["algebraic", "exponential"], arguments=["x_0"], constants=["c_0"]),
+    marker=sympy,
+)
 
 pset_small_letter = deap.gp.PrimitiveSet("small", 1)
 pset_small_letter.addPrimitive(np.add, 2, "add")
-pset_small_letter.renameArguments(**{'ARG{}'.format(i): 'x_{}'.format(i) for i in range(1)})
+pset_small_letter.renameArguments(**{"ARG{}".format(i): "x_{}".format(i) for i in range(1)})
 
-TreeSmall = Individual(name="TreeSmall",
-                       pset=pset_small_letter)
+TreeSmall = Individual(name="TreeSmall", pset=pset_small_letter)
 
 NDTree = NDIndividual(base=SympyTree)
 
@@ -41,7 +39,7 @@ def test_pickle(cls):
     defaults = inspect.getargspec(cls.create_population).defaults
     defaults = len(defaults) if defaults else 0
     argcount = len(inspect.getargspec(cls.create_population).args)
-    ind = cls.create_population(*[1]*(argcount-defaults-1))[0]
+    ind = cls.create_population(*[1] * (argcount - defaults - 1))[0]
     assert dill.loads(dill.dumps(ind)) == ind
 
 
@@ -70,7 +68,7 @@ phenotype_cases = [
 ]
 
 
-@pytest.mark.parametrize('case', phenotype_cases)
+@pytest.mark.parametrize("case", phenotype_cases)
 def test_phenotype(case):
     individual_class, expr = case
     phenotype = sympy_phenotype if individual_class.marker == "sympy" else numpy_phenotype
@@ -85,22 +83,22 @@ def test_phenotype(case):
 
 
 simplify_cases = [
-    (Tree, 'Mul(Symc, x_0)', 'Symc*x_0'),
-    (Tree, 'Sub(Symc, x_0)', 'Symc - x_0'),
-    (Tree, 'Add(x_0, x_0)', '2*x_0'),
-    (Tree, 'Div(x_0, x_0)', '1'),
-    (Tree, 'Div(x_0, 0.0)', '+inf*x_0'),
-    (Tree, 'Mul(x_0, x_0)', 'x_0**2'),
-    (Tree, 'Div(sin(x_0), cos(x_0))', 'tan(x_0)'),
+    (Tree, "Mul(Symc, x_0)", "Symc*x_0"),
+    (Tree, "Sub(Symc, x_0)", "Symc - x_0"),
+    (Tree, "Add(x_0, x_0)", "2*x_0"),
+    (Tree, "Div(x_0, x_0)", "1"),
+    (Tree, "Div(x_0, 0.0)", "zoo*x_0"),
+    (Tree, "Mul(x_0, x_0)", "x_0**2"),
+    (Tree, "Div(sin(x_0), cos(x_0))", "tan(x_0)"),
     (TreeSmall, "add(x_0, x_0)", "2*x_0"),
 ]
 
 
-@pytest.mark.parametrize('case', simplify_cases)
+@pytest.mark.parametrize("case", simplify_cases)
 def test_simplify_this(case):
     individual_class, expr, desired = case
     ind = individual_class.from_string(expr)
-    assert str(simplify_this(ind)) in desired  # test in not equality for appveyor +inf edge case
+    assert str(simplify_this(ind)) in desired
 
 
 def test_simplify_this_random_state():
@@ -108,6 +106,7 @@ def test_simplify_this_random_state():
     ind = individual_class.from_string(expr)
 
     import random
+
     random.seed(42)
     s = random.getstate()
 
@@ -157,7 +156,7 @@ def test_get_len(case):
 @pytest.fixture
 def sc_ind():
     pset = numpy_primitive_set(1)
-    f = lambda x, y: x/y
+    f = lambda x, y: x / y
     pset = add_sc(pset, f)
     pset.addPrimitive(operator.neg, 1, "Neg")
 
@@ -166,7 +165,7 @@ def sc_ind():
 
 sc_cases = (
     ("SC(x_0, x_0)", 1),
-    ("SC(x_0, SC(x_0, x_0))", 1/3),
+    ("SC(x_0, SC(x_0, x_0))", 1 / 3),
 )
 
 
@@ -214,7 +213,6 @@ def test_simplify_constant(case):
     assert str(simplify_constant(ind)) == res
 
 
-
 pprint_cases = (
     ("c", "1", ["c"], [1], 0),
     ("c1", "1", ["c1"], [1], 0),
@@ -241,7 +239,7 @@ def test_pprint_simplify():
     assert res == "1 + x_0"
 
 
-constant_normal_form_cases =(
+constant_normal_form_cases = (
     ("f(a+b)", "c"),
     ("2*a", "c"),
     ("2*b + c + d", "c"),
@@ -249,12 +247,13 @@ constant_normal_form_cases =(
     ("y_0 + f(y_0 + 3*b)", "y_0 + f(c + y_0)"),
     ("c**3", "c"),
     ("sin(c)", "c"),
-    ("y_0**2", "y_0**2")
+    ("y_0**2", "y_0**2"),
 )
 
 
 @pytest.mark.parametrize("case", constant_normal_form_cases)
 def test__constant_normal_form(case):
     from glyph.gp.individual import _constant_normal_form
+
     expr, res = case
     assert res == repr(_constant_normal_form(sympy.sympify(expr), variables=[sympy.Symbol("y_0")]))
