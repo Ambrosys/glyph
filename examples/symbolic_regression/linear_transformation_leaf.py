@@ -1,3 +1,8 @@
+"""
+Linear Trafo Leaf
+=================
+"""
+
 import warnings
 from functools import partial, wraps
 
@@ -20,7 +25,7 @@ class Terminal(deap.gp.Terminal):
         return "w.dot(x) + b"
 
 
-pset = gp.numpy_primitive_set(arity=0, categories=['algebraic'])
+pset = gp.numpy_primitive_set(arity=0, categories=["algebraic"])
 pset.terminals[object].append(Terminal())
 
 
@@ -37,6 +42,7 @@ def phenotype(individual):
 
 class Individual(gp.individual.AExpressionTree):
     """The gp representation (genotype) of the actuator for the control problem."""
+
     pset = pset
 
     @property
@@ -54,13 +60,15 @@ def const_opt(f, individual):
     @wraps(f)
     def closure(consts):
         new_consts = []
-        for node in [consts[i:i + arity + 1] for i in range(0, len(consts), arity + 1)]:
+        for node in [
+            consts[i : i + arity + 1] for i in range(0, len(consts), arity + 1)
+        ]:
             new_consts.append(np.array(node[:-1]))
             new_consts.append(node[-1])
         return f(individual, *new_consts)
 
     p0 = np.ones((arity + 1) * individual.n_args)
-    res = scipy.optimize.minimize(fun=closure, x0=p0, method='Nelder-Mead', tol=1e-3)
+    res = scipy.optimize.minimize(fun=closure, x0=p0, method="Nelder-Mead", tol=1e-3)
     popt = res.x if res.x.shape else np.array([res.x])
     measure_opt = res.fun
     if not res.success:
@@ -104,7 +112,9 @@ def main():
     expr_mut = partial(deap.gp.genFull, min_=0, max_=2)
     mutate = partial(deap.gp.mutUniform, expr=expr_mut, pset=Individual.pset)
 
-    algorithm = gp.algorithms.AgeFitness(mate, mutate, deap.tools.selNSGA2, Individual.create_population)
+    algorithm = gp.algorithms.AgeFitness(
+        mate, mutate, deap.tools.selNSGA2, Individual.create_population
+    )
 
     pop = update_fitness(Individual.create_population(pop_size))
 

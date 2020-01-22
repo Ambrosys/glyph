@@ -1,3 +1,8 @@
+"""
+Observer
+========
+"""
+
 import warnings
 from functools import partial
 
@@ -13,13 +18,13 @@ from glyph.utils import Memoize
 from glyph.utils.numeric import silent_numpy, nrmse
 
 
-pset = gp.numpy_primitive_set(arity=1, categories=['algebraic', 'trigonometric', 'exponential', 'symc'])
+pset = gp.numpy_primitive_set(arity=1, categories=["algebraic", "trigonometric", "exponential", "symc"])
 Individual = gp.Individual(pset=pset)
 
 
 @silent_numpy
 def error(ind, *args):
-    g = lambda x: x**2 - 1.1
+    g = lambda x: x ** 2 - 1.1
     points = np.linspace(-1, 1, 100, endpoint=True)
     y = g(points)
     f = gp.individual.numpy_phenotype(ind)
@@ -47,7 +52,7 @@ def update_fitness(population, map=map):
     return population
 
 
-class Mock():
+class Mock:
     pass
 
 
@@ -78,6 +83,11 @@ def main():
         app.gp_runner.pareto_front = front
         app.logbook = logbook
         observer(app)
+
+        best = deap.tools.selBest(pop, 1)[0]
+
+        if best.fitness.values[0] <= 1e-3:
+            break
 
 
 if __name__ == "__main__":

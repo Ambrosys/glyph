@@ -1,4 +1,5 @@
 src/
+doc/source/usr/examples
 *.sqlite
 dask-worker-space
 doc/source/dev/api
@@ -13,6 +14,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+pip-wheel-metadata
 env/
 build/
 develop-eggs/
