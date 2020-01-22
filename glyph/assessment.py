@@ -63,7 +63,7 @@ class AAssessmentRunner(object):
         All the attributes except 'parallel' can be pickled.
         """
         state = self.__dict__.copy()
-        del state['_parallel']  # Remove the unpicklable parallelization scheme.
+        del state["_parallel"]  # Remove the unpicklable parallelization scheme.
         return state
 
     def __setstate__(self, state):
@@ -103,10 +103,12 @@ def measure(*funcs, pre=toolz.identity, post=toolz.identity):
     :returns: callable(input) -> tuple of measure values, where input is usually
               a phenotype (eg. an expression tree).
     """
+
     def closure(*args, **kwargs) -> tuple:
         m = toolz.compose(post, _tt_flatten, toolz.juxt([tuple_wrap(f) for f in funcs]), pre)
         return m(*args, **kwargs)
-    closure.size = sum(getattr(f, 'size', 1) for f in funcs)
+
+    closure.size = sum(getattr(f, "size", 1) for f in funcs)
     return closure
 
 
@@ -119,9 +121,9 @@ def default_constants(ind):
     """
     if ind.pset.constants:
         consts_types = ind.pset.constants
-        if len(consts_types) == 1 and "Symc" in consts_types:   # symc case
+        if len(consts_types) == 1 and "Symc" in consts_types:  # symc case
             values = np.ones(len(_get_index(ind, consts_types[0])))
-        else:                           # sympy case
+        else:  # sympy case
             values = np.ones(len(consts_types))
     else:
         values = []
@@ -174,7 +176,9 @@ def const_opt_scalar(*args, **kwargs):
 
 @deprecated.deprecated(reason="Use const_opt(*args, lsq=True, **kwargs) instead.", version="0.4")
 def const_opt_leastsq(measure, individual, default_constants=default_constants, f_kwargs=None, **kwargs):
-    return const_opt(measure, individual, lsq=True, default_constants=default_constants, f_kwargs=f_kwargs, **kwargs)
+    return const_opt(
+        measure, individual, lsq=True, default_constants=default_constants, f_kwargs=f_kwargs, **kwargs
+    )
 
 
 def replace_nan(x, rep=np.infty):
@@ -186,9 +190,11 @@ def replace_nan(x, rep=np.infty):
 
     :returns: x without nan's
     """
+
     @np.vectorize
     def repl(x):
         return rep if np.isnan(x) else x
+
     t = toolz.identity if isinstance(x, np.ndarray) else type(x)
     return t(repl(x))
 
@@ -205,8 +211,8 @@ def _argcount(func):
 
 def annotate(func, annotations):
     """Add annoations to func."""
-    if not hasattr(func, '__annoations__'):
-        setattr(func, '__annotations__', annotations)
+    if not hasattr(func, "__annoations__"):
+        setattr(func, "__annotations__", annotations)
     else:
         func.__annotations__.update(annotations)
     return func
@@ -215,7 +221,7 @@ def annotate(func, annotations):
 def returns(func, types):
     """Check func's annotation dictionary for return type tuple."""
     try:
-        return func.__annotations__['return'] in types
+        return func.__annotations__["return"] in types
     except (AttributeError, KeyError):
         return False
 
@@ -226,14 +232,16 @@ def tuple_wrap(func):
     if returns(func, types=types):
         return func  # No need to wrap.
     else:
+
         @functools.wraps(func)
         def closure(*args, **kwargs):
             res = func(*args, **kwargs)
             if isinstance(res, types):
                 return tuple(res)
             else:
-                return res,
-        annotate(closure, {'return': tuple})
+                return (res,)
+
+        annotate(closure, {"return": tuple})
         return closure
 
 
@@ -244,11 +252,14 @@ def max_fitness_on_timeout(max_fitness, timeout):
     :param timeout: time until timeout
     :returns: fitness or max_fitness
     """
+
     def decorate(f):
         @functools.wraps(f)
         def inner(*args, **kwargs):
             return timeoutable(default=max_fitness)(f)(*args, timeout=timeout, **kwargs)
+
         return inner
+
     return decorate
 
 
@@ -261,5 +272,5 @@ complexity_measures = {
     "ec_genotype": expressional_complexity,
     "ec_phenotype": lambda ind: expressional_complexity(ind.resolve_sc()),
     "num_nodes_genotype": len,
-    "num_nodes_phenotype": lambda ind: len(ind.resolve_sc())
+    "num_nodes_phenotype": lambda ind: len(ind.resolve_sc()),
 }

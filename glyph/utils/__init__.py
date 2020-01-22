@@ -40,10 +40,10 @@ def random_state(obj, rng=random):
     :params rng: Instance of a random number generator.
     """
     obj._tmp_state = rng.getstate()
-    rng.setstate(getattr(obj, '_prev_state', rng.getstate()))
+    rng.setstate(getattr(obj, "_prev_state", rng.getstate()))
     yield
     obj._prev_state = rng.getstate()
-    rng.setstate(getattr(obj, '_tmp_state', rng.getstate()))
+    rng.setstate(getattr(obj, "_tmp_state", rng.getstate()))
 
 
 def partition(pred, iterable):

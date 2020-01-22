@@ -457,7 +457,7 @@ def make_remote_app(callbacks=(), callback_factories=(), parser=None):
     glyph.utils.logging.load_config(
         config_file=args.logging_config,
         level=getattr(logging, args.verbosity),
-        placeholders=dict(workdir=workdir)
+        placeholders=dict(workdir=workdir),
     )
     if args.resume_file is not None:
         logger.debug("Loading checkpoint {}".format(args.resume_file))

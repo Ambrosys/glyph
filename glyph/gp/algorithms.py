@@ -16,22 +16,24 @@ def varOr(population, toolbox, lambda_, cxpb, mutpb):
     Reproduction needs cloning, so that fitness is not shared.
     Else the current implementation of AgeFitness will break.
     """
-    assert (cxpb + mutpb) <= 1.0, "The sum of the crossover and mutation probabilities must be smaller or equal to 1.0."
+    assert (
+        cxpb + mutpb
+    ) <= 1.0, "The sum of the crossover and mutation probabilities must be smaller or equal to 1.0."
 
     offspring = []
     for _ in range(lambda_):
         op_choice = random.random()
-        if op_choice < cxpb:            # Apply crossover
+        if op_choice < cxpb:  # Apply crossover
             ind1, ind2 = list(map(toolbox.clone, random.sample(population, 2)))
             ind1, ind2 = toolbox.mate(ind1, ind2)
             del ind1.fitness.values
             offspring.append(ind1)
         elif op_choice < cxpb + mutpb:  # Apply mutation
             ind = toolbox.clone(random.choice(population))
-            ind, = toolbox.mutate(ind)
+            (ind,) = toolbox.mutate(ind)
             del ind.fitness.values
             offspring.append(ind)
-        else:                           # Apply reproduction
+        else:  # Apply reproduction
             offspring.append(toolbox.clone(random.choice(population)))
 
     return offspring
@@ -50,7 +52,7 @@ class MOGP(object):
 
     def evolve(self, population):
         if not _all_valid(population):
-            raise RuntimeError('Cannot evolve on invalid fitness values in population.')
+            raise RuntimeError("Cannot evolve on invalid fitness values in population.")
         if not self._initialized:
             self._init(population)
         parents = self.select(population, self.parents_size)
@@ -69,12 +71,14 @@ class MOGP(object):
 
 class NSGA2(MOGP):
     """Implementation of the NSGA-II algorithm as described in Essentials of Metaheuristics"""
+
     def __init__(self, mate_func, mutate_func):
         super().__init__(mate_func, mutate_func, deap.tools.selNSGA2)
 
 
 class SPEA2(MOGP):
     """Implementation of the SPEA2 algorithm as described in Essentials of Metaheuristics"""
+
     def __init__(self, mate_func, mutate_func):
         super().__init__(mate_func, mutate_func, deap.tools.selSPEA2)
 
@@ -98,7 +102,7 @@ class DeapEaSimple(object):
 
     def evolve(self, population):
         if not _all_valid(population):
-            raise RuntimeError('Cannot evolve on invalid fitness values in population.')
+            raise RuntimeError("Cannot evolve on invalid fitness values in population.")
         if not self._initialized:
             self._init(population)
         parents = deap.tools.selTournament(population, self.offspring_size, self.tournament_size)
@@ -110,6 +114,7 @@ class AgeFitness(MOGP):
     """AgeFitness algorithm as described in Schmidt & Lipson.
     DOI: 10.1007/978-1-4419-7747-2_8
     """
+
     def __init__(self, mate_func, mutate_func, select, create_func):
         super().__init__(mate_func, mutate_func, select)
         self.num_new_blood = 1
@@ -122,7 +127,7 @@ class AgeFitness(MOGP):
 
     def evolve(self, population):
         if not _all_valid(population):
-            raise RuntimeError('Cannot evolve on invalid fitness values in population.')
+            raise RuntimeError("Cannot evolve on invalid fitness values in population.")
         if not self._initialized:
             self._init(population)
         self._aging(population)
@@ -133,7 +138,7 @@ class AgeFitness(MOGP):
 
     def _remove_age_from_fitness(self, pop):
         for ind in pop:
-            ind.fitness.values = ind.fitness.values[:self.n_obj]
+            ind.fitness.values = ind.fitness.values[: self.n_obj]
 
     @staticmethod
     def _aging(population):

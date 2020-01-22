@@ -15,7 +15,7 @@ def load_config(config_file, placeholders=None, level=logging.INFO):
         # Route warnings through python logging
         logging.captureWarnings(True)
     if os.path.exists(config_file):
-        with open(config_file, 'rt') as f:
+        with open(config_file, "rt") as f:
             content = f.read().format(**placeholders)
         config = yaml.load(content)
         logging.config.dictConfig(config)
@@ -40,7 +40,7 @@ def print_dict(p_func, d):
     :type d: dict
     """
     for k, v in sorted(d.items()):
-        p_func('{} = {}'.format(k, v))
+        p_func("{} = {}".format(k, v))
 
 
 def print_params(p_func, gp_config):

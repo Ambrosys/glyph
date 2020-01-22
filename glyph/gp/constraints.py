@@ -129,7 +129,9 @@ def reject_constrain_violation(constraint, n_trials=30, timeout=60):
                     if t not in constraint:
                         break
                 else:
-                    logger.warning(f"Number of tries exhausted during constrained operation {operator} on individual {inds}.")  # noqa
+                    logger.warning(
+                        f"Number of tries exhausted during constrained operation {operator} on individual {inds}."
+                    )  # noqa
                     if inds:
                         return inds
                     else:
@@ -137,7 +139,9 @@ def reject_constrain_violation(constraint, n_trials=30, timeout=60):
             if to_ctx.state == to_ctx.TIMED_OUT:
                 logger.warning(f"Timeout during constrained operation {operator} on individual {inds}.")
             return out
+
         return inner
+
     return reject
 
 
@@ -151,5 +155,4 @@ def constrain(funcs, constraint, n_trials=30, timeout=60):
 
     if not constraint:
         return funcs
-    return [reject_constrain_violation(constraint, n_trials=n_trials, timeout=timeout)(f)
-            for f in funcs]
+    return [reject_constrain_violation(constraint, n_trials=n_trials, timeout=timeout)(f) for f in funcs]

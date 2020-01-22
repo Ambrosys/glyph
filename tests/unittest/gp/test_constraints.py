@@ -10,13 +10,14 @@ from glyph.gp.breeding import nd_mutation
 
 
 class Tree(AExpressionTree):
-    pset = numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'symc'))
+    pset = numpy_primitive_set(1, categories=("algebraic", "trigonometric", "symc"))
     marker = "symc"
 
 
 class SympyTree(AExpressionTree):
-    pset = sympy_primitive_set(categories=['algebraic', 'exponential'], arguments=['x_0'], constants=['c_0'])
+    pset = sympy_primitive_set(categories=["algebraic", "exponential"], arguments=["x_0"], constants=["c_0"])
     marker = "sympy"
+
 
 cases = (
     ("Sub(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
@@ -28,7 +29,12 @@ cases = (
     ("SC(x_0, x_0)", True, dict(zero=True, constant=True, infty=True), Tree),
     ("Add(Symc, Symc)", True, dict(zero=True, constant=True, infty=True), Tree),
     ("Add(c_0, c_0)", True, dict(zero=True, constant=True, infty=True), SympyTree),
-    ("Mul(x_0, Div(Mul(Div(x_0, x_0), Div(x_0, x_0)), Div(Add(x_0, x_0), Div(x_0, x_0))))", True, dict(zero=True, constant=True, infty=True), Tree)
+    (
+        "Mul(x_0, Div(Mul(Div(x_0, x_0), Div(x_0, x_0)), Div(Add(x_0, x_0), Div(x_0, x_0))))",
+        True,
+        dict(zero=True, constant=True, infty=True),
+        Tree,
+    ),
 )
 
 
@@ -61,12 +67,11 @@ def test_constraint_decorator(i, NumpyIndividual):
             this_mock()
     else:
 
-        other_ind, *rest = this_mock(*[ind]*i)
+        other_ind, *rest = this_mock(*[ind] * i)
         assert ind == other_ind
 
 
 def test_constraint_in_nd(NumpyIndividual):
-
     class NDTree(ANDimTree):
         base = NumpyIndividual
 
@@ -76,7 +81,7 @@ def test_constraint_in_nd(NumpyIndividual):
     [this_mock] = constrain([this_mock], ns)
     mate = partial(nd_mutation, mut1d=this_mock)
 
-    nd_ind = NDTree([ind]*2)
+    nd_ind = NDTree([ind] * 2)
 
     new_nd_ind, *rest = mate(nd_ind)
 

@@ -10,9 +10,7 @@ import tempfile
 import pytest
 
 
-THIS_FILES_DIR = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe()))
-)
+THIS_FILES_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
 @contextlib.contextmanager
@@ -55,32 +53,21 @@ def test_symbolic_regression_example(file):
 @pytest.mark.timeout(300)
 def test_glyph_remote():
     with tempdir():
-        example = os.path.abspath(
-            os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py")
-        )
+        example = os.path.abspath(os.path.join(THIS_FILES_DIR, "../../examples/remote/experiment.py"))
         exp = subprocess.Popen(
-            "python {}".format(example),
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            "python {}".format(example), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         gp = subprocess.Popen(
-            "glyph-remote --remote --ndim 2 -n 2 -p 4 --max_iter_total 1 --max_fev_const_opt 1",
-            shell=True,
+            "glyph-remote --remote --ndim 2 -n 2 -p 4 --max_iter_total 1 --max_fev_const_opt 1", shell=True,
         )
 
         gp.wait()  # gp sends shutdown to exp process
         exp.wait()
 
         exp = subprocess.Popen(
-            "python {}".format(example),
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            "python {}".format(example), shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
-        gp = subprocess.Popen(
-            "glyph-remote --resume checkpoint.pickle --remote", shell=True
-        )
+        gp = subprocess.Popen("glyph-remote --resume checkpoint.pickle --remote", shell=True)
 
         gp.wait()  # gp sends shutdown to exp process
         exp.wait()

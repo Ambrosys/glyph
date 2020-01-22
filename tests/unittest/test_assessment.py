@@ -14,25 +14,25 @@ from glyph import gp
 from glyph.utils.numeric import hill_climb, rms
 
 SingleConstIndividual = gp.Individual(
-    pset=gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg', 'sqrt'],
-                                arguments=['x_0'],
-                                constants=['c']),
+    pset=gp.sympy_primitive_set(
+        categories=["algebraic", "exponential", "neg", "sqrt"], arguments=["x_0"], constants=["c"]
+    ),
     name="SingleConstIndividual",
-    marker="sympy"
+    marker="sympy",
 )
 
 TwoConstIndividual = gp.Individual(
-    pset=gp.sympy_primitive_set(categories=['algebraic', 'exponential', 'neg'],
-                                arguments=['x_0'],
-                                constants=['c_0', 'c_1']),
+    pset=gp.sympy_primitive_set(
+        categories=["algebraic", "exponential", "neg"], arguments=["x_0"], constants=["c_0", "c_1"]
+    ),
     name="TwoConstIndividual",
-    marker="sympy"
+    marker="sympy",
 )
 
 UnlimitedConstants = gp.Individual(
-    pset=gp.numpy_primitive_set(1, categories=('algebraic', 'trigonometric', 'exponential', 'symc')),
+    pset=gp.numpy_primitive_set(1, categories=("algebraic", "trigonometric", "exponential", "symc")),
     name="UnlimitedConstants",
-    marker="symc"
+    marker="symc",
 )
 
 
@@ -52,7 +52,7 @@ def tupleize(x):
     try:
         iter(x)
     except:
-        x = x,
+        x = (x,)
     return x
 
 
@@ -64,19 +64,39 @@ def assert_all_close(a, b, r_tol=1e-6):
 
 
 const_opt_agreement_cases = [
-    (SingleConstIndividual, 'x_0', lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
-    (SingleConstIndividual, 'Mul(c, x_0)', lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
-    (SingleConstIndividual, 'Mul(c, Neg(x_0))', lambda x: 1.5 * x, np.linspace(0, 100, 100), -1.5, 1),
-    (SingleConstIndividual, 'Add(c, Mul(c, x_0))', lambda x: 8.0 + 8.0 * x, np.linspace(0, 100, 100), 8.0, 1),
-    (SingleConstIndividual, 'Add(c, x_0)', lambda x: 5.5 + 5.5 * x, np.linspace(-100, 100, 200), 5.5, 1),
-    (TwoConstIndividual, 'x_0', lambda x: x, np.linspace(0, 100, 100), 1.0, 2),
-    (TwoConstIndividual, 'Mul(c_1, x_0)', lambda x: 2.0 * x, np.linspace(0, 100, 100), (Any(), 2.0), 2),
-    (TwoConstIndividual, 'Add(Mul(c_0, x_0), c_1)', lambda x: 4.1 * x + 2.3, np.linspace(0, 100, 100), (4.1, 2.3), 2),
-    (UnlimitedConstants, 'Mul(Symc, x_0)', lambda x: 1.5 * x, np.linspace(0, 100, 100), 1.5, 1),
-    (UnlimitedConstants, 'Mul(Symc, Add(x_0, Symc)', lambda x: x + 2.0, np.linspace(0, 100, 100), (1.0, 2.0), 2),
-    (UnlimitedConstants, 'x_0', lambda x: x, np.linspace(0, 100, 100), (), 0),
-
-    (SingleConstIndividual, 'sqrt(Neg(c))', lambda x: x, np.linspace(0, 100, 100), Any(), 1)  # raises exception
+    (SingleConstIndividual, "x_0", lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
+    (SingleConstIndividual, "Mul(c, x_0)", lambda x: x, np.linspace(0, 100, 100), 1.0, 1),
+    (SingleConstIndividual, "Mul(c, Neg(x_0))", lambda x: 1.5 * x, np.linspace(0, 100, 100), -1.5, 1),
+    (SingleConstIndividual, "Add(c, Mul(c, x_0))", lambda x: 8.0 + 8.0 * x, np.linspace(0, 100, 100), 8.0, 1),
+    (SingleConstIndividual, "Add(c, x_0)", lambda x: 5.5 + 5.5 * x, np.linspace(-100, 100, 200), 5.5, 1),
+    (TwoConstIndividual, "x_0", lambda x: x, np.linspace(0, 100, 100), 1.0, 2),
+    (TwoConstIndividual, "Mul(c_1, x_0)", lambda x: 2.0 * x, np.linspace(0, 100, 100), (Any(), 2.0), 2),
+    (
+        TwoConstIndividual,
+        "Add(Mul(c_0, x_0), c_1)",
+        lambda x: 4.1 * x + 2.3,
+        np.linspace(0, 100, 100),
+        (4.1, 2.3),
+        2,
+    ),
+    (UnlimitedConstants, "Mul(Symc, x_0)", lambda x: 1.5 * x, np.linspace(0, 100, 100), 1.5, 1),
+    (
+        UnlimitedConstants,
+        "Mul(Symc, Add(x_0, Symc)",
+        lambda x: x + 2.0,
+        np.linspace(0, 100, 100),
+        (1.0, 2.0),
+        2,
+    ),
+    (UnlimitedConstants, "x_0", lambda x: x, np.linspace(0, 100, 100), (), 0),
+    (
+        SingleConstIndividual,
+        "sqrt(Neg(c))",
+        lambda x: x,
+        np.linspace(0, 100, 100),
+        Any(),
+        1,
+    ),  # raises exception
 ]
 
 
@@ -91,7 +111,7 @@ class Measure:
         return func(self.x, *consts) - self.target(self.x)
 
 
-@pytest.mark.parametrize('case', const_opt_agreement_cases)
+@pytest.mark.parametrize("case", const_opt_agreement_cases)
 def test_const_opt_leastsq(case):
     individual_class, expr, target, x, desired, _ = case
     ind = individual_class.from_string(expr)
@@ -100,7 +120,7 @@ def test_const_opt_leastsq(case):
     assert_all_close(desired, popt)
 
 
-@pytest.mark.parametrize('case', const_opt_agreement_cases)
+@pytest.mark.parametrize("case", const_opt_agreement_cases)
 def test_const_opt_scalar(case):
     individual_class, expr, target, x, desired, _ = case
     ind = individual_class.from_string(expr)
@@ -134,7 +154,7 @@ def test_const_opt_scalar_functional():
 def test_hill_climb():
     rng = np.random.RandomState(seed=1742)
     case = const_opt_agreement_cases[3]
-    optiones = {"directions": 200, "maxfev": 2000, "target": 0.2, 'rng': rng}
+    optiones = {"directions": 200, "maxfev": 2000, "target": 0.2, "rng": rng}
 
     individual_class, expr, target, x, desired, _ = case
     ind = individual_class.from_string(expr)
@@ -149,14 +169,14 @@ def test_hill_climb():
     assert_all_close(desired, popt, r_tol=0.1)
 
 
-@pytest.mark.parametrize('case', const_opt_agreement_cases)
+@pytest.mark.parametrize("case", const_opt_agreement_cases)
 def test_default_constants(case):
     individual_class, expr, _, _, _, n_consts = case
     ind = individual_class.from_string(expr)
     np.testing.assert_allclose(actual=assessment.default_constants(ind), desired=np.ones(n_consts), rtol=0)
 
 
-@pytest.mark.parametrize('case', filter(lambda x: x[0] is UnlimitedConstants, const_opt_agreement_cases))
+@pytest.mark.parametrize("case", filter(lambda x: x[0] is UnlimitedConstants, const_opt_agreement_cases))
 def test__get_index(case):
     individual_class, expr, _, _, _, n_consts = case
     ind = individual_class.from_string(expr)
@@ -201,14 +221,14 @@ def test_tuple_wrap():
     assert isinstance(g(1), tuple)
 
 
-@pytest.mark.skipif(sys.platform == 'win32',
-                    reason="does not run on windows")
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def test_max_fitness_on_timeout():
 
     f = lambda: 1
 
     def g():
         import time
+
         time.sleep(10)
         return f()
 

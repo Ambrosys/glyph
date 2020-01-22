@@ -29,7 +29,9 @@ def non_negative_int(string):
     except ValueError:
         raise argparse.ArgumentTypeError("invalid int value: '{}'".format(string))
     if value < 0:
-        raise argparse.ArgumentTypeError("int value hast to be either 0 or greater then 0: '{}'".format(string))
+        raise argparse.ArgumentTypeError(
+            "int value hast to be either 0 or greater then 0: '{}'".format(string)
+        )
     return value
 
 
@@ -46,14 +48,16 @@ def unit_interval(string):
 
 def ntuple(n, to_type=float):
     """Check whether string is an n-tuple."""
+
     def evaluate(string):
         try:
-            value = tuple(to_type(val) for val in string.split(','))
+            value = tuple(to_type(val) for val in string.split(","))
             if len(value) != n:
                 raise ValueError
         except ValueError:
             raise argparse.ArgumentTypeError("Must be a {}-tuple of type {}".format(n, to_type))
         return value
+
     return evaluate
 
 
@@ -61,7 +65,7 @@ def readable_file(string):
     """Check weather file is readable"""
     path = os.path.abspath(string)
     try:
-        with open(path, 'r'):
+        with open(path, "r"):
             pass
     except IOError:
         raise argparse.ArgumentTypeError("Must be a readable file path {}".format(path))

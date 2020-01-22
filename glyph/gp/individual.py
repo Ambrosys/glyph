@@ -26,7 +26,7 @@ def sc_qout(x, y):
 def sc_mmqout(x, y, cmin=-1, cmax=1):
     """SC is the minimum-maximum quotient of the number of nodes of both
     child-trees x and y mapped into the constant interval [cmin, cmax]"""
-    return cmin + min(x, y)/max(x, y) * (cmax - cmin)
+    return cmin + min(x, y) / max(x, y) * (cmax - cmin)
 
 
 class StructConst(deap.gp.Primitive):
@@ -35,7 +35,7 @@ class StructConst(deap.gp.Primitive):
         :param func: evaluate left and right subtree and assign a constant.
         """
         self.func = func
-        super().__init__("SC", [deap.gp.__type__]*arity, deap.gp.__type__)
+        super().__init__("SC", [deap.gp.__type__] * arity, deap.gp.__type__)
 
     @staticmethod
     def get_len(expr, tokens=("(,")):
@@ -61,15 +61,17 @@ def add_sc(pset, func):
 
 
 def _build_args_string(pset, consts):
-    args = ','.join(arg for arg in pset.args)
+    args = ",".join(arg for arg in pset.args)
     if consts:
         if args:
-            args += ','
-        args += ','.join("{}=1.0".format(arg) for arg in consts)
+            args += ","
+        args += ",".join("{}=1.0".format(arg) for arg in consts)
     return args
 
 
-def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential'), arguments=['y_0'], constants=[]):
+def sympy_primitive_set(
+    categories=("algebraic", "trigonometric", "exponential"), arguments=["y_0"], constants=[]
+):
     """Create a primitive set with sympy primitves.
 
     :param arguments: variables to use in primitive set
@@ -79,20 +81,20 @@ def sympy_primitive_set(categories=('algebraic', 'trigonometric', 'exponential')
 
      :return: `deap.gp.PrimitiveSet`
     """
-    pset = deap.gp.PrimitiveSet('main', arity=0)
-    if 'algebraic' in categories:
+    pset = deap.gp.PrimitiveSet("main", arity=0)
+    if "algebraic" in categories:
         pset.addPrimitive(sympy.Add, arity=2)
         pset.addPrimitive(sympy.Mul, arity=2)
-    if 'neg' in categories:
-        pset.addPrimitive(functools.partial(sympy.Mul, -1.0), arity=1, name='Neg')
-    if 'trigonometric' in categories:
+    if "neg" in categories:
+        pset.addPrimitive(functools.partial(sympy.Mul, -1.0), arity=1, name="Neg")
+    if "trigonometric" in categories:
         pset.addPrimitive(sympy.sin, arity=1)
         pset.addPrimitive(sympy.cos, arity=1)
-    if 'exponential' in categories:
+    if "exponential" in categories:
         pset.addPrimitive(sympy.exp, arity=1)
-    if 'logarithm' in categories:
+    if "logarithm" in categories:
         pset.addPrimitive(sympy.ln, arity=1)
-    if 'sqrt' in categories:
+    if "sqrt" in categories:
         pset.addPrimitive(sympy.sqrt, arity=1)
 
     # Use sympy symbols for argument representation.
@@ -118,11 +120,11 @@ def sympy_phenotype(individual):
     pset = individual.pset
     args = _build_args_string(pset, pset.constants)
     expr = sympy.sympify(deap.gp.compile(str(individual), pset))
-    func = sympy.utilities.lambdify(args, expr, modules='numpy')
+    func = sympy.utilities.lambdify(args, expr, modules="numpy")
     return func
 
 
-def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'exponential', 'symc')):
+def numpy_primitive_set(arity, categories=("algebraic", "trigonometric", "exponential", "symc")):
     """Create a primitive set based on numpys vectorized functions.
 
 
@@ -134,9 +136,9 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
     """
     pset = deap.gp.PrimitiveSet("main", arity)
     # Use primitive set built-in for argument representation.
-    pset.renameArguments(**{'ARG{}'.format(i): 'x_{}'.format(i) for i in range(arity)})
+    pset.renameArguments(**{"ARG{}".format(i): "x_{}".format(i) for i in range(arity)})
     pset.args = pset.arguments
-    if 'symc' in categories:
+    if "symc" in categories:
         symc = 1.0
         pset.addTerminal(symc, "Symc")
         pset.constants = ["Symc"]
@@ -154,22 +156,23 @@ def numpy_primitive_set(arity, categories=('algebraic', 'trigonometric', 'expone
             elif np.isinf(res) or np.isnan(res):
                 res = value
             return res
+
         return closure
 
-    if 'algebraic' in categories:
+    if "algebraic" in categories:
         pset.addPrimitive(np.add, 2, name="Add")
         pset.addPrimitive(np.subtract, 2, name="Sub")
         pset.addPrimitive(np.multiply, 2, name="Mul")
         _div = close_function(np.divide, 1)
         pset.addPrimitive(_div, 2, name="Div")
-    if 'trigonometric' in categories:
+    if "trigonometric" in categories:
         pset.addPrimitive(np.sin, arity=1)
         pset.addPrimitive(np.cos, arity=1)
-    if 'exponential' in categories:
+    if "exponential" in categories:
         pset.addPrimitive(np.exp, arity=1)
         _log = close_function(np.log, 1)
         pset.addPrimitive(_log, arity=1)
-    if 'sqrt' in categories:
+    if "sqrt" in categories:
         _sqrt = close_function(np.sqrt, 1)
         pset.addPrimitive(_sqrt, arity=1)
     if "constants" in categories:
@@ -320,7 +323,7 @@ class AExpressionTree(deap.gp.PrimitiveTree):
     def create_population(cls, size, gen_method=deap.gp.genHalfAndHalf, min=1, max=4):
         """Create a list of individuals of class Individual."""
         if size < 0:
-            raise RuntimeError('Cannot create population of size {}'.format(size))
+            raise RuntimeError("Cannot create population of size {}".format(size))
         return [cls.create(gen_method=gen_method, min=min, max=max) for _ in range(size)]
 
 
@@ -359,6 +362,7 @@ class ANDimTree(list):
 
     Each dimension is encoded as a expression tree.
     """
+
     def __init__(self, trees):
         super().__init__(trees)
         self.dim = len(trees)
@@ -442,10 +446,10 @@ def convert_inverse_prim(prim, args):
     """
     prim = copy.copy(prim)
     converter = {
-        'sub': lambda *args_: "Add({}, Mul(-1,{}))".format(*args_),
-        'div': lambda *args_: "Mul({}, Pow({}, -1))".format(*args_),
-        'add': lambda *args_: "Add({}, {})".format(*args_),
-        'mul': lambda *args_: "Mul({}, {})".format(*args_),
+        "sub": lambda *args_: "Add({}, Mul(-1,{}))".format(*args_),
+        "div": lambda *args_: "Mul({}, Pow({}, -1))".format(*args_),
+        "add": lambda *args_: "Add({}, {})".format(*args_),
+        "mul": lambda *args_: "Mul({}, {})".format(*args_),
     }
     prim_formatter = converter.get(prim.name.lower(), prim.format)
     return prim_formatter(*args)
@@ -460,7 +464,9 @@ def simplify_this(expr, timeout=5):
 
     :warning: does not respect closures
     """
-    with glyph.utils.random_state(simplify_this):  # to avoid strange side effects of sympy testcases and random
+    with glyph.utils.random_state(
+        simplify_this
+    ):  # to avoid strange side effects of sympy testcases and random
         with glyph.utils.Timeout(timeout):
             try:
                 return sympy.simplify(expr.to_polish(for_sympy=True))
@@ -497,7 +503,7 @@ def simplify_constant(ind):
         root = ind.root
 
         # the tree is just a function of constants
-        if len(ind) > 1 and  all(i == symc for i in ind[1:]):
+        if len(ind) > 1 and all(i == symc for i in ind[1:]):
             return type(ind)([symc])
 
         # root is just a constant or tree is a function of a variable and cannot be trimmed down.

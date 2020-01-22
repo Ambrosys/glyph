@@ -13,7 +13,9 @@ def rms(y):
 def strict_subtract(x, y):
     try:
         if x.shape != y.shape:
-            raise ValueError('operands could not be broadcast together with shapes {} {}'.format(x.shape, y.shape))
+            raise ValueError(
+                "operands could not be broadcast together with shapes {} {}".format(x.shape, y.shape)
+            )
     except AttributeError:
         pass
     return x - y
@@ -39,8 +41,9 @@ def cvrmse(x, y):
 def silent_numpy(func):
     @functools.wraps(func)
     def closure(*args, **kwargs):
-        with np.errstate(all='ignore'):
+        with np.errstate(all="ignore"):
             return func(*args, **kwargs)
+
     return closure
 
 
@@ -63,7 +66,7 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
 
     def tweak(x):
         """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))"""
-        return round(x+rng.normal(scale=np.sqrt(abs(x))+10**(-precision)), precision)
+        return round(x + rng.normal(scale=np.sqrt(abs(x)) + 10 ** (-precision)), precision)
 
     def f(x):
         return fun(x, *args)
@@ -112,7 +115,7 @@ class SlowConversionTerminator:
 
     def __call__(self, fun, x0, args, **kwargs):
 
-        maxfev = kwargs.get('maxfev', 1000*len(x0))
+        maxfev = kwargs.get("maxfev", 1000 * len(x0))
         kw = kwargs.copy()
         kw["maxfev"] = self.step_size
 
@@ -135,4 +138,3 @@ class SlowConversionTerminator:
                     break
 
         return res
-

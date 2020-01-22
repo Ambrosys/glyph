@@ -46,12 +46,9 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3 :: Only",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
         ],
         extras_require={"gui": REQUIRED_GUI},
-        entry_points={
-            "console_scripts": [
-                "glyph-remote = glyph.cli.glyph_remote:main"
-            ]
-        },
+        entry_points={"console_scripts": ["glyph-remote = glyph.cli.glyph_remote:main"]},
         cmdclass=versioneer.get_cmdclass(),
     )

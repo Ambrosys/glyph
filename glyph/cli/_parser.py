@@ -101,10 +101,7 @@ def get_parser(parser=None):
     gui_active = GUI_AVAILABLE and isinstance(parser, GooeyParser)
 
     parser.add_argument(
-        "--port",
-        type=positive_int,
-        default=5555,
-        help="Port for the zeromq communication (default: 5555)",
+        "--port", type=positive_int, default=5555, help="Port for the zeromq communication (default: 5555)",
     )
     parser.add_argument("--ip", type=str, default="localhost", help="IP of the client (default: localhost)")
     parser.add_argument(
@@ -130,9 +127,7 @@ def get_parser(parser=None):
     )
 
     config = parser.add_argument_group("config")
-    group = config.add_mutually_exclusive_group(
-        required=gui_active
-    )
+    group = config.add_mutually_exclusive_group(required=gui_active)
     group.add_argument(
         "--remote",
         action="store_true",
@@ -149,9 +144,7 @@ def get_parser(parser=None):
     )
 
     glyph.application.Application.add_options(parser)
-    cp_group = parser.add_mutually_exclusive_group(
-        required=gui_active
-    )
+    cp_group = parser.add_mutually_exclusive_group(required=gui_active)
     cp_group.add_argument("--ndim", type=positive_int, default=1)
     cp_group.add_argument(
         "--resume",
@@ -216,10 +209,7 @@ def get_parser(parser=None):
         help="Directions for the stochastic hill-climber (default: 5 only used in conjunction with --const_opt_method hill_climb)",
     )
     ass_group.add_argument(
-        "--precision",
-        type=non_negative_int,
-        default=3,
-        help="Precision of constants (default: 3)",
+        "--precision", type=non_negative_int, default=3, help="Precision of constants (default: 3)",
     )
     ass_group.add_argument(
         "--const_opt_method",

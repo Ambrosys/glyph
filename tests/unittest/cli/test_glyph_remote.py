@@ -19,8 +19,8 @@ def primitives():
 @pytest.fixture(scope="module")
 def ndtree(primitives):
     pset = build_pset_gp(primitives)
-    Tree = type("Tree", (Individual, ), dict(pset=pset))
-    MyTree = type("MyTree", (NDTree, ), dict(base=Tree))
+    Tree = type("Tree", (Individual,), dict(pset=pset))
+    MyTree = type("MyTree", (NDTree,), dict(base=Tree))
     return MyTree
 
 
@@ -30,7 +30,7 @@ def test_build_pset_gp(primitives):
     assert pset.constants == {"k"}
 
 
-class DummyExperiment:   # a copy of our example
+class DummyExperiment:  # a copy of our example
     def __init__(self):
         self.socket = zmq.Context().socket(zmq.REP)
 
@@ -44,11 +44,11 @@ class DummyExperiment:   # a copy of our example
     def run(self):
         self.start()
         while True:
-            request = json.loads(self.socket.recv().decode('ascii'))
+            request = json.loads(self.socket.recv().decode("ascii"))
             result = self.work(request)
             if result is None:
                 break
-            self.socket.send(json.dumps(result).encode('ascii'))
+            self.socket.send(json.dumps(result).encode("ascii"))
 
     def work(self, request):
         action = request["action"]
@@ -60,13 +60,14 @@ class DummyExperiment:   # a copy of our example
             return None
 
 
-class MockQueue():
+class MockQueue:
     def put(self, *args):
         pass
 
     @staticmethod
     def get(*_):
         return 0
+
 
 # @pytest.fixture(scope="function")
 # def runner():
@@ -75,8 +76,8 @@ class MockQueue():
 #     thread.start()
 #     send, recv = connect("127.0.0.1", PORT)
 #     runner = RemoteAssessmentRunner(send, recv)
-        # runner.queue = MockQueue()
-        # runner.result_queue = runner.queue
+# runner.queue = MockQueue()
+# runner.result_queue = runner.queue
 #     yield runner
 #     runner.send(dict(action="SHUTDOWN"))
 #     thread.join()

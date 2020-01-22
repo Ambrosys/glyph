@@ -26,7 +26,7 @@ def mutate_mock(ind1):
 
     :returns: (ind1, ) unchanged
     """
-    return ind1,
+    return (ind1,)
 
 
 def fitness_values(population):
@@ -101,6 +101,7 @@ def get_best(pop):
 # maybe this is not a unit test anymore
 def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
     from sklearn.datasets import load_boston
+
     pop_size = 50
     num_generation = 5
 
@@ -118,7 +119,9 @@ def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
     mutate_mock = mutuniform(NumpyIndividual.pset)
 
     if "AgeFitness" in AlgorithmClass.__name__:
-        algorithm = AlgorithmClass(mate_mock, mutate_mock, deap.tools.selNSGA2, NumpyIndividual.create_population)
+        algorithm = AlgorithmClass(
+            mate_mock, mutate_mock, deap.tools.selNSGA2, NumpyIndividual.create_population
+        )
     else:
         algorithm = AlgorithmClass(mate_mock, mutate_mock)
     population = NumpyIndividual.create_population(pop_size)
@@ -128,7 +131,7 @@ def test_best_is_preserved_with_data(AlgorithmClass, NumpyIndividual):
             ind.fitness.values = fitness
         population = algorithm.evolve(population)
         new_best = get_best(population)
-        assert new_best.fitness >= best.fitness   # better means lower fitness in this case
+        assert new_best.fitness >= best.fitness  # better means lower fitness in this case
         best = new_best
 
 
@@ -160,7 +163,9 @@ def test_reproducibility(AlgorithmClass, IndividualClass):
 
 def setup_algorithm(AlgorithmClass, IndividualClass):
     if "AgeFitness" in AlgorithmClass.__name__:
-        algorithm = AlgorithmClass(mate_mock, mutate_mock, deap.tools.selNSGA2, IndividualClass.create_population)
+        algorithm = AlgorithmClass(
+            mate_mock, mutate_mock, deap.tools.selNSGA2, IndividualClass.create_population
+        )
     else:
         algorithm = AlgorithmClass(mate_mock, mutate_mock)
     return algorithm

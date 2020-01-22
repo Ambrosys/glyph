@@ -10,7 +10,6 @@ class AssessmentRunnerMock(AAssessmentRunner):
 
 
 def test_gp_runner_reproducibility(SympyIndividual):
-
     def run(pop_size, num_generations):
         gp_runner = application.default_gprunner(SympyIndividual, AssessmentRunnerMock())
         gp_runner.init(pop_size)
@@ -19,6 +18,7 @@ def test_gp_runner_reproducibility(SympyIndividual):
         return gp_runner
 
     import random
+
     seed = 1234567890
     pop_size = 10
     num_generations = 4
