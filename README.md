@@ -3,7 +3,6 @@ glyph - symbolic regression tools
 
 [![Build
 Status](https://travis-ci.org/Ambrosys/glyph.svg?branch=master)](https://travis-ci.org/Ambrosys/glyph)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/rbl2b44yfnfk4owi/branch/master?svg=true)](https://ci.appveyor.com/project/Ohjeah/glyph)
 [![Documentation Status](https://readthedocs.org/projects/glyph/badge/?version=latest)](http://glyph.readthedocs.io/en/latest/?badge=latest)
 [![PyPI
 version](https://img.shields.io/pypi/v/pyglyph.svg)](https://pypi.python.org/pypi/pyglyph/)
