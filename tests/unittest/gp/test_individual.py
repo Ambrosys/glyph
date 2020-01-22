@@ -87,7 +87,7 @@ simplify_cases = [
     (Tree, "Sub(Symc, x_0)", "Symc - x_0"),
     (Tree, "Add(x_0, x_0)", "2*x_0"),
     (Tree, "Div(x_0, x_0)", "1"),
-    (Tree, "Div(x_0, 0.0)", "+inf*x_0"),
+    (Tree, "Div(x_0, 0.0)", "zoo*x_0"),
     (Tree, "Mul(x_0, x_0)", "x_0**2"),
     (Tree, "Div(sin(x_0), cos(x_0))", "tan(x_0)"),
     (TreeSmall, "add(x_0, x_0)", "2*x_0"),
@@ -98,7 +98,7 @@ simplify_cases = [
 def test_simplify_this(case):
     individual_class, expr, desired = case
     ind = individual_class.from_string(expr)
-    assert str(simplify_this(ind)) in desired  # test in not equality for appveyor +inf edge case
+    assert str(simplify_this(ind)) in desired
 
 
 def test_simplify_this_random_state():
