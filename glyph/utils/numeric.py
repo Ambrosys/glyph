@@ -13,9 +13,7 @@ def rms(y):
 def strict_subtract(x, y):
     try:
         if x.shape != y.shape:
-            raise ValueError(
-                "operands could not be broadcast together with shapes {} {}".format(x.shape, y.shape)
-            )
+            raise ValueError("operands could not be broadcast together with shapes {} {}".format(x.shape, y.shape))
     except AttributeError:
         pass
     return x - y
@@ -65,7 +63,7 @@ def hill_climb(fun, x0, args, precision=5, maxfev=100, directions=5, target=0, r
     res = scipy.optimize.OptimizeResult()
 
     def tweak(x):
-        """ x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))"""
+        """x = round(x + xi, p) with xi ~ N(0, sqrt(x)+10**(-p))"""
         return round(x + rng.normal(scale=np.sqrt(abs(x)) + 10 ** (-precision)), precision)
 
     def f(x):
@@ -131,10 +129,10 @@ class SlowConversionTerminator:
             fx = res.fun
             x0 = res.x
 
-            eps = (fx - fx_base) / fev
-            self.memory[fev].append(eps)
-            if len(self.memory[fev]) > self.min_stat:
-                if eps < np.percentile(self.memory[fev], self.threshold):
+            eps = (fx - fx_base) / res.nfev
+            self.memory[res.nfev].append(eps)
+            if len(self.memory[res.nfev]) > self.min_stat:
+                if eps < np.percentile(self.memory[res.nfev], self.threshold):
                     break
 
         return res
